@@ -1625,7 +1625,172 @@ details .adv-content { border: 1px solid #30363d; border-top: none; border-radiu
   <code class="snippet"><span class="kw">try</span> { } <span class="kw">catch</span> (e: <span class="ty">Exception</span>) { <span class="kw">if</span> (e <span class="kw">is</span> <span class="ty">CancellationException</span>) <span class="kw">throw</span> e; <span class="fn">handle</span>(e) }</code>
   <span class="desc">CancellationException is how structured concurrency propagates cancellation — swallowing it breaks scope cancellation.</span>
 </div>
-    <!-- Coroutines Advanced details element goes here (Task 7) -->
+    <details id="kt-coro-adv">
+  <summary>Kotlin Coroutines — Advanced (Hot Flows · callbackFlow · Select · Mutex · Semaphore · Job Lifecycle · Backpressure · Testing)</summary>
+  <div class="adv-content">
+
+    <div class="sub-heading">Hot Flows</div>
+
+    <div class="entry">
+      <code class="sig">class MutableStateFlow&lt;T&gt;(value: T) : StateFlow&lt;T&gt;</code>
+      <code class="snippet"><span class="kw">val</span> uiState = <span class="ty">MutableStateFlow</span>(<span class="ty">UiState</span>.Loading); uiState.value = <span class="ty">UiState</span>.<span class="fn">Success</span>(data)</code>
+      <span class="desc">Always has a current value; replays the latest to new collectors. The standard ViewModel state pattern.</span>
+    </div>
+
+    <div class="entry">
+      <code class="sig">class MutableSharedFlow&lt;T&gt;(replay: Int = 0) : SharedFlow&lt;T&gt;</code>
+      <code class="snippet"><span class="kw">val</span> events = <span class="ty">MutableSharedFlow</span>&lt;<span class="ty">UiEvent</span>&gt;(); events.<span class="fn">emit</span>(<span class="ty">UiEvent</span>.ShowSnackbar)</code>
+      <span class="desc">Multicast; no stored value by default. Use for one-shot events (toasts, navigation commands).</span>
+    </div>
+
+    <div class="entry">
+      <code class="sig">fun &lt;T&gt; Flow&lt;T&gt;.stateIn(scope, started: SharingStarted, initialValue: T): StateFlow&lt;T&gt;</code>
+      <code class="snippet">coldFlow.<span class="fn">stateIn</span>(viewModelScope, <span class="ty">SharingStarted</span>.<span class="fn">WhileSubscribed</span>(<span class="num">5000</span>), initial)</code>
+      <span class="desc">Converts a cold Flow to a hot StateFlow; WhileSubscribed(5000) stops collecting when no subscribers for 5s.</span>
+    </div>
+
+    <div class="entry">
+      <code class="sig">fun &lt;T&gt; Flow&lt;T&gt;.shareIn(scope, started: SharingStarted, replay: Int = 0): SharedFlow&lt;T&gt;</code>
+      <code class="snippet">apiFlow.<span class="fn">shareIn</span>(scope, <span class="ty">SharingStarted</span>.Eagerly, replay = <span class="num">1</span>)</code>
+      <span class="desc">Converts cold Flow to hot SharedFlow; replay caches the last N emissions for late collectors.</span>
+    </div>
+
+    <div class="entry">
+      <code class="sig">SharingStarted.Eagerly / Lazily / WhileSubscribed(stopTimeoutMillis)</code>
+      <code class="snippet"><span class="ty">SharingStarted</span>.<span class="fn">WhileSubscribed</span>(<span class="num">5_000</span>) <span class="cm">// stop 5s after last collector</span></code>
+      <span class="desc">Controls when the upstream flow starts/stops; WhileSubscribed is best for Android ViewModels.</span>
+    </div>
+
+    <div class="sub-heading">Callback-to-Flow</div>
+
+    <div class="entry">
+      <code class="sig">fun &lt;T&gt; callbackFlow(block: suspend ProducerScope&lt;T&gt;.() -&gt; Unit): Flow&lt;T&gt;</code>
+      <code class="snippet"><span class="fn">callbackFlow</span> { <span class="kw">val</span> cb = { v: <span class="ty">T</span> -&gt; <span class="fn">trySend</span>(v) }; api.<span class="fn">register</span>(cb); <span class="fn">awaitClose</span> { api.<span class="fn">unregister</span>(cb) } }</code>
+      <span class="desc">Wraps callback-based APIs into a Flow; awaitClose is mandatory and runs when collection stops.</span>
+    </div>
+
+    <div class="entry">
+      <code class="sig">fun &lt;T&gt; channelFlow(block: suspend ProducerScope&lt;T&gt;.() -&gt; Unit): Flow&lt;T&gt;</code>
+      <code class="snippet"><span class="fn">channelFlow</span> { <span class="fn">launch</span> { <span class="fn">send</span>(<span class="fn">compute1</span>()) }; <span class="fn">launch</span> { <span class="fn">send</span>(<span class="fn">compute2</span>()) } }</code>
+      <span class="desc">Like callbackFlow but for bridging concurrent coroutine code to Flow; safe to launch child coroutines inside.</span>
+    </div>
+
+    <div class="sub-heading">Select</div>
+
+    <div class="entry">
+      <code class="sig">suspend fun &lt;R&gt; select(builder: SelectBuilder&lt;R&gt;.() -&gt; Unit): R</code>
+      <code class="snippet"><span class="fn">select</span> { ch1.<span class="fn">onReceive</span> { <span class="str">"from ch1: $it"</span> }; ch2.<span class="fn">onReceive</span> { <span class="str">"from ch2: $it"</span> } }</code>
+      <span class="desc">Waits for the first of multiple suspend operations to complete; first-wins race among channels, deferreds, or timeouts.</span>
+    </div>
+
+    <div class="sub-heading">Synchronization</div>
+
+    <div class="entry">
+      <code class="sig">class Mutex(locked: Boolean = false)</code>
+      <code class="snippet">mutex.<span class="fn">withLock</span> { sharedState++ } <span class="cm">// coroutine-safe exclusive access</span></code>
+      <span class="desc">Suspending mutual exclusion; withLock acquires and releases automatically. Never use j.u.c.locks in coroutines.</span>
+    </div>
+
+    <div class="entry">
+      <code class="sig">fun Mutex.lock() / unlock() / tryLock(): Boolean / withLock(action): T</code>
+      <code class="snippet"><span class="kw">if</span> (mutex.<span class="fn">tryLock</span>()) <span class="kw">try</span> { <span class="fn">update</span>() } <span class="kw">finally</span> { mutex.<span class="fn">unlock</span>() }</code>
+      <span class="desc">tryLock acquires without suspending (returns false if held); always pair manual lock/unlock with try/finally.</span>
+    </div>
+
+    <div class="entry">
+      <code class="sig">class Semaphore(permits: Int, acquiredPermits: Int = 0)</code>
+      <code class="snippet"><span class="kw">val</span> sem = <span class="ty">Semaphore</span>(<span class="num">4</span>); urls.<span class="fn">map</span> { <span class="fn">async</span> { sem.<span class="fn">withPermit</span> { <span class="fn">fetch</span>(it) } } }.<span class="fn">awaitAll</span>()</code>
+      <span class="desc">Limits concurrent access; withPermit(4) means at most 4 coroutines execute simultaneously.</span>
+    </div>
+
+    <div class="sub-heading">Job Lifecycle &amp; Cancellation</div>
+
+    <div class="entry">
+      <code class="sig">Job.cancel(cause?) / cancelAndJoin() / isActive / isCompleted / isCancelled</code>
+      <code class="snippet">job.<span class="fn">cancel</span>(); job.<span class="fn">join</span>() <span class="cm">// or: job.cancelAndJoin()</span></code>
+      <span class="desc">cancel signals cancellation; join waits for completion; cancelAndJoin does both atomically.</span>
+    </div>
+
+    <div class="entry">
+      <code class="sig">fun CoroutineScope.ensureActive() / suspend fun yield()</code>
+      <code class="snippet"><span class="kw">for</span> (item <span class="kw">in</span> bigList) { <span class="fn">ensureActive</span>(); <span class="fn">process</span>(item) }</code>
+      <span class="desc">ensureActive throws CancellationException if cancelled; yield is a suspension point for cooperative cancellation in tight loops.</span>
+    </div>
+
+    <div class="entry">
+      <code class="sig">object NonCancellable : Job</code>
+      <code class="snippet"><span class="fn">withContext</span>(<span class="ty">NonCancellable</span>) { db.<span class="fn">rollback</span>() } <span class="cm">// runs even if scope is cancelling</span></code>
+      <span class="desc">Use in finally blocks to perform cleanup even when the surrounding coroutine is being cancelled.</span>
+    </div>
+
+    <div class="entry">
+      <code class="sig">CoroutineStart.LAZY — start the coroutine manually</code>
+      <code class="snippet"><span class="kw">val</span> job = <span class="fn">launch</span>(start = <span class="ty">CoroutineStart</span>.LAZY) { }; job.<span class="fn">start</span>() <span class="cm">// explicit start</span></code>
+      <span class="desc">LAZY defers execution until start() or join() is called; useful for pre-creating coroutines without running them.</span>
+    </div>
+
+    <div class="sub-heading">Flow — Buffer &amp; Backpressure</div>
+
+    <div class="entry">
+      <code class="sig">fun &lt;T&gt; Flow&lt;T&gt;.buffer(capacity: Int = BUFFERED): Flow&lt;T&gt;</code>
+      <code class="snippet">fastProducer.<span class="fn">buffer</span>(<span class="num">100</span>).<span class="fn">collect</span> { <span class="fn">slowConsumer</span>(it) }</code>
+      <span class="desc">Decouples producer from collector with a buffer; producer can run ahead while collector processes.</span>
+    </div>
+
+    <div class="entry">
+      <code class="sig">fun &lt;T&gt; Flow&lt;T&gt;.conflate(): Flow&lt;T&gt;</code>
+      <code class="snippet">sensorFlow.<span class="fn">conflate</span>().<span class="fn">collect</span> { <span class="fn">render</span>(it) } <span class="cm">// only latest sensor value</span></code>
+      <span class="desc">Drops intermediate values if the collector is slow; delivers only the most recent emission.</span>
+    </div>
+
+    <div class="entry">
+      <code class="sig">fun &lt;T&gt; Flow&lt;T&gt;.flowOn(context: CoroutineContext): Flow&lt;T&gt;</code>
+      <code class="snippet"><span class="fn">flow</span> { <span class="fn">emit</span>(<span class="fn">readFile</span>()) }.<span class="fn">flowOn</span>(<span class="ty">Dispatchers</span>.IO).<span class="fn">collect</span> { }</code>
+      <span class="desc">Changes the dispatcher for all upstream operators; the collector runs on its own dispatcher unchanged.</span>
+    </div>
+
+    <div class="entry">
+      <code class="sig">fun &lt;T&gt; Flow&lt;T&gt;.retry(retries: Long, predicate: (Throwable) -&gt; Boolean): Flow&lt;T&gt;</code>
+      <code class="snippet">apiFlow.<span class="fn">retry</span>(<span class="num">3</span>) { e -&gt; e <span class="kw">is</span> <span class="ty">IOException</span> }</code>
+      <span class="desc">Retries the upstream flow on failure up to retries times; predicate decides which errors are retryable.</span>
+    </div>
+
+    <div class="entry">
+      <code class="sig">fun &lt;T&gt; Flow&lt;T&gt;.retryWhen(predicate: suspend (Throwable, Long) -&gt; Boolean): Flow&lt;T&gt;</code>
+      <code class="snippet">apiFlow.<span class="fn">retryWhen</span> { e, attempt -&gt; e <span class="kw">is</span> <span class="ty">IOException</span> &amp;&amp; attempt &lt; <span class="num">3</span> }</code>
+      <span class="desc">Like retry but provides the attempt count; use for exponential backoff logic.</span>
+    </div>
+
+    <div class="sub-heading">Testing (kotlinx-coroutines-test)</div>
+
+    <div class="entry">
+      <code class="sig">fun runTest(block: suspend TestScope.() -&gt; Unit)</code>
+      <code class="snippet">@<span class="ty">Test</span> <span class="kw">fun</span> <span class="fn">test</span>() = <span class="fn">runTest</span> { <span class="fn">delay</span>(<span class="num">1_000</span>); <span class="fn">assertEquals</span>(<span class="num">1</span>, <span class="num">1</span>) }</code>
+      <span class="desc">Runs coroutines with virtual time; delay(1000) completes instantly in tests.</span>
+    </div>
+
+    <div class="entry">
+      <code class="sig">TestScope.advanceUntilIdle() / advanceTimeBy(ms) / runCurrent()</code>
+      <code class="snippet"><span class="fn">launch</span> { <span class="fn">delay</span>(<span class="num">5_000</span>); result = <span class="num">42</span> }; <span class="fn">advanceUntilIdle</span>(); <span class="fn">assertEquals</span>(<span class="num">42</span>, result)</code>
+      <span class="desc">Control virtual time; advanceUntilIdle runs all pending coroutines to completion before asserting.</span>
+    </div>
+
+    <div class="entry">
+      <code class="sig">class TestCoroutineDispatcher / UnconfinedTestDispatcher / StandardTestDispatcher</code>
+      <code class="snippet"><span class="fn">runTest</span>(UnconfinedTestDispatcher()) { <span class="cm">/* launch runs eagerly */</span> }</code>
+      <span class="desc">UnconfinedTestDispatcher runs coroutines eagerly (no need for advanceUntilIdle); StandardTestDispatcher is the default (lazy).</span>
+    </div>
+
+    <div class="sub-heading">Android / Platform (reference)</div>
+
+    <div class="entry">
+      <code class="sig">viewModelScope / lifecycleScope / MainScope()</code>
+      <code class="snippet">viewModelScope.<span class="fn">launch</span> { } <span class="cm">// auto-cancelled when ViewModel cleared</span></code>
+      <span class="desc">viewModelScope cancels on ViewModel.onCleared(); lifecycleScope cancels on Lifecycle DESTROYED; MainScope is manual.</span>
+    </div>
+
+  </div>
+</details>
 
   </section>
   <!-- Future language sections: <section id="python" class="lang-section"> ... </section> -->
