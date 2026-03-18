@@ -791,7 +791,386 @@ details .adv-content { border: 1px solid #30363d; border-top: none; border-radiu
   <code class="snippet"><span class="kw">for</span> ((i, v) <span class="kw">in</span> list.<span class="fn">withIndex</span>()) println(<span class="str">"$i: $v"</span>)</code>
   <span class="desc">Wraps each element with its index; destructures cleanly in for loops.</span>
 </div>
-    <!-- Strings, Sequences, Scope, I/O content goes here (Task 4) -->
+    <!-- coverage: Strings/Sequences/Scope/IO — see Task 9 for final count -->
+<h2 class="section-heading" id="kt-strings">Strings</h2>
+
+<div class="entry">
+  <code class="sig">fun String.trim(): String / trimStart(): String / trimEnd(): String</code>
+  <code class="snippet"><span class="str">"  hello  "</span>.<span class="fn">trim</span>(); <span class="str">"  hello  "</span>.<span class="fn">trimStart</span>(); <span class="str">"  hello  "</span>.<span class="fn">trimEnd</span>()</code>
+  <span class="desc">trim removes both sides; trimStart removes leading only; trimEnd removes trailing only.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun String.trimIndent(): String</code>
+  <code class="snippet"><span class="kw">val</span> s = <span class="str">"""
+      line1
+      line2
+  """</span>.<span class="fn">trimIndent</span>()</code>
+  <span class="desc">Removes the common leading whitespace prefix from all lines in a multiline string.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun String.trimMargin(marginPrefix: String = "|"): String</code>
+  <code class="snippet"><span class="str">"""
+      |SELECT *
+      |FROM users
+  """</span>.<span class="fn">trimMargin</span>()</code>
+  <span class="desc">Strips leading whitespace and the margin prefix character from each line.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun String.split(vararg delimiters: String, limit: Int = 0): List&lt;String&gt;</code>
+  <code class="snippet"><span class="str">"a,b,c"</span>.<span class="fn">split</span>(<span class="str">","</span>) <span class="cm">// ["a","b","c"]</span></code>
+  <span class="desc">Splits by delimiters; limit caps the number of parts; last part contains the remainder.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun String.lines(): List&lt;String&gt;</code>
+  <code class="snippet">fileContent.<span class="fn">lines</span>().<span class="fn">filter</span> { it.<span class="fn">isNotBlank</span>() }</code>
+  <span class="desc">Splits by line terminators (\r\n, \n, \r); handles all platforms.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun String.chunked(size: Int): List&lt;String&gt;</code>
+  <code class="snippet">hex.<span class="fn">chunked</span>(<span class="num">2</span>) <span class="cm">// ["FF", "0A", ...]</span></code>
+  <span class="desc">Splits a string into chunks of at most size characters; last chunk may be shorter.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun String.replace(oldValue: String, newValue: String, ignoreCase: Boolean = false): String</code>
+  <code class="snippet">template.<span class="fn">replace</span>(<span class="str">"{{name}}"</span>, userName)</code>
+  <span class="desc">Returns a new string with all occurrences of oldValue replaced.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun String.replaceFirst(oldValue: String, newValue: String): String</code>
+  <code class="snippet">csv.<span class="fn">replaceFirst</span>(<span class="str">","</span>, <span class="str">";"</span>) <span class="cm">// only first comma</span></code>
+  <span class="desc">Replaces only the first occurrence of the old value.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun String.replaceRange(range: IntRange, replacement: String): String</code>
+  <code class="snippet">s.<span class="fn">replaceRange</span>(<span class="num">0</span>..<span class="num">3</span>, <span class="str">"NEW"</span>)</code>
+  <span class="desc">Replaces the substring at the specified index range.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun String.replaceAfter(delimiter: String, replacement: String): String</code>
+  <code class="snippet"><span class="str">"user@old.com"</span>.<span class="fn">replaceAfter</span>(<span class="str">"@"</span>, <span class="str">"new.com"</span>)</code>
+  <span class="desc">Replaces everything after the first occurrence of delimiter.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun String.replaceBefore(delimiter: String, replacement: String): String</code>
+  <code class="snippet"><span class="str">"old@example.com"</span>.<span class="fn">replaceBefore</span>(<span class="str">"@"</span>, <span class="str">"new"</span>)</code>
+  <span class="desc">Replaces everything before the first occurrence of delimiter.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun String.replaceAfterLast(delimiter: String, replacement: String): String</code>
+  <code class="snippet">path.<span class="fn">replaceAfterLast</span>(<span class="str">"/"</span>, <span class="str">"newfile.txt"</span>)</code>
+  <span class="desc">Replaces everything after the last occurrence of delimiter.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun String.replaceFirstChar(transform: (Char) -&gt; CharSequence): String</code>
+  <code class="snippet">word.<span class="fn">replaceFirstChar</span> { it.<span class="fn">uppercase</span>() } <span class="cm">// capitalize (non-deprecated)</span></code>
+  <span class="desc">Transforms only the first character; use instead of deprecated capitalize().</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun String.startsWith(prefix: String, ignoreCase: Boolean = false): Boolean</code>
+  <code class="snippet">url.<span class="fn">startsWith</span>(<span class="str">"https"</span>)</code>
+  <span class="desc">Checks if the string begins with the given prefix.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun String.endsWith(suffix: String, ignoreCase: Boolean = false): Boolean</code>
+  <code class="snippet">file.<span class="fn">endsWith</span>(<span class="str">".kt"</span>)</code>
+  <span class="desc">Checks if the string ends with the given suffix.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun String.contains(other: String, ignoreCase: Boolean = false): Boolean</code>
+  <code class="snippet">haystack.<span class="fn">contains</span>(<span class="str">"needle"</span>, ignoreCase = <span class="kw">true</span>)</code>
+  <span class="desc">Checks if the string contains the given substring.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun String.matches(regex: Regex): Boolean</code>
+  <code class="snippet">email.<span class="fn">matches</span>(<span class="ty">Regex</span>(<span class="str">"""[\w.]+@[\w.]+"""</span>))</code>
+  <span class="desc">Returns true if the entire string matches the regex (anchored match, not partial).</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun String.padStart(length: Int, padChar: Char = ' '): String</code>
+  <code class="snippet">num.<span class="fn">toString</span>().<span class="fn">padStart</span>(<span class="num">5</span>, <span class="str">'0'</span>) <span class="cm">// "00042"</span></code>
+  <span class="desc">Left-pads the string to at least length characters with padChar.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun String.padEnd(length: Int, padChar: Char = ' '): String</code>
+  <code class="snippet">label.<span class="fn">padEnd</span>(<span class="num">20</span>, <span class="str">'.'</span>) <span class="cm">// "Name................"</span></code>
+  <span class="desc">Right-pads the string to at least length characters with padChar.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun String.uppercase(): String / lowercase(): String / uppercaseChar() / lowercaseChar()</code>
+  <code class="snippet">input.<span class="fn">lowercase</span>().<span class="fn">trim</span>(); name[<span class="num">0</span>].<span class="fn">uppercaseChar</span>() <span class="cm">// Char variant</span></code>
+  <span class="desc">String variants convert the whole string; Char variants convert a single character.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun String.toInt() / toIntOrNull() / toLong() / toLongOrNull() / toDouble() / toDoubleOrNull() / toFloatOrNull() / toBooleanStrict()</code>
+  <code class="snippet">userInput.<span class="fn">toIntOrNull</span>() ?: <span class="fn">error</span>(<span class="str">"not a number"</span>); <span class="str">"true"</span>.<span class="fn">toBooleanStrict</span>()</code>
+  <span class="desc">Parse string to number/boolean; OrNull variants return null on bad input; toBooleanStrict only accepts "true"/"false".</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun String.toBoolean(): Boolean</code>
+  <code class="snippet"><span class="str">"TRUE"</span>.<span class="fn">toBoolean</span>() <span class="cm">// true (case-insensitive)</span>; <span class="str">"yes"</span>.<span class="fn">toBoolean</span>() <span class="cm">// false</span></code>
+  <span class="desc">Returns true only if the string equals "true" (case-insensitive); anything else returns false — unlike toBooleanStrict which throws.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun String.repeat(n: Int): String</code>
+  <code class="snippet"><span class="str">"-"</span>.<span class="fn">repeat</span>(<span class="num">40</span>) <span class="cm">// divider line</span></code>
+  <span class="desc">Repeats the string n times.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun String.reversed(): String</code>
+  <code class="snippet"><span class="str">"hello"</span>.<span class="fn">reversed</span>() <span class="cm">// "olleh"</span></code>
+  <span class="desc">Returns the string with characters in reverse order.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun String.substring(startIndex: Int, endIndex: Int = length): String</code>
+  <code class="snippet">s.<span class="fn">substring</span>(<span class="num">0</span>, <span class="num">5</span>) <span class="cm">// first 5 chars</span></code>
+  <span class="desc">Extracts a substring by index range; endIndex is exclusive.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun String.substringBefore(delimiter: String): String</code>
+  <code class="snippet"><span class="str">"user@example.com"</span>.<span class="fn">substringBefore</span>(<span class="str">"@"</span>) <span class="cm">// "user"</span></code>
+  <span class="desc">Returns the portion before the first occurrence of delimiter.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun String.substringAfter(delimiter: String): String</code>
+  <code class="snippet"><span class="str">"user@example.com"</span>.<span class="fn">substringAfter</span>(<span class="str">"@"</span>) <span class="cm">// "example.com"</span></code>
+  <span class="desc">Returns the portion after the first occurrence of delimiter.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun String.substringBeforeLast(delimiter: String): String</code>
+  <code class="snippet"><span class="str">"/path/to/file.txt"</span>.<span class="fn">substringBeforeLast</span>(<span class="str">"."</span>) <span class="cm">// "/path/to/file"</span></code>
+  <span class="desc">Returns the portion before the last occurrence of delimiter.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun String.substringAfterLast(delimiter: String): String</code>
+  <code class="snippet"><span class="str">"/path/to/file.txt"</span>.<span class="fn">substringAfterLast</span>(<span class="str">"/"</span>) <span class="cm">// "file.txt"</span></code>
+  <span class="desc">Returns the portion after the last occurrence; useful for extracting file names from paths.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun String.removePrefix(prefix: String): String / removeSuffix(suffix: String): String</code>
+  <code class="snippet"><span class="str">"#comment"</span>.<span class="fn">removePrefix</span>(<span class="str">"#"</span>); <span class="str">"file.kt"</span>.<span class="fn">removeSuffix</span>(<span class="str">".kt"</span>)</code>
+  <span class="desc">Removes the prefix/suffix if present; returns the string unchanged if not found.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun String.isEmpty() / isBlank() / isNotEmpty() / isNotBlank(): Boolean</code>
+  <code class="snippet"><span class="kw">if</span> (input.<span class="fn">isBlank</span>()) <span class="kw">return</span> <span class="fn">error</span>(<span class="str">"required"</span>)</code>
+  <span class="desc">isEmpty = length 0; isBlank = empty or whitespace only; prefer isBlank for user input validation.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun String.ifEmpty(defaultValue: () -&gt; String): String</code>
+  <code class="snippet">env.<span class="fn">ifEmpty</span> { <span class="str">"development"</span> }</code>
+  <span class="desc">Returns the string if not empty, otherwise calls and returns the lambda result.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun String.ifBlank(defaultValue: () -&gt; String): String</code>
+  <code class="snippet">name.<span class="fn">ifBlank</span> { <span class="str">"Anonymous"</span> }</code>
+  <span class="desc">Returns the string if not blank, otherwise the lambda result; great for display fallbacks.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">"template ${expression}" / String.format(vararg args: Any?)</code>
+  <code class="snippet"><span class="str">"Hello, $name! Score: ${score * 100}"</span>; <span class="str">"%.2f"</span>.<span class="fn">format</span>(price)</code>
+  <span class="desc">String templates (${}) are the idiomatic Kotlin way; format() is useful for printf-style numeric formatting.</span>
+</div>
+
+<h2 class="section-heading" id="kt-sequences">Sequences</h2>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Iterable&lt;T&gt;.asSequence(): Sequence&lt;T&gt;</code>
+  <code class="snippet">list.<span class="fn">asSequence</span>().<span class="fn">filter</span> { }.<span class="fn">map</span> { }.<span class="fn">first</span>()</code>
+  <span class="desc">Converts a collection to a lazy sequence; intermediate ops don't allocate new lists — use for long chains on large collections.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; sequenceOf(vararg elements: T): Sequence&lt;T&gt;</code>
+  <code class="snippet"><span class="fn">sequenceOf</span>(<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>).<span class="fn">map</span> { it * <span class="num">2</span> }.<span class="fn">toList</span>()</code>
+  <span class="desc">Creates a sequence directly from values; lazy equivalent of listOf followed by asSequence.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T : Any&gt; generateSequence(seed: T?, nextFunction: (T) -&gt; T?): Sequence&lt;T&gt;</code>
+  <code class="snippet"><span class="fn">generateSequence</span>(<span class="num">1</span>) { it * <span class="num">2</span> }.<span class="fn">take</span>(<span class="num">10</span>).<span class="fn">toList</span>()</code>
+  <span class="desc">Generates an infinite (or terminating when null is returned) sequence from a seed and a step function.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; sequence(block: suspend SequenceScope&lt;T&gt;.() -&gt; Unit): Sequence&lt;T&gt;</code>
+  <code class="snippet"><span class="kw">val</span> fibs = <span class="fn">sequence</span> { <span class="kw">var</span> a=<span class="num">0</span>; <span class="kw">var</span> b=<span class="num">1</span>; <span class="kw">while</span>(<span class="kw">true</span>) { <span class="fn">yield</span>(a); <span class="kw">val</span> c=a+b; a=b; b=c } }</code>
+  <span class="desc">Builds a lazy sequence using yield/yieldAll in a coroutine-like builder; perfect for complex iteration logic.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Lazy operators: map / filter / filterNot / filterNotNull / flatMap / mapNotNull / mapIndexed</code>
+  <code class="snippet">bigList.<span class="fn">asSequence</span>().<span class="fn">filter</span> { it.isActive }.<span class="fn">map</span> { it.name }.<span class="fn">take</span>(<span class="num">10</span>).<span class="fn">toList</span>()</code>
+  <span class="desc">All collection operators work lazily on sequences; no intermediate list allocations — chaining many ops is efficient.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Lazy operators: take / drop / takeWhile / dropWhile / zip / zipWithNext / windowed / chunked</code>
+  <code class="snippet">seq.<span class="fn">windowed</span>(<span class="num">3</span>).<span class="fn">map</span> { it.<span class="fn">average</span>() }.<span class="fn">take</span>(<span class="num">1</span>).<span class="fn">first</span>()</code>
+  <span class="desc">Windowing and slicing operators are lazy on sequences; combine with take for efficient short-circuit evaluation.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Lazy operators: distinct / distinctBy / sorted / sortedBy / onEach / constrainOnce</code>
+  <code class="snippet">seq.<span class="fn">distinct</span>().<span class="fn">sortedBy</span> { it.name }.<span class="fn">onEach</span> { <span class="fn">log</span>(it) }.<span class="fn">toList</span>()</code>
+  <span class="desc">distinct/sorted force full iteration internally; use them as late as possible in the chain to preserve laziness.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Terminal ops: toList() / toSet() / first() / firstOrNull() / last() / lastOrNull() / single() / find() / findLast()</code>
+  <code class="snippet">seq.<span class="fn">filter</span> { it &gt; <span class="num">0</span> }.<span class="fn">first</span>() <span class="cm">// short-circuits immediately</span></code>
+  <span class="desc">Terminals trigger evaluation; first/find short-circuit so only elements up to the match are processed.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Terminal ops: count() / fold() / reduce() / scan() / runningFold() / sum() / sumOf() / average() / any() / all() / none() / joinToString() / forEach()</code>
+  <code class="snippet">seq.<span class="fn">filter</span> { it.valid }.<span class="fn">sumOf</span> { it.value }</code>
+  <span class="desc">Aggregating terminals consume the full sequence once; they are the only terminals that don't short-circuit.</span>
+</div>
+
+<h2 class="section-heading" id="kt-scope">Scope Functions</h2>
+
+<div class="entry">
+  <code class="sig">fun &lt;T, R&gt; T.let(block: (T) -&gt; R): R</code>
+  <code class="snippet">user?.<span class="fn">let</span> { <span class="fn">sendEmail</span>(it.email) } <span class="cm">// null-safe call</span></code>
+  <span class="desc">Runs block with the object as <code>it</code>; returns block result. Use for null checks, transformations, and scoped variables.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T, R&gt; T.run(block: T.() -&gt; R): R</code>
+  <code class="snippet"><span class="kw">val</span> result = config.<span class="fn">run</span> { host + <span class="str">":"</span> + port }</code>
+  <span class="desc">Runs block with the object as <code>this</code>; returns block result. Use to compute a value using the object's properties.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; T.apply(block: T.() -&gt; Unit): T</code>
+  <code class="snippet"><span class="kw">val</span> btn = <span class="ty">Button</span>().<span class="fn">apply</span> { text = <span class="str">"OK"</span>; isEnabled = <span class="kw">true</span> }</code>
+  <span class="desc">Runs block as <code>this</code>, returns the original object. Classic builder/configuration pattern.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; T.also(block: (T) -&gt; Unit): T</code>
+  <code class="snippet">items.<span class="fn">also</span> { log.<span class="fn">debug</span>(<span class="str">"fetched ${it.size}"</span>) }.<span class="fn">filter</span> { it.valid }</code>
+  <span class="desc">Runs block with <code>it</code>, returns original object. Use for side-effects (logging, validation) mid-chain.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T, R&gt; with(receiver: T, block: T.() -&gt; R): R</code>
+  <code class="snippet"><span class="kw">val</span> html = <span class="fn">with</span>(builder) { <span class="fn">head</span> { }; <span class="fn">body</span> { }; <span class="fn">build</span>() }</code>
+  <span class="desc">Not an extension; calls block with receiver as <code>this</code>, returns result. Use when operating on an object without extension syntax.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; T.takeIf(predicate: (T) -&gt; Boolean): T?</code>
+  <code class="snippet">input.<span class="fn">takeIf</span> { it.<span class="fn">isNotBlank</span>() } ?: <span class="str">"default"</span></code>
+  <span class="desc">Returns the receiver if the predicate holds, null otherwise; clean alternative to if/else chains on a single value.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; T.takeUnless(predicate: (T) -&gt; Boolean): T?</code>
+  <code class="snippet">response.<span class="fn">takeUnless</span> { it.isError } ?: <span class="fn">handleError</span>(response)</code>
+  <span class="desc">Inverse of takeIf; returns null when the predicate holds.</span>
+</div>
+
+<h2 class="section-heading" id="kt-io">I/O</h2>
+
+<div class="entry">
+  <code class="sig">fun readLine(): String?</code>
+  <code class="snippet"><span class="kw">val</span> input = <span class="fn">readLine</span>() ?: <span class="fn">error</span>(<span class="str">"EOF"</span>)</code>
+  <span class="desc">Reads one line from stdin; returns null at end of input.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun File.readText(charset: Charset = UTF_8): String</code>
+  <code class="snippet"><span class="kw">val</span> content = <span class="ty">File</span>(<span class="str">"config.json"</span>).<span class="fn">readText</span>()</code>
+  <span class="desc">Reads entire file content as a string; fine for small files.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun File.readLines(charset: Charset = UTF_8): List&lt;String&gt;</code>
+  <code class="snippet"><span class="ty">File</span>(<span class="str">"data.csv"</span>).<span class="fn">readLines</span>().<span class="fn">drop</span>(<span class="num">1</span>) <span class="cm">// skip header</span></code>
+  <span class="desc">Reads all lines into a list; closes the file automatically.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun File.forEachLine(charset: Charset = UTF_8, action: (String) -&gt; Unit)</code>
+  <code class="snippet"><span class="ty">File</span>(<span class="str">"huge.log"</span>).<span class="fn">forEachLine</span> { <span class="fn">process</span>(it) }</code>
+  <span class="desc">Streams lines one at a time without loading the whole file; use for large files.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun File.useLines(charset: Charset = UTF_8, block: (Sequence&lt;String&gt;) -&gt; T): T</code>
+  <code class="snippet"><span class="ty">File</span>(<span class="str">"large.csv"</span>).<span class="fn">useLines</span> { lines -&gt; lines.<span class="fn">filter</span> { it.<span class="fn">startsWith</span>(<span class="str">"A"</span>) }.<span class="fn">toList</span>() }</code>
+  <span class="desc">Provides a lazy Sequence of lines and auto-closes the file when done; best for large files with complex filtering.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun File.writeText(text: String, charset: Charset = UTF_8)</code>
+  <code class="snippet"><span class="ty">File</span>(<span class="str">"out.txt"</span>).<span class="fn">writeText</span>(result)</code>
+  <span class="desc">Writes (overwrites) file content as a string.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun File.appendText(text: String, charset: Charset = UTF_8)</code>
+  <code class="snippet"><span class="ty">File</span>(<span class="str">"app.log"</span>).<span class="fn">appendText</span>(<span class="str">"$timestamp $msg\n"</span>)</code>
+  <span class="desc">Appends text to a file without truncating existing content.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun File.writeBytes(array: ByteArray) / readBytes(): ByteArray</code>
+  <code class="snippet"><span class="ty">File</span>(<span class="str">"img.png"</span>).<span class="fn">writeBytes</span>(bytes); <span class="ty">File</span>(<span class="str">"img.png"</span>).<span class="fn">readBytes</span>()</code>
+  <span class="desc">Binary read/write; readBytes loads entire file into memory — use for small binary files.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T : Closeable, R&gt; T.use(block: (T) -&gt; R): R</code>
+  <code class="snippet"><span class="ty">FileInputStream</span>(<span class="str">"f"</span>).<span class="fn">use</span> { stream -&gt; stream.<span class="fn">read</span>() }</code>
+  <span class="desc">Automatically closes the resource after the block, even on exception; Kotlin's try-with-resources.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun File.bufferedReader(charset: Charset = UTF_8): BufferedReader</code>
+  <code class="snippet"><span class="ty">File</span>(<span class="str">"big.txt"</span>).<span class="fn">bufferedReader</span>().<span class="fn">use</span> { it.<span class="fn">lineSequence</span>().<span class="fn">forEach</span> { } }</code>
+  <span class="desc">Returns a buffered reader; pair with use {} for safe resource management.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun File.bufferedWriter(charset: Charset = UTF_8): BufferedWriter / printWriter(): PrintWriter</code>
+  <code class="snippet"><span class="ty">File</span>(<span class="str">"out.txt"</span>).<span class="fn">bufferedWriter</span>().<span class="fn">use</span> { it.<span class="fn">write</span>(line) }</code>
+  <span class="desc">Returns a buffered writer for efficient line-by-line writing; printWriter adds println/printf support.</span>
+</div>
     <!-- Stdlib Advanced details element goes here (Task 5) -->
     <!-- Coroutines Core sections go here (Task 6) -->
     <!-- Coroutines Advanced details element goes here (Task 7) -->
