@@ -1385,7 +1385,246 @@ details .adv-content { border: 1px solid #30363d; border-top: none; border-radiu
 
   </div>
 </details>
-    <!-- Coroutines Core sections go here (Task 6) -->
+    <!-- coverage: Coroutines Core — see Task 9 for final count -->
+<h2 class="section-heading" id="kt-coro-builders">Coroutines — Builders</h2>
+
+<div class="entry">
+  <code class="sig">fun CoroutineScope.launch(context, start, block: suspend CoroutineScope.() -&gt; Unit): Job</code>
+  <code class="snippet">scope.<span class="fn">launch</span> { <span class="fn">delay</span>(<span class="num">1000</span>); println(<span class="str">"done"</span>) }</code>
+  <span class="desc">Starts a fire-and-forget coroutine; returns a Job for cancellation/joining.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; CoroutineScope.async(context, start, block: suspend () -&gt; T): Deferred&lt;T&gt;</code>
+  <code class="snippet"><span class="kw">val</span> a = <span class="fn">async</span> { <span class="fn">fetchUser</span>() }; <span class="kw">val</span> b = <span class="fn">async</span> { <span class="fn">fetchPosts</span>() }; a.<span class="fn">await</span>() to b.<span class="fn">await</span>()</code>
+  <span class="desc">Starts a coroutine that returns a value; concurrent tasks run in parallel until awaited.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; runBlocking(context, block: suspend CoroutineScope.() -&gt; T): T</code>
+  <code class="snippet"><span class="kw">fun</span> <span class="fn">main</span>() = <span class="fn">runBlocking</span> { <span class="fn">launch</span> { } }</code>
+  <span class="desc">Bridges blocking and coroutine worlds by blocking the current thread. Use only in main() or tests.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">suspend fun &lt;R&gt; coroutineScope(block: suspend CoroutineScope.() -&gt; R): R</code>
+  <code class="snippet"><span class="fn">coroutineScope</span> { <span class="kw">val</span> j1 = <span class="fn">launch</span> { }; <span class="kw">val</span> j2 = <span class="fn">launch</span> { } }</code>
+  <span class="desc">Creates a child scope; if any child fails, all siblings are cancelled and the exception propagates.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">suspend fun &lt;R&gt; supervisorScope(block: suspend CoroutineScope.() -&gt; R): R</code>
+  <code class="snippet"><span class="fn">supervisorScope</span> { <span class="fn">repeat</span>(<span class="num">10</span>) { <span class="fn">launch</span> { <span class="fn">riskyTask</span>(it) } } }</code>
+  <span class="desc">Like coroutineScope but child failures don't cancel siblings; use for independent parallel tasks.</span>
+</div>
+
+<h2 class="section-heading" id="kt-coro-context">Context &amp; Dispatchers</h2>
+
+<div class="entry">
+  <code class="sig">suspend fun &lt;T&gt; withContext(context: CoroutineContext, block: suspend () -&gt; T): T</code>
+  <code class="snippet"><span class="kw">val</span> data = <span class="fn">withContext</span>(<span class="ty">Dispatchers</span>.IO) { <span class="fn">readFile</span>() }</code>
+  <span class="desc">Switches dispatcher for the block and returns the result; the primary way to do blocking I/O in a coroutine.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Dispatchers.IO / Default / Main / Unconfined</code>
+  <code class="snippet"><span class="fn">withContext</span>(<span class="ty">Dispatchers</span>.Default) { <span class="fn">heavyCpuWork</span>() }</code>
+  <span class="desc">IO = thread pool for blocking ops (64 threads); Default = CPU thread pool; Main = UI thread; Unconfined = no thread pinning (rare).</span>
+</div>
+
+<div class="entry">
+  <code class="sig">suspend fun Deferred&lt;T&gt;.await(): T / Job.join() / awaitAll(vararg deferred) / joinAll()</code>
+  <code class="snippet"><span class="fn">awaitAll</span>(d1, d2, d3) <span class="cm">// concurrent wait for all</span></code>
+  <span class="desc">await() suspends until a Deferred has a value; awaitAll waits for multiple in parallel.</span>
+</div>
+
+<h2 class="section-heading" id="kt-coro-timing">Timing</h2>
+
+<div class="entry">
+  <code class="sig">suspend fun delay(timeMillis: Long)</code>
+  <code class="snippet"><span class="fn">delay</span>(<span class="num">1_000</span>) <span class="cm">// non-blocking 1s pause</span></code>
+  <span class="desc">Suspends without blocking the thread; unlike Thread.sleep(), the thread is released to process other coroutines.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">suspend fun &lt;T&gt; withTimeout(timeMillis: Long, block: suspend () -&gt; T): T</code>
+  <code class="snippet"><span class="fn">withTimeout</span>(<span class="num">5_000</span>) { <span class="fn">remoteCall</span>() } <span class="cm">// throws TimeoutCancellationException</span></code>
+  <span class="desc">Cancels the block and throws TimeoutCancellationException if it exceeds the timeout.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">suspend fun &lt;T&gt; withTimeoutOrNull(timeMillis: Long, block: suspend () -&gt; T): T?</code>
+  <code class="snippet"><span class="fn">withTimeoutOrNull</span>(<span class="num">3_000</span>) { <span class="fn">fetch</span>() } ?: <span class="fn">cachedValue</span>()</code>
+  <span class="desc">Like withTimeout but returns null instead of throwing; cleaner for optional operations.</span>
+</div>
+
+<h2 class="section-heading" id="kt-coro-flow">Flow</h2>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; flow(block: suspend FlowCollector&lt;T&gt;.() -&gt; Unit): Flow&lt;T&gt;</code>
+  <code class="snippet"><span class="kw">val</span> f = <span class="fn">flow</span> { <span class="kw">for</span> (i <span class="kw">in</span> <span class="num">1</span>..<span class="num">5</span>) { <span class="fn">emit</span>(i); <span class="fn">delay</span>(<span class="num">100</span>) } }</code>
+  <span class="desc">Creates a cold flow; the block only runs when someone collects it.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; flowOf(vararg elements: T): Flow&lt;T&gt; / Iterable&lt;T&gt;.asFlow() / (Range).asFlow()</code>
+  <code class="snippet">(<span class="num">1</span>..<span class="num">100</span>).<span class="fn">asFlow</span>().<span class="fn">filter</span> { it % <span class="num">2</span> == <span class="num">0</span> }.<span class="fn">collect</span> { println(it) }</code>
+  <span class="desc">Convenience constructors for flows from known values, iterables, or ranges.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">suspend fun &lt;T&gt; Flow&lt;T&gt;.collect(action: suspend (T) -&gt; Unit)</code>
+  <code class="snippet">flow.<span class="fn">collect</span> { value -&gt; <span class="fn">process</span>(value) }</code>
+  <span class="desc">Terminal operator that triggers the flow and processes each emitted value sequentially.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">suspend fun &lt;T&gt; Flow&lt;T&gt;.collectLatest(action: suspend (T) -&gt; Unit)</code>
+  <code class="snippet">searchQuery.<span class="fn">collectLatest</span> { query -&gt; <span class="fn">search</span>(query) } <span class="cm">// cancels slow search on new input</span></code>
+  <span class="desc">Like collect but cancels processing of the previous value when a new one arrives.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">suspend fun &lt;T&gt; Flow&lt;T&gt;.toList() / toSet() / first() / firstOrNull() / single() / last() / count()</code>
+  <code class="snippet">flow.<span class="fn">filter</span> { it.valid }.<span class="fn">first</span>() <span class="cm">// collect only until first match</span></code>
+  <span class="desc">Terminal operators that materialize flows into collections or single values; first/single short-circuit.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T, R&gt; Flow&lt;T&gt;.map(transform: suspend (T) -&gt; R): Flow&lt;R&gt;</code>
+  <code class="snippet">priceFlow.<span class="fn">map</span> { it * taxRate }</code>
+  <span class="desc">Transforms each emitted value; same semantics as collection map but lazy and async.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Flow&lt;T&gt;.filter(predicate: suspend (T) -&gt; Boolean): Flow&lt;T&gt; / filterNot / filterIsInstance / mapNotNull</code>
+  <code class="snippet">eventFlow.<span class="fn">filterIsInstance</span>&lt;<span class="ty">ClickEvent</span>&gt;().<span class="fn">mapNotNull</span> { it.target }</code>
+  <span class="desc">Filtering operators mirror collection equivalents; filterIsInstance narrows the type.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Flow&lt;T&gt;.transform(transform: suspend FlowCollector&lt;R&gt;.(T) -&gt; Unit): Flow&lt;R&gt;</code>
+  <code class="snippet">flow.<span class="fn">transform</span> { v -&gt; <span class="fn">emit</span>(v); <span class="fn">emit</span>(-v) } <span class="cm">// emit multiple per input</span></code>
+  <span class="desc">Most flexible flow operator; can emit zero, one, or multiple values per incoming element.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Flow&lt;T&gt;.onEach / onStart / onCompletion / catch</code>
+  <code class="snippet">apiFlow.<span class="fn">onStart</span> { <span class="fn">showSpinner</span>() }.<span class="fn">catch</span> { e -&gt; <span class="fn">emit</span>(<span class="fn">fallback</span>()) }.<span class="fn">onCompletion</span> { <span class="fn">hideSpinner</span>() }</code>
+  <span class="desc">Lifecycle hooks; catch can emit fallback values — it only catches upstream exceptions.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Flow&lt;T&gt;.take(count: Int) / drop(count: Int) / takeWhile / dropWhile / distinctUntilChanged</code>
+  <code class="snippet">flow.<span class="fn">distinctUntilChanged</span>().<span class="fn">take</span>(<span class="num">10</span>) <span class="cm">// skip duplicate consecutive values, stop at 10</span></code>
+  <span class="desc">Windowing and deduplication operators; distinctUntilChanged avoids unnecessary downstream re-processing.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Flow&lt;T&gt;.debounce(timeoutMillis: Long): Flow&lt;T&gt;</code>
+  <code class="snippet">keystrokes.<span class="fn">debounce</span>(<span class="num">300</span>).<span class="fn">collect</span> { <span class="fn">search</span>(it) } <span class="cm">// search-as-you-type</span></code>
+  <span class="desc">Emits only after the flow has been silent for the timeout period; classic typeahead pattern.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Flow&lt;T&gt;.sample(periodMillis: Long): Flow&lt;T&gt;</code>
+  <code class="snippet">sensorFlow.<span class="fn">sample</span>(<span class="num">100</span>) <span class="cm">// emit at most every 100ms</span></code>
+  <span class="desc">Periodically samples the flow; unlike debounce, emits on a fixed interval rather than waiting for silence.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T1, T2, R&gt; combine(flow1, flow2, transform: (T1, T2) -&gt; R): Flow&lt;R&gt;</code>
+  <code class="snippet"><span class="fn">combine</span>(userFlow, settingsFlow) { user, settings -&gt; <span class="fn">render</span>(user, settings) }</code>
+  <span class="desc">Emits whenever either upstream emits, using the latest value from the other; great for reactive UI state.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T, R&gt; Flow&lt;T&gt;.zip(other: Flow&lt;R&gt;, transform: (T, R) -&gt; ...): Flow&lt;...&gt;</code>
+  <code class="snippet">requestFlow.<span class="fn">zip</span>(responseFlow) { req, res -&gt; req to res }</code>
+  <span class="desc">Pairs elements by position; stops when either flow ends. Unlike combine, waits for both to emit each time.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; merge(vararg flows: Flow&lt;T&gt;): Flow&lt;T&gt;</code>
+  <code class="snippet"><span class="fn">merge</span>(bluetoothEvents, wifiEvents).<span class="fn">collect</span> { }</code>
+  <span class="desc">Merges multiple flows into one; emissions from any source appear in the merged flow immediately.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T, R&gt; Flow&lt;T&gt;.flatMapLatest(transform: suspend (T) -&gt; Flow&lt;R&gt;): Flow&lt;R&gt;</code>
+  <code class="snippet">searchQuery.<span class="fn">flatMapLatest</span> { q -&gt; <span class="fn">searchApi</span>(q) }</code>
+  <span class="desc">Cancels the previous inner flow when a new upstream value arrives; the canonical search-as-you-type pattern.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T, R&gt; Flow&lt;T&gt;.flatMapMerge(concurrency: Int = DEFAULT, transform: (T) -&gt; Flow&lt;R&gt;): Flow&lt;R&gt;</code>
+  <code class="snippet">ids.<span class="fn">asFlow</span>().<span class="fn">flatMapMerge</span>(<span class="num">4</span>) { id -&gt; <span class="fn">fetchFlow</span>(id) }</code>
+  <span class="desc">Runs inner flows concurrently up to concurrency limit; use for parallel fetching with backpressure.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T, R&gt; Flow&lt;T&gt;.flatMapConcat(transform: (T) -&gt; Flow&lt;R&gt;): Flow&lt;R&gt;</code>
+  <code class="snippet">pages.<span class="fn">flatMapConcat</span> { page -&gt; <span class="fn">fetchItems</span>(page) } <span class="cm">// sequential</span></code>
+  <span class="desc">Maps each value to an inner flow and collects them sequentially one at a time.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Flow&lt;T&gt;.launchIn(scope: CoroutineScope): Job</code>
+  <code class="snippet">flow.<span class="fn">onEach</span> { <span class="fn">render</span>(it) }.<span class="fn">launchIn</span>(viewModelScope)</code>
+  <span class="desc">Terminal operator that collects the flow in the given scope; equivalent to scope.launch { flow.collect() }.</span>
+</div>
+
+<h2 class="section-heading" id="kt-coro-channels">Channels</h2>
+
+<div class="entry">
+  <code class="sig">class Channel&lt;T&gt;(capacity: Int = RENDEZVOUS)</code>
+  <code class="snippet"><span class="kw">val</span> ch = <span class="ty">Channel</span>&lt;<span class="ty">Int</span>&gt;(<span class="ty">Channel</span>.BUFFERED); ch.<span class="fn">send</span>(<span class="num">1</span>); ch.<span class="fn">receive</span>()</code>
+  <span class="desc">Queue for communicating between coroutines; RENDEZVOUS=0 (synchronous handoff), BUFFERED=64, UNLIMITED.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;E&gt; CoroutineScope.produce(block: suspend ProducerScope&lt;E&gt;.() -&gt; Unit): ReceiveChannel&lt;E&gt;</code>
+  <code class="snippet"><span class="kw">val</span> chan = <span class="fn">produce</span> { <span class="kw">for</span> (i <span class="kw">in</span> <span class="num">1</span>..<span class="num">5</span>) <span class="fn">send</span>(i) }</code>
+  <span class="desc">Creates a coroutine-backed producer channel; automatically closes when the block completes.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">suspend fun &lt;E&gt; ReceiveChannel&lt;E&gt;.consumeEach(action: (E) -&gt; Unit)</code>
+  <code class="snippet">chan.<span class="fn">consumeEach</span> { <span class="fn">process</span>(it) } <span class="cm">// auto-closes and cancels on exception</span></code>
+  <span class="desc">Iterates and consumes all channel elements; cancels the channel if the block throws.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;E&gt; SendChannel&lt;E&gt;.trySend(element: E): ChannelResult&lt;Unit&gt; / ReceiveChannel.tryReceive(): ChannelResult&lt;E&gt;</code>
+  <code class="snippet"><span class="kw">val</span> result = ch.<span class="fn">trySend</span>(event); <span class="kw">if</span> (result.<span class="fn">isSuccess</span>) { } <span class="cm">// non-blocking</span></code>
+  <span class="desc">Non-suspending channel operations; return a result indicating success or failure rather than suspending.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;E&gt; ReceiveChannel&lt;E&gt;.receiveAsFlow(): Flow&lt;E&gt; / consumeAsFlow(): Flow&lt;E&gt;</code>
+  <code class="snippet">channel.<span class="fn">receiveAsFlow</span>().<span class="fn">filter</span> { it.isValid }.<span class="fn">collect</span> { }</code>
+  <span class="desc">Adapts a Channel to a Flow; receiveAsFlow allows multiple collectors, consumeAsFlow is for single collector only.</span>
+</div>
+
+<h2 class="section-heading" id="kt-coro-errors">Exception Handling</h2>
+
+<div class="entry">
+  <code class="sig">val handler = CoroutineExceptionHandler { coroutineContext, throwable -&gt; ... }</code>
+  <code class="snippet"><span class="kw">val</span> scope = <span class="ty">CoroutineScope</span>(<span class="ty">SupervisorJob</span>() + handler); scope.<span class="fn">launch</span> { }</code>
+  <span class="desc">Top-level handler for uncaught exceptions from launch; does NOT catch async/await exceptions — use try/catch around await.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">class SupervisorJob() : Job</code>
+  <code class="snippet"><span class="ty">CoroutineScope</span>(<span class="ty">SupervisorJob</span>() + <span class="ty">Dispatchers</span>.Default)</code>
+  <span class="desc">A Job where child failures don't cancel the parent or siblings; used in long-lived scopes (ViewModel, Application).</span>
+</div>
+
+<div class="entry">
+  <code class="sig">// Always rethrow CancellationException</code>
+  <code class="snippet"><span class="kw">try</span> { } <span class="kw">catch</span> (e: <span class="ty">Exception</span>) { <span class="kw">if</span> (e <span class="kw">is</span> <span class="ty">CancellationException</span>) <span class="kw">throw</span> e; <span class="fn">handle</span>(e) }</code>
+  <span class="desc">CancellationException is how structured concurrency propagates cancellation — swallowing it breaks scope cancellation.</span>
+</div>
     <!-- Coroutines Advanced details element goes here (Task 7) -->
 
   </section>
