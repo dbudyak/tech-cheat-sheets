@@ -223,7 +223,574 @@ details .adv-content { border: 1px solid #30363d; border-top: none; border-radiu
 <main id="main">
   <section id="kotlin" class="lang-section visible">
 
-    <!-- Collections content goes here (Task 3) -->
+    <!-- coverage: Collections — see Task 9 for final count -->
+<h2 class="section-heading" id="kt-collections">Collections</h2>
+
+<div class="sub-heading">Creation</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; listOf(vararg elements: T): List&lt;T&gt;</code>
+  <code class="snippet"><span class="kw">val</span> names = <span class="fn">listOf</span>(<span class="str">"Alice"</span>, <span class="str">"Bob"</span>)</code>
+  <span class="desc">Creates an immutable list; use when the contents won't change.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; mutableListOf(vararg elements: T): MutableList&lt;T&gt;</code>
+  <code class="snippet"><span class="kw">val</span> queue = <span class="fn">mutableListOf</span>(<span class="str">"task1"</span>); queue.<span class="fn">add</span>(<span class="str">"task2"</span>)</code>
+  <span class="desc">Creates a mutable list backed by ArrayList; use when you need add/remove.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; listOfNotNull(vararg elements: T?): List&lt;T&gt;</code>
+  <code class="snippet"><span class="kw">val</span> items = <span class="fn">listOfNotNull</span>(a, b, <span class="kw">null</span>, c) <span class="cm">// nulls dropped</span></code>
+  <span class="desc">Like listOf but silently drops null arguments; useful when building a list from optional values.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; buildList(builderAction: MutableList&lt;T&gt;.() -&gt; Unit): List&lt;T&gt;</code>
+  <code class="snippet"><span class="kw">val</span> list = <span class="fn">buildList</span> { <span class="fn">add</span>(<span class="num">1</span>); <span class="kw">if</span> (flag) <span class="fn">add</span>(<span class="num">2</span>) }</code>
+  <span class="desc">Builds an immutable list using a mutable builder DSL; ideal for conditional construction.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;K, V&gt; mapOf(vararg pairs: Pair&lt;K, V&gt;): Map&lt;K, V&gt;</code>
+  <code class="snippet"><span class="kw">val</span> config = <span class="fn">mapOf</span>(<span class="str">"host"</span> to <span class="str">"localhost"</span>, <span class="str">"port"</span> to <span class="str">"8080"</span>)</code>
+  <span class="desc">Creates an immutable map from key-to-value pairs.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;K, V&gt; mutableMapOf(vararg pairs: Pair&lt;K, V&gt;): MutableMap&lt;K, V&gt;</code>
+  <code class="snippet"><span class="kw">val</span> cache = <span class="fn">mutableMapOf</span>&lt;<span class="ty">String</span>, <span class="ty">Int</span>&gt;(); cache[<span class="str">"x"</span>] = <span class="num">1</span></code>
+  <span class="desc">Creates a mutable LinkedHashMap (preserves insertion order).</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;K, V&gt; buildMap(builderAction: MutableMap&lt;K, V&gt;.() -&gt; Unit): Map&lt;K, V&gt;</code>
+  <code class="snippet"><span class="kw">val</span> m = <span class="fn">buildMap</span> { <span class="fn">put</span>(<span class="str">"a"</span>, <span class="num">1</span>); <span class="fn">put</span>(<span class="str">"b"</span>, <span class="num">2</span>) }</code>
+  <span class="desc">Builds an immutable map using a mutable builder block.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; setOf(vararg elements: T): Set&lt;T&gt;</code>
+  <code class="snippet"><span class="kw">val</span> roles = <span class="fn">setOf</span>(<span class="str">"admin"</span>, <span class="str">"user"</span>, <span class="str">"admin"</span>) <span class="cm">// size = 2</span></code>
+  <span class="desc">Creates an immutable set that automatically deduplicates elements.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; mutableSetOf(vararg elements: T): MutableSet&lt;T&gt;</code>
+  <code class="snippet"><span class="kw">val</span> seen = <span class="fn">mutableSetOf</span>&lt;<span class="ty">String</span>&gt;(); seen.<span class="fn">add</span>(<span class="str">"a"</span>)</code>
+  <span class="desc">Creates a mutable LinkedHashSet (preserves insertion order, deduplicates).</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; buildSet(builderAction: MutableSet&lt;T&gt;.() -&gt; Unit): Set&lt;T&gt;</code>
+  <code class="snippet"><span class="kw">val</span> allowed = <span class="fn">buildSet</span> { <span class="fn">add</span>(<span class="str">"read"</span>); <span class="kw">if</span> (isAdmin) <span class="fn">add</span>(<span class="str">"write"</span>) }</code>
+  <span class="desc">Builds an immutable set using a mutable builder block; parity with buildList/buildMap.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; arrayOf(vararg elements: T): Array&lt;T&gt;</code>
+  <code class="snippet"><span class="kw">val</span> arr = <span class="fn">arrayOf</span>(<span class="str">"a"</span>, <span class="str">"b"</span>, <span class="str">"c"</span>)</code>
+  <span class="desc">Creates a typed Array; prefer listOf for most cases, arrayOf for Java interop.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun intArrayOf(vararg elements: Int): IntArray  [also: longArrayOf, byteArrayOf, doubleArrayOf]</code>
+  <code class="snippet"><span class="kw">val</span> pixels = <span class="fn">intArrayOf</span>(<span class="num">0xFF0000</span>, <span class="num">0x00FF00</span>)</code>
+  <span class="desc">Creates a primitive int array without boxing; use when performance matters or Java interop requires it.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; emptyList(): List&lt;T&gt; / emptyMap() / emptySet()</code>
+  <code class="snippet"><span class="kw">fun</span> <span class="fn">getItems</span>(): <span class="ty">List</span>&lt;<span class="ty">String</span>&gt; = <span class="fn">emptyList</span>()</code>
+  <span class="desc">Returns a shared singleton empty collection; prefer over listOf() for default return values.</span>
+</div>
+
+<div class="sub-heading">Transformation</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T, R&gt; Iterable&lt;T&gt;.map(transform: (T) -&gt; R): List&lt;R&gt;</code>
+  <code class="snippet">users.<span class="fn">map</span> { it.email.<span class="fn">lowercase</span>() }</code>
+  <span class="desc">Transforms each element; returns a new list of the same size.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T, R : Any&gt; Iterable&lt;T&gt;.mapNotNull(transform: (T) -&gt; R?): List&lt;R&gt;</code>
+  <code class="snippet">rows.<span class="fn">mapNotNull</span> { it.<span class="fn">toIntOrNull</span>() } <span class="cm">// skips non-numeric</span></code>
+  <span class="desc">Like map but filters out null results in one pass.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T, R&gt; Iterable&lt;T&gt;.mapIndexed(transform: (index: Int, T) -&gt; R): List&lt;R&gt;</code>
+  <code class="snippet">items.<span class="fn">mapIndexed</span> { i, v -&gt; <span class="str">"$i: $v"</span> }</code>
+  <span class="desc">Like map but also provides the element's index.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T, R&gt; Iterable&lt;T&gt;.mapIndexedNotNull(transform: (Int, T) -&gt; R?): List&lt;R&gt;</code>
+  <code class="snippet">lines.<span class="fn">mapIndexedNotNull</span> { i, l -&gt; <span class="kw">if</span> (l.<span class="fn">isNotBlank</span>()) i to l <span class="kw">else</span> <span class="kw">null</span> }</code>
+  <span class="desc">Combines mapIndexed and filterNotNull in one pass; drops null results.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T, R&gt; Iterable&lt;T&gt;.flatMap(transform: (T) -&gt; Iterable&lt;R&gt;): List&lt;R&gt;</code>
+  <code class="snippet">orders.<span class="fn">flatMap</span> { it.items } <span class="cm">// flatten list of lists</span></code>
+  <span class="desc">Maps each element to a collection, then flattens the results into a single list.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Iterable&lt;Iterable&lt;T&gt;&gt;.flatten(): List&lt;T&gt;</code>
+  <code class="snippet"><span class="fn">listOf</span>(<span class="fn">listOf</span>(<span class="num">1</span>,<span class="num">2</span>), <span class="fn">listOf</span>(<span class="num">3</span>)).<span class="fn">flatten</span>() <span class="cm">// [1,2,3]</span></code>
+  <span class="desc">Flattens a collection of collections into a single list; use when you already have nested collections.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T, R&gt; Iterable&lt;T&gt;.zip(other: Iterable&lt;R&gt;): List&lt;Pair&lt;T, R&gt;&gt;</code>
+  <code class="snippet">names.<span class="fn">zip</span>(scores) <span class="cm">// [("Alice", 95), ("Bob", 87)]</span></code>
+  <span class="desc">Pairs elements by position; stops at the shorter collection.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Iterable&lt;T&gt;.zipWithNext(transform: (T, T) -&gt; R): List&lt;R&gt;</code>
+  <code class="snippet">prices.<span class="fn">zipWithNext</span> { a, b -&gt; b - a } <span class="cm">// price deltas</span></code>
+  <span class="desc">Pairs each element with the next one; useful for computing consecutive differences.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T, R&gt; Iterable&lt;Pair&lt;T, R&gt;&gt;.unzip(): Pair&lt;List&lt;T&gt;, List&lt;R&gt;&gt;</code>
+  <code class="snippet"><span class="kw">val</span> (keys, vals) = pairs.<span class="fn">unzip</span>()</code>
+  <span class="desc">Splits a list of pairs into two separate lists.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T, K, V&gt; Iterable&lt;T&gt;.associate(transform: (T) -&gt; Pair&lt;K, V&gt;): Map&lt;K, V&gt;</code>
+  <code class="snippet">users.<span class="fn">associate</span> { it.id to it.name }</code>
+  <span class="desc">Builds a map from elements by transforming each into a key-value pair.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T, K&gt; Iterable&lt;T&gt;.associateBy(keySelector: (T) -&gt; K): Map&lt;K, T&gt;</code>
+  <code class="snippet">users.<span class="fn">associateBy</span> { it.id } <span class="cm">// Map&lt;UserId, User&gt;</span></code>
+  <span class="desc">Builds a map keyed by the selector; the value is the original element.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T, V&gt; Iterable&lt;T&gt;.associateWith(valueSelector: (T) -&gt; V): Map&lt;T, V&gt;</code>
+  <code class="snippet">userIds.<span class="fn">associateWith</span> { db.<span class="fn">find</span>(it) } <span class="cm">// Map&lt;Id, User&gt;</span></code>
+  <span class="desc">Builds a map where the original element is the key and the selector provides the value.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;K, V, R&gt; Map&lt;K, V&gt;.mapKeys(transform: (Map.Entry&lt;K,V&gt;) -&gt; R): Map&lt;R, V&gt;</code>
+  <code class="snippet">map.<span class="fn">mapKeys</span> { it.key.<span class="fn">lowercase</span>() } <span class="cm">// normalise keys</span></code>
+  <span class="desc">Returns a new map with keys transformed; values unchanged. Duplicate keys after transform keep last value.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;K, V, R&gt; Map&lt;K, V&gt;.mapValues(transform: (Map.Entry&lt;K,V&gt;) -&gt; R): Map&lt;K, R&gt;</code>
+  <code class="snippet">scores.<span class="fn">mapValues</span> { it.value * <span class="num">1.1</span> } <span class="cm">// scale all values</span></code>
+  <span class="desc">Returns a new map with values transformed; keys unchanged.</span>
+</div>
+
+<div class="sub-heading">Filtering</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Iterable&lt;T&gt;.filter(predicate: (T) -&gt; Boolean): List&lt;T&gt;</code>
+  <code class="snippet">users.<span class="fn">filter</span> { it.isActive }</code>
+  <span class="desc">Returns a list of elements matching the predicate.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Iterable&lt;T&gt;.filterNot(predicate: (T) -&gt; Boolean): List&lt;T&gt;</code>
+  <code class="snippet">events.<span class="fn">filterNot</span> { it.isCancelled }</code>
+  <span class="desc">Returns elements where the predicate is false; cleaner than filter { !it.x }.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T : Any&gt; Iterable&lt;T?&gt;.filterNotNull(): List&lt;T&gt;</code>
+  <code class="snippet">results.<span class="fn">filterNotNull</span>() <span class="cm">// drops nulls, narrows type</span></code>
+  <span class="desc">Removes nulls and narrows the type to non-nullable.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;reified R&gt; Iterable&lt;*&gt;.filterIsInstance(): List&lt;R&gt;</code>
+  <code class="snippet">events.<span class="fn">filterIsInstance</span>&lt;<span class="ty">ClickEvent</span>&gt;()</code>
+  <span class="desc">Keeps only elements of the given type; combines filter and cast safely.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Iterable&lt;T&gt;.partition(predicate: (T) -&gt; Boolean): Pair&lt;List&lt;T&gt;, List&lt;T&gt;&gt;</code>
+  <code class="snippet"><span class="kw">val</span> (passed, failed) = students.<span class="fn">partition</span> { it.score &gt;= <span class="num">60</span> }</code>
+  <span class="desc">Splits into two lists: matching and non-matching, in one pass.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Iterable&lt;T&gt;.take(n: Int): List&lt;T&gt;</code>
+  <code class="snippet">leaderboard.<span class="fn">take</span>(<span class="num">10</span>) <span class="cm">// top 10</span></code>
+  <span class="desc">Returns the first n elements.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Iterable&lt;T&gt;.drop(n: Int): List&lt;T&gt;</code>
+  <code class="snippet">rows.<span class="fn">drop</span>(<span class="num">1</span>) <span class="cm">// skip header row</span></code>
+  <span class="desc">Returns all elements except the first n.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Iterable&lt;T&gt;.takeLast(n: Int): List&lt;T&gt; / dropLast(n: Int): List&lt;T&gt;</code>
+  <code class="snippet">log.<span class="fn">takeLast</span>(<span class="num">100</span>) <span class="cm">// last 100 lines</span></code>
+  <span class="desc">takeLast returns the last n elements; dropLast removes the last n elements.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Iterable&lt;T&gt;.takeWhile(predicate: (T) -&gt; Boolean): List&lt;T&gt;</code>
+  <code class="snippet">sorted.<span class="fn">takeWhile</span> { it.score &gt; <span class="num">90</span> } <span class="cm">// top scorers</span></code>
+  <span class="desc">Takes elements from the front while the predicate holds; stops at first failure.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Iterable&lt;T&gt;.dropWhile(predicate: (T) -&gt; Boolean): List&lt;T&gt;</code>
+  <code class="snippet">log.<span class="fn">dropWhile</span> { it.level == <span class="ty">DEBUG</span> } <span class="cm">// skip debug prefix</span></code>
+  <span class="desc">Drops elements from the front while the predicate holds; returns the rest.</span>
+</div>
+
+<div class="sub-heading">Aggregation</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T, R&gt; Iterable&lt;T&gt;.fold(initial: R, operation: (R, T) -&gt; R): R</code>
+  <code class="snippet">nums.<span class="fn">fold</span>(<span class="num">0</span>) { acc, n -&gt; acc + n } <span class="cm">// sum</span></code>
+  <span class="desc">Accumulates a value starting from an initial; works on empty collections.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Iterable&lt;T&gt;.reduce(operation: (T, T) -&gt; T): T</code>
+  <code class="snippet">nums.<span class="fn">reduce</span> { acc, n -&gt; acc + n } <span class="cm">// throws on empty!</span></code>
+  <span class="desc">Like fold but uses the first element as the initial value; throws on empty collections.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T, R&gt; Iterable&lt;T&gt;.runningFold(initial: R, operation: (R, T) -&gt; R): List&lt;R&gt;</code>
+  <code class="snippet">nums.<span class="fn">runningFold</span>(<span class="num">0</span>) { acc, n -&gt; acc + n } <span class="cm">// running totals</span></code>
+  <span class="desc">Like fold but returns a list of all intermediate accumulator values including the initial.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T, R&gt; Iterable&lt;T&gt;.scan(initial: R, operation: (R, T) -&gt; R): List&lt;R&gt;</code>
+  <code class="snippet">prices.<span class="fn">scan</span>(<span class="num">0.0</span>) { total, p -&gt; total + p }</code>
+  <span class="desc">Alias for runningFold; produces a prefix-sum style list including the initial value.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Iterable&lt;T&gt;.runningReduce(operation: (T, T) -&gt; T): List&lt;T&gt;</code>
+  <code class="snippet">nums.<span class="fn">runningReduce</span> { acc, n -&gt; acc + n } <span class="cm">// no initial value</span></code>
+  <span class="desc">Like runningFold but uses the first element as initial; result list is one shorter than input.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Iterable&lt;T&gt;.sumOf(selector: (T) -&gt; Int): Int</code>
+  <code class="snippet">orders.<span class="fn">sumOf</span> { it.total }</code>
+  <span class="desc">Sums elements by a numeric selector; also available for Long, Double, BigDecimal.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Iterable&lt;T&gt;.maxByOrNull(selector: (T) -&gt; Comparable): T?</code>
+  <code class="snippet">products.<span class="fn">maxByOrNull</span> { it.price }</code>
+  <span class="desc">Returns the element with the largest selector value, or null if the collection is empty.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Iterable&lt;T&gt;.minByOrNull(selector: (T) -&gt; Comparable): T?</code>
+  <code class="snippet">tasks.<span class="fn">minByOrNull</span> { it.priority }</code>
+  <span class="desc">Returns the element with the smallest selector value, or null if empty.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T : Comparable&lt;T&gt;&gt; Iterable&lt;T&gt;.maxOrNull(): T? / minOrNull(): T?</code>
+  <code class="snippet">scores.<span class="fn">maxOrNull</span>(); temps.<span class="fn">minOrNull</span>()</code>
+  <span class="desc">Returns the largest/smallest element directly (no selector); null on empty. Use instead of deprecated max()/min().</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Iterable&lt;T&gt;.average(): Double</code>
+  <code class="snippet">scores.<span class="fn">average</span>() <span class="cm">// arithmetic mean; NaN on empty</span></code>
+  <span class="desc">Returns the arithmetic mean; returns NaN if the collection is empty.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Iterable&lt;T&gt;.count(predicate: (T) -&gt; Boolean = { true }): Int</code>
+  <code class="snippet">users.<span class="fn">count</span> { it.isAdmin }</code>
+  <span class="desc">Counts matching elements; without predicate counts all.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Iterable&lt;T&gt;.joinToString(separator: String = ", ", ...): String</code>
+  <code class="snippet">names.<span class="fn">joinToString</span>(separator = <span class="str">", "</span>, prefix = <span class="str">"["</span>, postfix = <span class="str">"]"</span>)</code>
+  <span class="desc">Joins elements into a string with separator, optional prefix/postfix/transform.</span>
+</div>
+
+<div class="sub-heading">Grouping</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T, K&gt; Iterable&lt;T&gt;.groupBy(keySelector: (T) -&gt; K): Map&lt;K, List&lt;T&gt;&gt;</code>
+  <code class="snippet">employees.<span class="fn">groupBy</span> { it.department }</code>
+  <span class="desc">Groups elements by key into a Map; each key maps to a list of matching elements.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T, K&gt; Iterable&lt;T&gt;.groupingBy(keySelector: (T) -&gt; K): Grouping&lt;T, K&gt;</code>
+  <code class="snippet">words.<span class="fn">groupingBy</span> { it.first() }.<span class="fn">eachCount</span>()</code>
+  <span class="desc">Creates a lazy Grouping; chain with eachCount/fold/aggregate for efficient single-pass grouping.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T, K&gt; Grouping&lt;T, K&gt;.eachCount(): Map&lt;K, Int&gt;</code>
+  <code class="snippet">words.<span class="fn">groupingBy</span> { it }.<span class="fn">eachCount</span>() <span class="cm">// word frequency map</span></code>
+  <span class="desc">Counts elements per group; the most common Grouping terminal.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T, K, R&gt; Grouping&lt;T, K&gt;.fold(initialValue: R, operation: (R, T) -&gt; R): Map&lt;K, R&gt;</code>
+  <code class="snippet">sales.<span class="fn">groupingBy</span> { it.region }.<span class="fn">fold</span>(<span class="num">0.0</span>) { acc, s -&gt; acc + s.amount }</code>
+  <span class="desc">Folds within each group simultaneously in a single pass.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T, K, R&gt; Grouping&lt;T, K&gt;.aggregate(operation: (key, acc: R?, T, Boolean) -&gt; R): Map&lt;K, R&gt;</code>
+  <code class="snippet">items.<span class="fn">groupingBy</span> { it.type }.<span class="fn">aggregate</span> { _, acc, el, first -&gt; <span class="kw">if</span> (first) el.value <span class="kw">else</span> acc!! + el.value }</code>
+  <span class="desc">Most flexible Grouping terminal; handles first-element initialization explicitly.</span>
+</div>
+
+<div class="sub-heading">Search</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Iterable&lt;T&gt;.find(predicate: (T) -&gt; Boolean): T?</code>
+  <code class="snippet">users.<span class="fn">find</span> { it.email == email }</code>
+  <span class="desc">Returns the first matching element or null; alias for firstOrNull.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Iterable&lt;T&gt;.findLast(predicate: (T) -&gt; Boolean): T?</code>
+  <code class="snippet">log.<span class="fn">findLast</span> { it.<span class="fn">startsWith</span>(<span class="str">"ERROR"</span>) }</code>
+  <span class="desc">Returns the last matching element or null.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Iterable&lt;T&gt;.first(predicate: (T) -&gt; Boolean = ...): T</code>
+  <code class="snippet">users.<span class="fn">first</span> { it.isAdmin } <span class="cm">// throws if none</span></code>
+  <span class="desc">Returns the first match; throws NoSuchElementException if not found.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Iterable&lt;T&gt;.firstOrNull(predicate: (T) -&gt; Boolean): T?</code>
+  <code class="snippet">users.<span class="fn">firstOrNull</span> { it.isAdmin } ?: <span class="fn">defaultAdmin</span>()</code>
+  <span class="desc">Returns the first match or null; use with ?: for safe fallbacks.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Iterable&lt;T&gt;.last(predicate: (T) -&gt; Boolean = ...): T / lastOrNull(...): T?</code>
+  <code class="snippet">events.<span class="fn">last</span> { it.type == <span class="ty">Click</span> }; events.<span class="fn">lastOrNull</span> { it.type == <span class="ty">Click</span> }</code>
+  <span class="desc">Returns the last matching element; last throws on empty/no match, lastOrNull returns null.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Iterable&lt;T&gt;.single(predicate: (T) -&gt; Boolean): T</code>
+  <code class="snippet">configs.<span class="fn">single</span> { it.env == <span class="str">"prod"</span> } <span class="cm">// throws if 0 or 2+</span></code>
+  <span class="desc">Returns the one matching element; throws if zero or more than one match.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Iterable&lt;T&gt;.singleOrNull(predicate: (T) -&gt; Boolean): T?</code>
+  <code class="snippet">results.<span class="fn">singleOrNull</span> { it.isPrimary }</code>
+  <span class="desc">Returns the single matching element, or null if zero or more than one match.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Iterable&lt;T&gt;.any(predicate: (T) -&gt; Boolean): Boolean</code>
+  <code class="snippet"><span class="kw">if</span> (users.<span class="fn">any</span> { it.isBanned }) <span class="fn">blockRequest</span>()</code>
+  <span class="desc">Returns true if at least one element matches.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Iterable&lt;T&gt;.all(predicate: (T) -&gt; Boolean): Boolean</code>
+  <code class="snippet"><span class="kw">val</span> allPaid = invoices.<span class="fn">all</span> { it.isPaid }</code>
+  <span class="desc">Returns true only if every element matches; true for empty collections.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Iterable&lt;T&gt;.none(predicate: (T) -&gt; Boolean): Boolean</code>
+  <code class="snippet">errors.<span class="fn">none</span> { it.isCritical }</code>
+  <span class="desc">Returns true if no elements match; cleaner than !any { }.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Iterable&lt;T&gt;.contains(element: T): Boolean / indexOf(element: T): Int</code>
+  <code class="snippet">items.<span class="fn">contains</span>(target); items.<span class="fn">indexOf</span>(target) <span class="cm">// -1 if absent</span></code>
+  <span class="desc">contains checks membership; indexOf returns position or -1.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Iterable&lt;T&gt;.indexOfFirst(predicate: (T) -&gt; Boolean): Int</code>
+  <code class="snippet">rows.<span class="fn">indexOfFirst</span> { it.<span class="fn">startsWith</span>(<span class="str">"#"</span>) }</code>
+  <span class="desc">Returns the index of the first matching element, or -1.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Iterable&lt;T&gt;.indexOfLast(predicate: (T) -&gt; Boolean): Int</code>
+  <code class="snippet">tokens.<span class="fn">indexOfLast</span> { it == <span class="str">"}"</span> }</code>
+  <span class="desc">Returns the index of the last matching element, or -1.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; List&lt;T&gt;.getOrNull(index: Int): T? / getOrElse(index: Int, defaultValue: (Int) -&gt; T): T</code>
+  <code class="snippet">args.<span class="fn">getOrNull</span>(<span class="num">1</span>); args.<span class="fn">getOrElse</span>(<span class="num">2</span>) { <span class="str">"default"</span> }</code>
+  <span class="desc">Safe index access; getOrNull returns null, getOrElse calls the lambda for out-of-bounds indices.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Collection&lt;T&gt;.random(): T / randomOrNull(): T?</code>
+  <code class="snippet">options.<span class="fn">random</span>() <span class="cm">// throws on empty</span>; options.<span class="fn">randomOrNull</span>()</code>
+  <span class="desc">Returns a random element; random throws on empty, randomOrNull returns null.</span>
+</div>
+
+<div class="sub-heading">Ordering</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T : Comparable&lt;T&gt;&gt; Iterable&lt;T&gt;.sorted(): List&lt;T&gt;</code>
+  <code class="snippet">scores.<span class="fn">sorted</span>() <span class="cm">// natural ascending</span></code>
+  <span class="desc">Returns a new sorted list in natural ascending order.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T : Comparable&lt;T&gt;&gt; Iterable&lt;T&gt;.sortedDescending(): List&lt;T&gt;</code>
+  <code class="snippet">scores.<span class="fn">sortedDescending</span>() <span class="cm">// largest first</span></code>
+  <span class="desc">Sorts in natural descending order; shortcut for sorted().reversed().</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Iterable&lt;T&gt;.sortedBy(selector: (T) -&gt; Comparable?): List&lt;T&gt;</code>
+  <code class="snippet">users.<span class="fn">sortedBy</span> { it.lastName }</code>
+  <span class="desc">Sorts by a computed key in ascending order.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Iterable&lt;T&gt;.sortedByDescending(selector: (T) -&gt; Comparable?): List&lt;T&gt;</code>
+  <code class="snippet">posts.<span class="fn">sortedByDescending</span> { it.createdAt }</code>
+  <span class="desc">Sorts by key in descending order; newest-first pattern.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Iterable&lt;T&gt;.sortedWith(comparator: Comparator&lt;T&gt;): List&lt;T&gt;</code>
+  <code class="snippet">files.<span class="fn">sortedWith</span>(<span class="fn">compareBy</span>({ it.dir }, { it.name }))</code>
+  <span class="desc">Sorts using a custom Comparator; chain compareBy for multi-key sort.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; compareBy(vararg selectors: (T) -&gt; Comparable?): Comparator&lt;T&gt;</code>
+  <code class="snippet"><span class="fn">compareBy</span>&lt;<span class="ty">Person</span>&gt;({ it.lastName }, { it.firstName })</code>
+  <span class="desc">Creates a Comparator that compares by multiple keys in order; first key wins unless tied.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Iterable&lt;T&gt;.reversed(): List&lt;T&gt;</code>
+  <code class="snippet">chronological.<span class="fn">reversed</span>() <span class="cm">// newest first</span></code>
+  <span class="desc">Returns a new list in reverse order.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Iterable&lt;T&gt;.shuffled(): List&lt;T&gt;</code>
+  <code class="snippet">deck.<span class="fn">shuffled</span>() <span class="cm">// random order</span></code>
+  <span class="desc">Returns a new list with elements in random order.</span>
+</div>
+
+<div class="sub-heading">Windowing</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Iterable&lt;T&gt;.windowed(size: Int, step: Int = 1): List&lt;List&lt;T&gt;&gt;</code>
+  <code class="snippet">temps.<span class="fn">windowed</span>(<span class="num">7</span>) { it.<span class="fn">average</span>() } <span class="cm">// 7-day rolling avg</span></code>
+  <span class="desc">Produces sliding windows of a fixed size; step controls how far to advance each time.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Iterable&lt;T&gt;.chunked(size: Int): List&lt;List&lt;T&gt;&gt;</code>
+  <code class="snippet">ids.<span class="fn">chunked</span>(<span class="num">100</span>) { chunk -&gt; db.<span class="fn">batchFetch</span>(chunk) }</code>
+  <span class="desc">Splits into non-overlapping chunks of at most size; last chunk may be smaller.</span>
+</div>
+
+<div class="sub-heading">Set Operations</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Iterable&lt;T&gt;.distinct(): List&lt;T&gt;</code>
+  <code class="snippet">tags.<span class="fn">distinct</span>() <span class="cm">// deduplicate</span></code>
+  <span class="desc">Returns a list with duplicates removed, preserving first-occurrence order.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Iterable&lt;T&gt;.distinctBy(selector: (T) -&gt; Any?): List&lt;T&gt;</code>
+  <code class="snippet">users.<span class="fn">distinctBy</span> { it.email } <span class="cm">// one per email</span></code>
+  <span class="desc">Deduplicates by a key; keeps first element for each unique key.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">infix fun &lt;T&gt; Iterable&lt;T&gt;.intersect(other: Iterable&lt;T&gt;): Set&lt;T&gt;</code>
+  <code class="snippet">groupA <span class="fn">intersect</span> groupB <span class="cm">// common members</span></code>
+  <span class="desc">Returns elements present in both collections.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">infix fun &lt;T&gt; Iterable&lt;T&gt;.union(other: Iterable&lt;T&gt;): Set&lt;T&gt;</code>
+  <code class="snippet">setA <span class="fn">union</span> setB</code>
+  <span class="desc">Returns all elements from both collections, deduplicated.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">infix fun &lt;T&gt; Iterable&lt;T&gt;.subtract(other: Iterable&lt;T&gt;): Set&lt;T&gt;</code>
+  <code class="snippet">allUsers <span class="fn">subtract</span> bannedUsers</code>
+  <span class="desc">Returns elements in the first collection not present in the second.</span>
+</div>
+
+<div class="sub-heading">Misc / Iteration</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Iterable&lt;T&gt;.forEach(action: (T) -&gt; Unit)</code>
+  <code class="snippet">items.<span class="fn">forEach</span> { println(it) }</code>
+  <span class="desc">Iterates over elements for side effects; prefer for-in for simple cases.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Iterable&lt;T&gt;.forEachIndexed(action: (index: Int, T) -&gt; Unit)</code>
+  <code class="snippet">lines.<span class="fn">forEachIndexed</span> { i, line -&gt; println(<span class="str">"$i: $line"</span>) }</code>
+  <span class="desc">Like forEach but provides the index; useful for printing numbered lists.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Iterable&lt;T&gt;.onEach(action: (T) -&gt; Unit): Iterable&lt;T&gt;</code>
+  <code class="snippet">pipeline.<span class="fn">onEach</span> { logger.<span class="fn">log</span>(it) }.<span class="fn">filter</span> { it.valid }</code>
+  <span class="desc">Performs a side-effect on each element and returns the collection unchanged; good for logging in chains.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Iterable&lt;T&gt;.onEachIndexed(action: (index: Int, T) -&gt; Unit): Iterable&lt;T&gt;</code>
+  <code class="snippet">items.<span class="fn">onEachIndexed</span> { i, v -&gt; log.<span class="fn">debug</span>(<span class="str">"$i=$v"</span>) }.<span class="fn">filter</span> { it.valid }</code>
+  <span class="desc">Like onEach but also provides the index; returns the collection unchanged for chaining.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Iterable&lt;T&gt;.toList() / toSet() / toMap() / toMutableList() / toMutableSet() / toSortedSet()</code>
+  <code class="snippet">sequence.<span class="fn">toList</span>(); readonlyList.<span class="fn">toMutableList</span>()</code>
+  <span class="desc">Converts between collection types; always produces a new independent copy.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">operator fun &lt;T&gt; Collection&lt;T&gt;.plus(element: T): List&lt;T&gt; / minus(element: T): List&lt;T&gt;</code>
+  <code class="snippet"><span class="kw">val</span> updated = items + newItem; <span class="kw">val</span> filtered = items - toRemove</code>
+  <span class="desc">Returns new lists with element appended or first occurrence removed; originals unchanged.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">fun &lt;T&gt; Iterable&lt;T&gt;.withIndex(): Iterable&lt;IndexedValue&lt;T&gt;&gt;</code>
+  <code class="snippet"><span class="kw">for</span> ((i, v) <span class="kw">in</span> list.<span class="fn">withIndex</span>()) println(<span class="str">"$i: $v"</span>)</code>
+  <span class="desc">Wraps each element with its index; destructures cleanly in for loops.</span>
+</div>
     <!-- Strings, Sequences, Scope, I/O content goes here (Task 4) -->
     <!-- Stdlib Advanced details element goes here (Task 5) -->
     <!-- Coroutines Core sections go here (Task 6) -->
