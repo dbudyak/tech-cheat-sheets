@@ -183,7 +183,8 @@ details > summary::before { content: '▶  '; font-size: 10px; }
 details[open] > summary::before { content: '▼  '; }
 details > summary:hover { color: #c9d1d9; }
 details[open] > summary { border-radius: 6px 6px 0 0; border-bottom-color: #21262d; }
-details .adv-content { padding: 4px 0; border: 1px solid #30363d; border-top: none; border-radius: 0 0 6px 6px; padding: 8px; }
+details > summary::-webkit-details-marker { display: none; }
+details .adv-content { border: 1px solid #30363d; border-top: none; border-radius: 0 0 6px 6px; padding: 8px; }
 
 /* ── Scrollbar ───────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; }
@@ -248,13 +249,15 @@ const headings = document.querySelectorAll('.section-heading[id]');
 const links = document.querySelectorAll('.cat-link');
 
 const observer = new IntersectionObserver(entries => {
-  entries.forEach(entry => {
-    if (entry.isIntersecting) {
-      links.forEach(l => l.classList.remove('active'));
-      const active = document.querySelector(`.cat-link[href="#${entry.target.id}"]`);
-      if (active) active.classList.add('active');
-    }
-  });
+  const intersecting = entries.filter(e => e.isIntersecting);
+  if (!intersecting.length) return;
+  // Pick topmost (smallest top offset) among simultaneously intersecting headings
+  const top = intersecting.reduce((a, b) =>
+    a.boundingClientRect.top < b.boundingClientRect.top ? a : b
+  );
+  links.forEach(l => l.classList.remove('active'));
+  const active = document.querySelector(`.cat-link[href="#${top.target.id}"]`);
+  if (active) active.classList.add('active');
 }, { rootMargin: '-10% 0px -80% 0px' });
 
 headings.forEach(h => observer.observe(h));
