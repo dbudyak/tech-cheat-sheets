@@ -1843,7 +1843,7 @@ const observer = new IntersectionObserver(entries => {
   links.forEach(l => l.classList.remove('active'));
   const active = document.querySelector(`.cat-link[href="#${top.target.id}"]`);
   if (active) active.classList.add('active');
-}, { rootMargin: '-10% 0px -80% 0px' });
+}, { root: document.querySelector('#main'), rootMargin: '-10% 0px -80% 0px' });
 
 headings.forEach(h => observer.observe(h));
 </script>
