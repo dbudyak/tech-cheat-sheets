@@ -1171,7 +1171,220 @@ details .adv-content { border: 1px solid #30363d; border-top: none; border-radiu
   <code class="snippet"><span class="ty">File</span>(<span class="str">"out.txt"</span>).<span class="fn">bufferedWriter</span>().<span class="fn">use</span> { it.<span class="fn">write</span>(line) }</code>
   <span class="desc">Returns a buffered writer for efficient line-by-line writing; printWriter adds println/printf support.</span>
 </div>
-    <!-- Stdlib Advanced details element goes here (Task 5) -->
+    <details id="kt-stdlib-adv">
+  <summary>Kotlin Stdlib — Advanced (Regex · Ranges · Delegates · Math · Result · Collections extras · Misc)</summary>
+  <div class="adv-content">
+
+    <div class="sub-heading">Regex</div>
+
+    <div class="entry">
+      <code class="sig">class Regex(pattern: String, options: Set&lt;RegexOption&gt; = emptySet())</code>
+      <code class="snippet"><span class="kw">val</span> re = <span class="ty">Regex</span>(<span class="str">"""\d{4}-\d{2}-\d{2}"""</span>)</code>
+      <span class="desc">Compiles a regular expression; reuse instances — construction is expensive.</span>
+    </div>
+
+    <div class="entry">
+      <code class="sig">fun Regex.find(input: CharSequence, startIndex: Int = 0): MatchResult?</code>
+      <code class="snippet">re.<span class="fn">find</span>(text)?.value</code>
+      <span class="desc">Returns the first match or null.</span>
+    </div>
+
+    <div class="entry">
+      <code class="sig">fun Regex.findAll(input: CharSequence): Sequence&lt;MatchResult&gt;</code>
+      <code class="snippet">re.<span class="fn">findAll</span>(text).<span class="fn">map</span> { it.value }.<span class="fn">toList</span>()</code>
+      <span class="desc">Returns a lazy sequence of all non-overlapping matches.</span>
+    </div>
+
+    <div class="entry">
+      <code class="sig">fun Regex.matches(input: CharSequence): Boolean / containsMatchIn(input): Boolean</code>
+      <code class="snippet">re.<span class="fn">matches</span>(entire); re.<span class="fn">containsMatchIn</span>(text) <span class="cm">// partial match</span></code>
+      <span class="desc">matches checks the entire string; containsMatchIn checks anywhere in the string.</span>
+    </div>
+
+    <div class="entry">
+      <code class="sig">fun Regex.replace(input: CharSequence, replacement: String): String</code>
+      <code class="snippet"><span class="ty">Regex</span>(<span class="str">"""\s+"""</span>).<span class="fn">replace</span>(input, <span class="str">" "</span>) <span class="cm">// collapse whitespace</span></code>
+      <span class="desc">Replaces all matches with the replacement string; use $1 for capture group backreferences.</span>
+    </div>
+
+    <div class="entry">
+      <code class="sig">fun Regex.matchEntire(input: CharSequence): MatchResult?</code>
+      <code class="snippet"><span class="kw">val</span> (year, month, day) = <span class="ty">Regex</span>(<span class="str">"""(\d{4})-(\d{2})-(\d{2})"""</span>).<span class="fn">matchEntire</span>(s)!!.destructured</code>
+      <span class="desc">Matches the entire string and returns captured groups; destructured unpacks groups into variables.</span>
+    </div>
+
+    <div class="sub-heading">Ranges</div>
+
+    <div class="entry">
+      <code class="sig">operator fun Int.rangeTo(to: Int): IntRange  [also: until, downTo, step]</code>
+      <code class="snippet"><span class="kw">for</span> (i <span class="kw">in</span> <span class="num">1</span>..<span class="num">10</span>) { } <span class="cm">// inclusive</span>; <span class="kw">for</span> (i <span class="kw">in</span> <span class="num">0</span> until n) { } <span class="cm">// exclusive upper</span></code>
+      <span class="desc">.. is inclusive on both ends; until excludes the upper bound; downTo reverses; step skips elements.</span>
+    </div>
+
+    <div class="entry">
+      <code class="sig">fun &lt;T : Comparable&lt;T&gt;&gt; T.coerceIn(minimumValue: T, maximumValue: T): T</code>
+      <code class="snippet">progress.<span class="fn">coerceIn</span>(<span class="num">0</span>, <span class="num">100</span>) <span class="cm">// clamp to [0,100]</span></code>
+      <span class="desc">Clamps the value to the given range; replaces manual min/max chaining.</span>
+    </div>
+
+    <div class="entry">
+      <code class="sig">fun &lt;T : Comparable&lt;T&gt;&gt; T.coerceAtLeast(minimumValue: T): T / coerceAtMost(maximumValue: T): T</code>
+      <code class="snippet">x.<span class="fn">coerceAtLeast</span>(<span class="num">0</span>) <span class="cm">// clamp to ≥ 0</span>; x.<span class="fn">coerceAtMost</span>(<span class="num">100</span>) <span class="cm">// clamp to ≤ 100</span></code>
+      <span class="desc">One-sided clamping; use when you only need a minimum or maximum bound.</span>
+    </div>
+
+    <div class="entry">
+      <code class="sig">fun IntRange.random(): Int / randomOrNull(): Int?</code>
+      <code class="snippet">(<span class="num">1</span>..<span class="num">6</span>).<span class="fn">random</span>() <span class="cm">// dice roll</span></code>
+      <span class="desc">Picks a random value within the range.</span>
+    </div>
+
+    <div class="sub-heading">Property Delegates</div>
+
+    <div class="entry">
+      <code class="sig">fun &lt;T&gt; lazy(initializer: () -&gt; T): Lazy&lt;T&gt;</code>
+      <code class="snippet"><span class="kw">val</span> db: <span class="ty">Database</span> <span class="kw">by</span> <span class="fn">lazy</span> { <span class="fn">connectDb</span>() }</code>
+      <span class="desc">Computes the value on first access and caches it; thread-safe by default (LazyThreadSafetyMode.SYNCHRONIZED).</span>
+    </div>
+
+    <div class="entry">
+      <code class="sig">fun &lt;T&gt; observable(initialValue: T, onChange: (prop, old, new) -&gt; Unit): ReadWriteProperty&lt;*, T&gt;</code>
+      <code class="snippet"><span class="kw">var</span> name: <span class="ty">String</span> <span class="kw">by</span> <span class="fn">observable</span>(<span class="str">""</span>) { _, old, new -&gt; <span class="fn">onNameChange</span>(old, new) }</code>
+      <span class="desc">Calls a callback whenever the property value changes.</span>
+    </div>
+
+    <div class="entry">
+      <code class="sig">fun &lt;T&gt; vetoable(initialValue: T, onChange: (prop, old, new) -&gt; Boolean): ReadWriteProperty&lt;*, T&gt;</code>
+      <code class="snippet"><span class="kw">var</span> age: <span class="ty">Int</span> <span class="kw">by</span> <span class="fn">vetoable</span>(<span class="num">0</span>) { _, _, new -&gt; new &gt;= <span class="num">0</span> }</code>
+      <span class="desc">Like observable but can reject a new value by returning false from the callback.</span>
+    </div>
+
+    <div class="entry">
+      <code class="sig">operator fun &lt;T&gt; Map&lt;String, *&gt;.getValue(thisRef: Any?, property: KProperty&lt;*&gt;): T</code>
+      <code class="snippet"><span class="kw">val</span> name: <span class="ty">String</span> <span class="kw">by</span> map; <span class="kw">var</span> age: <span class="ty">Int</span> <span class="kw">by</span> mutableMap</code>
+      <span class="desc">Delegates property reads/writes to a Map; the property name becomes the key.</span>
+    </div>
+
+    <div class="sub-heading">Type Checks</div>
+
+    <div class="entry">
+      <code class="sig">is / as / as? — smart casts and safe casts</code>
+      <code class="snippet"><span class="kw">if</span> (x <span class="kw">is</span> <span class="ty">String</span>) x.<span class="fn">length</span>; <span class="kw">val</span> s = x <span class="kw">as</span>? <span class="ty">String</span> ?: <span class="kw">return</span></code>
+      <span class="desc">is smart-casts inside the branch; as throws on failure; as? returns null on failure — always prefer as?.</span>
+    </div>
+
+    <div class="sub-heading">Math (kotlin.math.*)</div>
+
+    <div class="entry">
+      <code class="sig">abs / ceil / floor / round / sqrt / pow / sign / min / max / PI / E</code>
+      <code class="snippet"><span class="kw">import</span> kotlin.math.*; <span class="fn">sqrt</span>(<span class="num">2.0</span>); <span class="fn">abs</span>(-<span class="num">5</span>); <span class="num">2.0</span>.<span class="fn">pow</span>(<span class="num">10</span>); <span class="fn">round</span>(<span class="num">3.7</span>)</code>
+      <span class="desc">Standard math functions; import kotlin.math.* to avoid qualification. pow is an extension on Double.</span>
+    </div>
+
+    <div class="sub-heading">Result / Error Handling</div>
+
+    <div class="entry">
+      <code class="sig">fun &lt;T&gt; runCatching(block: () -&gt; T): Result&lt;T&gt;</code>
+      <code class="snippet"><span class="kw">val</span> result = <span class="fn">runCatching</span> { <span class="fn">riskyOp</span>() }</code>
+      <span class="desc">Wraps a block in a Result; never throws — chains instead of try/catch.</span>
+    </div>
+
+    <div class="entry">
+      <code class="sig">fun &lt;T&gt; Result&lt;T&gt;.getOrElse(onFailure: (Throwable) -&gt; T): T</code>
+      <code class="snippet"><span class="fn">runCatching</span> { <span class="fn">parse</span>(s) }.<span class="fn">getOrElse</span> { defaultValue }</code>
+      <span class="desc">Returns the value on success, or calls the fallback lambda on failure.</span>
+    </div>
+
+    <div class="entry">
+      <code class="sig">fun &lt;T&gt; Result&lt;T&gt;.getOrDefault(defaultValue: T): T / getOrThrow(): T / getOrNull(): T?</code>
+      <code class="snippet">result.<span class="fn">getOrNull</span>() ?: <span class="fn">fallback</span>(); result.<span class="fn">getOrThrow</span>()</code>
+      <span class="desc">getOrNull returns null on failure; getOrDefault uses a static fallback; getOrThrow re-throws.</span>
+    </div>
+
+    <div class="entry">
+      <code class="sig">fun &lt;T, R&gt; Result&lt;T&gt;.map(transform: (T) -&gt; R): Result&lt;R&gt; / mapCatching(transform): Result&lt;R&gt;</code>
+      <code class="snippet"><span class="fn">runCatching</span> { <span class="fn">fetch</span>() }.<span class="fn">mapCatching</span> { <span class="fn">parse</span>(it) }.<span class="fn">getOrThrow</span>()</code>
+      <span class="desc">map transforms the value; mapCatching also catches exceptions in the transform.</span>
+    </div>
+
+    <div class="entry">
+      <code class="sig">fun &lt;T&gt; Result&lt;T&gt;.onSuccess(action: (T) -&gt; Unit): Result&lt;T&gt; / onFailure(action: (Throwable) -&gt; Unit): Result&lt;T&gt;</code>
+      <code class="snippet">result.<span class="fn">onSuccess</span> { <span class="fn">log</span>(it) }.<span class="fn">onFailure</span> { <span class="fn">reportError</span>(it) }</code>
+      <span class="desc">Side-effect callbacks for success/failure; both return the original Result unchanged for chaining.</span>
+    </div>
+
+    <div class="entry">
+      <code class="sig">fun &lt;T&gt; Result&lt;T&gt;.recover(transform: (Throwable) -&gt; T): Result&lt;T&gt;</code>
+      <code class="snippet">result.<span class="fn">recover</span> { e -&gt; <span class="kw">if</span> (e <span class="kw">is</span> <span class="ty">NetworkError</span>) <span class="fn">cached</span>() <span class="kw">else</span> <span class="kw">throw</span> e }</code>
+      <span class="desc">Converts a failure to a success value; like catch for a Result chain.</span>
+    </div>
+
+    <div class="sub-heading">Collections Extras</div>
+
+    <div class="entry">
+      <code class="sig">class IntArray(size: Int) / ByteArray / LongArray / DoubleArray / FloatArray</code>
+      <code class="snippet"><span class="kw">val</span> buf = <span class="ty">ByteArray</span>(<span class="num">1024</span>); <span class="kw">val</span> squares = <span class="ty">IntArray</span>(<span class="num">10</span>) { it * it }</code>
+      <span class="desc">Primitive arrays with no boxing overhead; prefer over Array&lt;Int&gt; for performance-sensitive numeric code.</span>
+    </div>
+
+    <div class="entry">
+      <code class="sig">fun &lt;T&gt; Array&lt;T&gt;.contentEquals(other: Array&lt;T&gt;): Boolean / contentToString(): String</code>
+      <code class="snippet">arr1.<span class="fn">contentEquals</span>(arr2); arr.<span class="fn">contentToString</span>() <span class="cm">// "[1, 2, 3]"</span></code>
+      <span class="desc">Structural equality and string representation for arrays; regular == and toString() don't work correctly on arrays.</span>
+    </div>
+
+    <div class="entry">
+      <code class="sig">val Array&lt;T&gt;.indices: IntRange / lastIndex: Int</code>
+      <code class="snippet"><span class="kw">for</span> (i <span class="kw">in</span> arr.indices) arr[i] = <span class="fn">transform</span>(arr[i])</code>
+      <span class="desc">Convenient range for index-based iteration; safer than 0..arr.size-1 (handles empty arrays).</span>
+    </div>
+
+    <div class="sub-heading">Miscellaneous</div>
+
+    <div class="entry">
+      <code class="sig">fun require(value: Boolean, lazyMessage: () -&gt; Any = ...)</code>
+      <code class="snippet"><span class="fn">require</span>(age &gt;= <span class="num">0</span>) { <span class="str">"age must be non-negative, got $age"</span> }</code>
+      <span class="desc">Throws IllegalArgumentException if false; use for parameter validation at function entry.</span>
+    </div>
+
+    <div class="entry">
+      <code class="sig">fun requireNotNull&lt;T : Any&gt;(value: T?, lazyMessage: () -&gt; Any = ...): T</code>
+      <code class="snippet"><span class="kw">val</span> token = <span class="fn">requireNotNull</span>(headers[<span class="str">"Authorization"</span>]) { <span class="str">"missing auth"</span> }</code>
+      <span class="desc">Throws IllegalArgumentException if null, else returns the non-null value with smart-cast.</span>
+    </div>
+
+    <div class="entry">
+      <code class="sig">fun check(value: Boolean, lazyMessage: () -&gt; Any = ...)</code>
+      <code class="snippet"><span class="fn">check</span>(isInitialized) { <span class="str">"call init() first"</span> }</code>
+      <span class="desc">Throws IllegalStateException if false; use for state invariants (not argument validation).</span>
+    </div>
+
+    <div class="entry">
+      <code class="sig">fun checkNotNull&lt;T : Any&gt;(value: T?, lazyMessage: () -&gt; Any = ...): T</code>
+      <code class="snippet"><span class="kw">val</span> conn = <span class="fn">checkNotNull</span>(connection) { <span class="str">"not connected"</span> }</code>
+      <span class="desc">Like requireNotNull but for state checks; throws IllegalStateException.</span>
+    </div>
+
+    <div class="entry">
+      <code class="sig">fun error(message: Any): Nothing</code>
+      <code class="snippet"><span class="kw">val</span> x = map[key] ?: <span class="fn">error</span>(<span class="str">"missing key: $key"</span>)</code>
+      <span class="desc">Throws IllegalStateException; returns Nothing so it works as an expression after ?:.</span>
+    </div>
+
+    <div class="entry">
+      <code class="sig">fun TODO(reason: String = "..."): Nothing</code>
+      <code class="snippet"><span class="kw">fun</span> <span class="fn">notYetImpl</span>(): <span class="ty">String</span> = <span class="fn">TODO</span>(<span class="str">"implement in next sprint"</span>)</code>
+      <span class="desc">Throws NotImplementedError with a message; useful for stubs during development.</span>
+    </div>
+
+    <div class="entry">
+      <code class="sig">fun repeat(times: Int, action: (Int) -&gt; Unit)</code>
+      <code class="snippet"><span class="fn">repeat</span>(<span class="num">3</span>) { println(<span class="str">"attempt $it"</span>) }</code>
+      <span class="desc">Executes the block times times, passing the 0-based iteration index.</span>
+    </div>
+
+  </div>
+</details>
     <!-- Coroutines Core sections go here (Task 6) -->
     <!-- Coroutines Advanced details element goes here (Task 7) -->
 
