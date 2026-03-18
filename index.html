@@ -1171,7 +1171,7 @@ details .adv-content { border: 1px solid #30363d; border-top: none; border-radiu
   <code class="snippet"><span class="ty">File</span>(<span class="str">"out.txt"</span>).<span class="fn">bufferedWriter</span>().<span class="fn">use</span> { it.<span class="fn">write</span>(line) }</code>
   <span class="desc">Returns a buffered writer for efficient line-by-line writing; printWriter adds println/printf support.</span>
 </div>
-    <details id="kt-stdlib-adv">
+<details id="kt-stdlib-adv">
   <summary>Kotlin Stdlib — Advanced (Regex · Ranges · Delegates · Math · Result · Collections extras)</summary>
   <div class="adv-content">
 
@@ -1515,7 +1515,7 @@ details .adv-content { border: 1px solid #30363d; border-top: none; border-radiu
 </div>
 
 <div class="entry">
-  <code class="sig">fun &lt;T&gt; Flow&lt;T&gt;.transform(transform: suspend FlowCollector&lt;R&gt;.(T) -&gt; Unit): Flow&lt;R&gt;</code>
+  <code class="sig">fun &lt;T, R&gt; Flow&lt;T&gt;.transform(transform: suspend FlowCollector&lt;R&gt;.(T) -&gt; Unit): Flow&lt;R&gt;</code>
   <code class="snippet">flow.<span class="fn">transform</span> { v -&gt; <span class="fn">emit</span>(v); <span class="fn">emit</span>(-v) } <span class="cm">// emit multiple per input</span></code>
   <span class="desc">Most flexible flow operator; can emit zero, one, or multiple values per incoming element.</span>
 </div>
@@ -1637,7 +1637,7 @@ details .adv-content { border: 1px solid #30363d; border-top: none; border-radiu
   <code class="snippet"><span class="kw">try</span> { } <span class="kw">catch</span> (e: <span class="ty">Exception</span>) { <span class="kw">if</span> (e <span class="kw">is</span> <span class="ty">CancellationException</span>) <span class="kw">throw</span> e; <span class="fn">handle</span>(e) }</code>
   <span class="desc">CancellationException is how structured concurrency propagates cancellation — swallowing it breaks scope cancellation.</span>
 </div>
-    <details id="kt-coro-adv">
+<details id="kt-coro-adv">
   <summary>Kotlin Coroutines — Advanced (Hot Flows · Select · Mutex · Semaphore · Job Lifecycle · Buffer · Testing)</summary>
   <div class="adv-content">
 
@@ -1790,7 +1790,7 @@ details .adv-content { border: 1px solid #30363d; border-top: none; border-radiu
     <div class="entry">
       <code class="sig">class TestCoroutineDispatcher / UnconfinedTestDispatcher / StandardTestDispatcher</code>
       <code class="snippet"><span class="fn">runTest</span>(UnconfinedTestDispatcher()) { <span class="cm">/* launch runs eagerly */</span> }</code>
-      <span class="desc">UnconfinedTestDispatcher runs coroutines eagerly (no need for advanceUntilIdle); StandardTestDispatcher is the default (lazy).</span>
+      <span class="desc">UnconfinedTestDispatcher runs coroutines eagerly (no need for advanceUntilIdle); StandardTestDispatcher is the default (lazy). Note: TestCoroutineDispatcher is deprecated in coroutines-test 1.6+; prefer StandardTestDispatcher or UnconfinedTestDispatcher.</span>
     </div>
 
     <div class="sub-heading">Android / Platform (reference)</div>
@@ -1820,7 +1820,7 @@ document.querySelectorAll('.lang-tab').forEach(tab => {
 });
 
 // ── Sidebar active link on scroll ─────────────
-const headings = document.querySelectorAll('.section-heading[id]');
+const headings = document.querySelectorAll('.section-heading[id], details[id]');
 const links = document.querySelectorAll('.cat-link');
 
 const observer = new IntersectionObserver(entries => {
