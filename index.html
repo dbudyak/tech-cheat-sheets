@@ -223,7 +223,7 @@ details .adv-content { border: 1px solid #30363d; border-top: none; border-radiu
 <main id="main">
   <section id="kotlin" class="lang-section visible">
 
-    <!-- coverage: Collections — see Task 9 for final count -->
+<!-- coverage: 91 entries -->
 <h2 class="section-heading" id="kt-collections">Collections</h2>
 
 <div class="sub-heading">Creation</div>
@@ -791,7 +791,7 @@ details .adv-content { border: 1px solid #30363d; border-top: none; border-radiu
   <code class="snippet"><span class="kw">for</span> ((i, v) <span class="kw">in</span> list.<span class="fn">withIndex</span>()) println(<span class="str">"$i: $v"</span>)</code>
   <span class="desc">Wraps each element with its index; destructures cleanly in for loops.</span>
 </div>
-    <!-- coverage: Strings/Sequences/Scope/IO — see Task 9 for final count -->
+<!-- coverage: 34 entries -->
 <h2 class="section-heading" id="kt-strings">Strings</h2>
 
 <div class="entry">
@@ -1004,6 +1004,7 @@ details .adv-content { border: 1px solid #30363d; border-top: none; border-radiu
   <span class="desc">String templates (${}) are the idiomatic Kotlin way; format() is useful for printf-style numeric formatting.</span>
 </div>
 
+<!-- coverage: 9 entries -->
 <h2 class="section-heading" id="kt-sequences">Sequences</h2>
 
 <div class="entry">
@@ -1060,6 +1061,7 @@ details .adv-content { border: 1px solid #30363d; border-top: none; border-radiu
   <span class="desc">Aggregating terminals consume the full sequence once; they are the only terminals that don't short-circuit.</span>
 </div>
 
+<!-- coverage: 7 entries -->
 <h2 class="section-heading" id="kt-scope">Scope Functions</h2>
 
 <div class="entry">
@@ -1104,6 +1106,7 @@ details .adv-content { border: 1px solid #30363d; border-top: none; border-radiu
   <span class="desc">Inverse of takeIf; returns null when the predicate holds.</span>
 </div>
 
+<!-- coverage: 11 entries -->
 <h2 class="section-heading" id="kt-io">I/O</h2>
 
 <div class="entry">
@@ -1171,6 +1174,7 @@ details .adv-content { border: 1px solid #30363d; border-top: none; border-radiu
   <code class="snippet"><span class="ty">File</span>(<span class="str">"out.txt"</span>).<span class="fn">bufferedWriter</span>().<span class="fn">use</span> { it.<span class="fn">write</span>(line) }</code>
   <span class="desc">Returns a buffered writer for efficient line-by-line writing; printWriter adds println/printf support.</span>
 </div>
+<!-- coverage: 34 entries -->
 <details id="kt-stdlib-adv">
   <summary>Kotlin Stdlib — Advanced (Regex · Ranges · Delegates · Math · Result · Collections extras)</summary>
   <div class="adv-content">
@@ -1397,7 +1401,7 @@ details .adv-content { border: 1px solid #30363d; border-top: none; border-radiu
 
   </div>
 </details>
-    <!-- coverage: Coroutines Core — see Task 9 for final count -->
+<!-- coverage: 5 entries -->
 <h2 class="section-heading" id="kt-coro-builders">Coroutines — Builders</h2>
 
 <div class="entry">
@@ -1430,6 +1434,7 @@ details .adv-content { border: 1px solid #30363d; border-top: none; border-radiu
   <span class="desc">Like coroutineScope but child failures don't cancel siblings; use for independent parallel tasks.</span>
 </div>
 
+<!-- coverage: 3 entries -->
 <h2 class="section-heading" id="kt-coro-context">Context &amp; Dispatchers</h2>
 
 <div class="entry">
@@ -1450,6 +1455,7 @@ details .adv-content { border: 1px solid #30363d; border-top: none; border-radiu
   <span class="desc">await() suspends until a Deferred has a value; awaitAll waits for multiple in parallel.</span>
 </div>
 
+<!-- coverage: 3 entries -->
 <h2 class="section-heading" id="kt-coro-timing">Timing</h2>
 
 <div class="entry">
@@ -1470,6 +1476,7 @@ details .adv-content { border: 1px solid #30363d; border-top: none; border-radiu
   <span class="desc">Like withTimeout but returns null instead of throwing; cleaner for optional operations.</span>
 </div>
 
+<!-- coverage: 19 entries -->
 <h2 class="section-heading" id="kt-coro-flow">Flow</h2>
 
 <div class="entry">
@@ -1586,6 +1593,7 @@ details .adv-content { border: 1px solid #30363d; border-top: none; border-radiu
   <span class="desc">Terminal operator that collects the flow in the given scope; equivalent to scope.launch { flow.collect() }.</span>
 </div>
 
+<!-- coverage: 5 entries -->
 <h2 class="section-heading" id="kt-coro-channels">Channels</h2>
 
 <div class="entry">
@@ -1618,6 +1626,7 @@ details .adv-content { border: 1px solid #30363d; border-top: none; border-radiu
   <span class="desc">Adapts a Channel to a Flow; receiveAsFlow allows multiple collectors, consumeAsFlow is for single collector only.</span>
 </div>
 
+<!-- coverage: 3 entries -->
 <h2 class="section-heading" id="kt-coro-errors">Exception Handling</h2>
 
 <div class="entry">
@@ -1637,6 +1646,7 @@ details .adv-content { border: 1px solid #30363d; border-top: none; border-radiu
   <code class="snippet"><span class="kw">try</span> { } <span class="kw">catch</span> (e: <span class="ty">Exception</span>) { <span class="kw">if</span> (e <span class="kw">is</span> <span class="ty">CancellationException</span>) <span class="kw">throw</span> e; <span class="fn">handle</span>(e) }</code>
   <span class="desc">CancellationException is how structured concurrency propagates cancellation — swallowing it breaks scope cancellation.</span>
 </div>
+<!-- coverage: 24 entries -->
 <details id="kt-coro-adv">
   <summary>Kotlin Coroutines — Advanced (Hot Flows · Select · Mutex · Semaphore · Job Lifecycle · Buffer · Testing)</summary>
   <div class="adv-content">
