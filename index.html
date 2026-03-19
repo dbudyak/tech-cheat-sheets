@@ -2672,17 +2672,473 @@ m := logRe.<span class="fn">FindStringSubmatch</span>(line)
 
 <h2 class="section-heading" id="go-io">io</h2>
 
+<div class="entry">
+  <code class="sig">type io.Reader interface { Read(p []byte) (n int, err error) }</code>
+  <code class="snippet"><span class="kw">func</span> <span class="fn">hashBody</span>(r <span class="ty">io.Reader</span>) []<span class="ty">byte</span> { h := sha256.<span class="fn">New</span>(); io.<span class="fn">Copy</span>(h, r); <span class="kw">return</span> h.<span class="fn">Sum</span>(<span class="kw">nil</span>) }</code>
+  <span class="desc">The fundamental streaming-read interface; accept io.Reader in function signatures instead of *os.File or []byte to keep code composable.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">type io.Writer interface { Write(p []byte) (n int, err error) }</code>
+  <code class="snippet">json.<span class="fn">NewEncoder</span>(w).<span class="fn">Encode</span>(v) <span class="cm">// w is io.Writer — works for http.ResponseWriter, os.File, bytes.Buffer</span></code>
+  <span class="desc">The fundamental streaming-write interface; accept io.Writer to write to any destination without coupling to a concrete type.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">type io.Closer interface { Close() error } / io.ReadCloser / io.WriteCloser</code>
+  <code class="snippet"><span class="kw">defer</span> resp.Body.<span class="fn">Close</span>() <span class="cm">// resp.Body is io.ReadCloser</span></code>
+  <span class="desc">Always defer Close on any io.ReadCloser (HTTP bodies, os.File); failing to close leaks file descriptors and HTTP connections.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">type io.ReadWriter interface { io.Reader; io.Writer } / io.Seeker / io.ReadWriteSeeker</code>
+  <code class="snippet"><span class="kw">var</span> buf <span class="ty">bytes.Buffer</span>; io.<span class="fn">Copy</span>(&amp;buf, src) <span class="cm">// bytes.Buffer satisfies io.ReadWriter</span></code>
+  <span class="desc">Composed interfaces; bytes.Buffer, os.File, and net.Conn satisfy various combinations — program to the narrowest interface you need.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func io.Copy(dst io.Writer, src io.Reader) (written int64, err error)</code>
+  <code class="snippet">n, err := io.<span class="fn">Copy</span>(dst, src) <span class="cm">// zero-alloc if src implements WriteTo or dst implements ReadFrom</span></code>
+  <span class="desc">Copies until EOF; uses 32 KB internal buffer by default. Returns bytes written and the first non-EOF error.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func io.CopyN(dst io.Writer, src io.Reader, n int64) (written int64, err error)</code>
+  <code class="snippet">_, err = io.<span class="fn">CopyN</span>(w, r, <span class="num">1</span>&lt;&lt;<span class="num">20</span>) <span class="cm">// copy at most 1 MiB</span></code>
+  <span class="desc">Like Copy but stops after n bytes; returns io.EOF if src had fewer bytes than n.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func io.CopyBuffer(dst io.Writer, src io.Reader, buf []byte) (written int64, err error)</code>
+  <code class="snippet">buf := <span class="fn">make</span>([]<span class="ty">byte</span>, <span class="num">64</span>&lt;&lt;<span class="num">10</span>); io.<span class="fn">CopyBuffer</span>(dst, src, buf) <span class="cm">// reuse buf across calls</span></code>
+  <span class="desc">Like Copy but uses the provided buffer; pass a pre-allocated slice to avoid per-call allocations in tight loops.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func io.ReadAll(r io.Reader) ([]byte, error)</code>
+  <code class="snippet">body, err := io.<span class="fn">ReadAll</span>(resp.Body)</code>
+  <span class="desc">Reads until EOF or error; don't use on untrusted network streams without a LimitReader — a malicious peer can exhaust memory.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func io.WriteString(w io.Writer, s string) (n int, err error)</code>
+  <code class="snippet">io.<span class="fn">WriteString</span>(w, <span class="str">"Content-Type: application/json\r\n"</span>)</code>
+  <span class="desc">Writes a string to w without converting to []byte if w implements io.StringWriter; otherwise falls back to Write([]byte(s)).</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func io.Pipe() (*io.PipeReader, *io.PipeWriter)</code>
+  <code class="snippet">pr, pw := io.<span class="fn">Pipe</span>(); <span class="kw">go</span> json.<span class="fn">NewEncoder</span>(pw).<span class="fn">Encode</span>(v); io.<span class="fn">Copy</span>(dst, pr)</code>
+  <span class="desc">Synchronous, in-memory pipe connecting a Writer to a Reader with no buffering; use when you need to stream encode/compress without staging a []byte.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func io.LimitReader(r io.Reader, n int64) io.Reader</code>
+  <code class="snippet">safe := io.<span class="fn">LimitReader</span>(resp.Body, <span class="num">10</span>&lt;&lt;<span class="num">20</span>); io.<span class="fn">ReadAll</span>(safe) <span class="cm">// cap at 10 MiB</span></code>
+  <span class="desc">Wraps r to return EOF after n bytes; essential safety guard before ReadAll on network responses or uploaded files.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func io.MultiReader(readers ...io.Reader) io.Reader</code>
+  <code class="snippet">body := io.<span class="fn">MultiReader</span>(strings.<span class="fn">NewReader</span>(header), f, strings.<span class="fn">NewReader</span>(footer))</code>
+  <span class="desc">Concatenates multiple readers into one; reads drain them in order — useful for prepending headers to a file stream without copying.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func io.MultiWriter(writers ...io.Writer) io.Writer</code>
+  <code class="snippet">mw := io.<span class="fn">MultiWriter</span>(os.Stdout, logFile); fmt.<span class="fn">Fprintln</span>(mw, <span class="str">"server started"</span>)</code>
+  <span class="desc">Fans out writes to all writers simultaneously; write fails if any writer fails, so combine with a resilient writer if some destinations are optional.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func io.TeeReader(r io.Reader, w io.Writer) io.Reader</code>
+  <code class="snippet">body := io.<span class="fn">TeeReader</span>(resp.Body, &amp;buf); json.<span class="fn">NewDecoder</span>(body).<span class="fn">Decode</span>(&amp;v) <span class="cm">// buf has raw bytes</span></code>
+  <span class="desc">Returns a Reader that writes everything it reads into w; use to log or hash a stream while consuming it.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">var io.Discard io.Writer</code>
+  <code class="snippet">io.<span class="fn">Copy</span>(io.Discard, resp.Body) <span class="cm">// drain body so connection can be reused</span></code>
+  <span class="desc">A writer that discards all data; drain HTTP response bodies you don't need so the underlying TCP connection returns to the pool.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func io.NopCloser(r io.Reader) io.ReadCloser</code>
+  <code class="snippet">req.Body = io.<span class="fn">NopCloser</span>(strings.<span class="fn">NewReader</span>(payload)) <span class="cm">// no-op Close()</span></code>
+  <span class="desc">Wraps a Reader with a no-op Close method to satisfy interfaces expecting io.ReadCloser; commonly used when building synthetic http.Request bodies in tests.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">var io.EOF = errors.New("EOF")</code>
+  <code class="snippet"><span class="kw">if</span> err == io.EOF { <span class="kw">return</span> } <span class="cm">// normal end-of-stream, not an error</span></code>
+  <span class="desc">The sentinel value Read returns when the stream is cleanly exhausted; never wrap or discard it — check with == not errors.Is.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func io.ReadFull(r io.Reader, buf []byte) (n int, err error)</code>
+  <code class="snippet">_, err = io.<span class="fn">ReadFull</span>(conn, header[:<span class="num">8</span>]) <span class="cm">// exactly 8 bytes or error</span></code>
+  <span class="desc">Reads exactly len(buf) bytes; returns ErrUnexpectedEOF if the stream ends before the buffer is full — use for binary protocol framing.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func io.ReadAtLeast(r io.Reader, buf []byte, min int) (n int, err error)</code>
+  <code class="snippet">n, err = io.<span class="fn">ReadAtLeast</span>(r, buf, <span class="num">1</span>) <span class="cm">// at least 1 byte, up to len(buf)</span></code>
+  <span class="desc">Like ReadFull but accepts a minimum count less than len(buf); useful when you need some data but can work with a partial buffer fill.</span>
+</div>
+
 <h2 class="section-heading" id="go-fs">io/fs</h2>
+
+<div class="entry">
+  <code class="sig">type fs.FS interface { Open(name string) (fs.File, error) }</code>
+  <code class="snippet"><span class="kw">func</span> <span class="fn">loadTemplates</span>(fsys <span class="ty">fs.FS</span>) { tmpl.<span class="fn">ParseFS</span>(fsys, <span class="str">"templates/*.html"</span>) }</code>
+  <span class="desc">The root abstraction for any file tree — OS directory, zip archive, or embed.FS; accept fs.FS in function parameters to make code testable with fstest.MapFS.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">type fs.ReadFileFS interface { fs.FS; ReadFile(name string) ([]byte, error) }</code>
+  <code class="snippet"><span class="kw">if</span> rfs, ok := fsys.(<span class="ty">fs.ReadFileFS</span>); ok { data, _ = rfs.<span class="fn">ReadFile</span>(<span class="str">"config.yaml"</span>) }</code>
+  <span class="desc">Optional FS extension for efficient whole-file reads; embed.FS and os.DirFS implement it — fs.ReadFile falls back to Open+Read if absent.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">type fs.StatFS interface { fs.FS; Stat(name string) (fs.FileInfo, error) }</code>
+  <code class="snippet"><span class="kw">if</span> sfs, ok := fsys.(<span class="ty">fs.StatFS</span>); ok { info, _ = sfs.<span class="fn">Stat</span>(<span class="str">"assets/logo.svg"</span>) }</code>
+  <span class="desc">Optional FS extension for metadata without opening; use a type assertion before calling to avoid the Open+Stat round-trip on implementations that support it natively.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func fs.WalkDir(fsys fs.FS, root string, fn fs.WalkDirFunc) error</code>
+  <code class="snippet">fs.<span class="fn">WalkDir</span>(fsys, <span class="str">"."</span>, <span class="kw">func</span>(p <span class="ty">string</span>, d <span class="ty">fs.DirEntry</span>, err <span class="ty">error</span>) <span class="ty">error</span> {
+  <span class="kw">if</span> err != <span class="kw">nil</span> { <span class="kw">return</span> err }; <span class="kw">if</span> !d.<span class="fn">IsDir</span>() { <span class="fn">index</span>(p) }; <span class="kw">return</span> <span class="kw">nil</span> })</code>
+  <span class="desc">Walks the tree rooted at root in lexical order; return fs.SkipDir from the callback to skip a directory, return fs.SkipAll to stop the entire walk.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func fs.ReadFile(fsys fs.FS, name string) ([]byte, error)</code>
+  <code class="snippet">data, err := fs.<span class="fn">ReadFile</span>(fsys, <span class="str">"migrations/001_init.sql"</span>)</code>
+  <span class="desc">Reads an entire file from any fs.FS; delegates to ReadFileFS.ReadFile if available, otherwise falls back to Open+Read+Close.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func fs.Glob(fsys fs.FS, pattern string) (matches []string, err error)</code>
+  <code class="snippet">htmlFiles, _ := fs.<span class="fn">Glob</span>(fsys, <span class="str">"templates/*.html"</span>)</code>
+  <span class="desc">Returns paths matching the shell pattern within the FS; same syntax as filepath.Match — useful for discovering embedded assets at startup.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">type fs.DirEntry interface { Name() string; IsDir() bool; Type() FileMode; Info() (FileInfo, error) }</code>
+  <code class="snippet">entries, _ := fs.<span class="fn">ReadDir</span>(fsys, <span class="str">"migrations"</span>); <span class="kw">for</span> _, e := <span class="kw">range</span> entries { fmt.<span class="fn">Println</span>(e.<span class="fn">Name</span>()) }</code>
+  <span class="desc">Lightweight directory entry; call Info() only when you need full FileInfo — avoids a stat syscall on implementations that cache basic metadata.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func fs.Sub(fsys fs.FS, dir string) (fs.FS, error)</code>
+  <code class="snippet">staticFS, _ := fs.<span class="fn">Sub</span>(assets, <span class="str">"static"</span>); http.<span class="fn">Handle</span>(<span class="str">"/static/"</span>, http.<span class="fn">FileServer</span>(http.<span class="fn">FS</span>(staticFS)))</code>
+  <span class="desc">Returns a new FS rooted at dir within fsys; use to expose a subdirectory of embed.FS to http.FileServer without revealing the full tree.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func fs.ReadDir(fsys fs.FS, name string) ([]fs.DirEntry, error)</code>
+  <code class="snippet">entries, err := fs.<span class="fn">ReadDir</span>(fsys, <span class="str">"migrations"</span>) <span class="cm">// sorted by name</span></code>
+  <span class="desc">Returns sorted directory entries; simpler than WalkDir when you only need one directory level without recursion.</span>
+</div>
 
 <h2 class="section-heading" id="go-os">os</h2>
 
+<div class="entry">
+  <code class="sig">func os.Open(name string) (*os.File, error)</code>
+  <code class="snippet">f, err := os.<span class="fn">Open</span>(<span class="str">"access.log"</span>); <span class="kw">if</span> err != <span class="kw">nil</span> { <span class="kw">return</span> err }; <span class="kw">defer</span> f.<span class="fn">Close</span>()</code>
+  <span class="desc">Opens a file read-only; always defer Close immediately after checking the error, not inside the if block, so the defer runs on all code paths.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func os.Create(name string) (*os.File, error)</code>
+  <code class="snippet">f, err := os.<span class="fn">Create</span>(<span class="str">"report.json"</span>); <span class="kw">if</span> err != <span class="kw">nil</span> { <span class="kw">return</span> err }; <span class="kw">defer</span> f.<span class="fn">Close</span>()</code>
+  <span class="desc">Creates or truncates a file for writing with mode 0666 (before umask); use OpenFile for append, exclusive create, or custom permissions.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func os.OpenFile(name string, flag int, perm os.FileMode) (*os.File, error)</code>
+  <code class="snippet">f, err := os.<span class="fn">OpenFile</span>(<span class="str">"app.log"</span>, os.O_APPEND|os.O_CREATE|os.O_WRONLY, <span class="num">0644</span>)</code>
+  <span class="desc">General-purpose open with explicit flags: O_RDONLY, O_WRONLY, O_RDWR combined with O_CREATE, O_APPEND, O_EXCL, O_TRUNC.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func os.ReadFile(name string) ([]byte, error)</code>
+  <code class="snippet">data, err := os.<span class="fn">ReadFile</span>(<span class="str">"config.yaml"</span>); <span class="kw">if</span> err != <span class="kw">nil</span> { <span class="kw">return</span> fmt.<span class="fn">Errorf</span>(<span class="str">"read config: %w"</span>, err) }</code>
+  <span class="desc">Reads a whole file into memory in one call; use for config files and small assets, not streaming large files.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func os.WriteFile(name string, data []byte, perm os.FileMode) error</code>
+  <code class="snippet">err := os.<span class="fn">WriteFile</span>(<span class="str">"state.json"</span>, buf.<span class="fn">Bytes</span>(), <span class="num">0600</span>)</code>
+  <span class="desc">Atomically creates or replaces a file; for safe atomic writes, write to a temp file and rename — WriteFile itself is not crash-safe.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func os.MkdirAll(path string, perm os.FileMode) error</code>
+  <code class="snippet">err := os.<span class="fn">MkdirAll</span>(filepath.<span class="fn">Join</span>(cacheDir, <span class="str">"thumbnails"</span>), <span class="num">0755</span>)</code>
+  <span class="desc">Creates a directory and all missing parents; does not error if the path already exists — use instead of Mkdir for setup code.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func os.Remove(name string) error / func os.RemoveAll(path string) error</code>
+  <code class="snippet">os.<span class="fn">Remove</span>(<span class="str">"upload.tmp"</span>); os.<span class="fn">RemoveAll</span>(filepath.<span class="fn">Join</span>(workDir, jobID))</code>
+  <span class="desc">Remove deletes one file or empty directory; RemoveAll recursively deletes a tree and returns nil if path doesn't exist.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func os.Stat(name string) (os.FileInfo, error) / func os.Lstat(name string) (os.FileInfo, error)</code>
+  <code class="snippet">info, err := os.<span class="fn">Stat</span>(<span class="str">"data.db"</span>); <span class="kw">if</span> os.<span class="fn">IsNotExist</span>(err) { <span class="cm">/* create */</span> }</code>
+  <span class="desc">Stat follows symlinks; Lstat returns info about the symlink itself. Use errors.Is(err, fs.ErrNotExist) for portable not-found checks.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func os.Getenv(key string) string / func os.LookupEnv(key string) (string, bool)</code>
+  <code class="snippet">dsn, ok := os.<span class="fn">LookupEnv</span>(<span class="str">"DATABASE_URL"</span>); <span class="kw">if</span> !ok { <span class="kw">return</span> fmt.<span class="fn">Errorf</span>(<span class="str">"DATABASE_URL not set"</span>) }</code>
+  <span class="desc">Prefer LookupEnv over Getenv when an empty string is a valid value and you need to distinguish "unset" from "empty".</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func os.Setenv(key, value string) error</code>
+  <code class="snippet">os.<span class="fn">Setenv</span>(<span class="str">"GOOGLE_APPLICATION_CREDENTIALS"</span>, credPath)</code>
+  <span class="desc">Sets an environment variable for the current process; changes are visible to child processes started after the call.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func os.Exit(code int)</code>
+  <code class="snippet"><span class="kw">if</span> err := <span class="fn">run</span>(); err != <span class="kw">nil</span> { fmt.<span class="fn">Fprintln</span>(os.Stderr, err); os.<span class="fn">Exit</span>(<span class="num">1</span>) }</code>
+  <span class="desc">Terminates the process immediately — deferred functions do NOT run. Only call from main(); use log.Fatal in tests or defer-heavy code.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">var os.Args []string / os.Stdin *os.File / os.Stdout *os.File / os.Stderr *os.File</code>
+  <code class="snippet">fmt.<span class="fn">Fprintln</span>(os.Stderr, <span class="str">"usage:"</span>, os.Args[<span class="num">0</span>], <span class="str">"[--port PORT]"</span>)</code>
+  <span class="desc">os.Args[0] is the program name; os.Stdin/Stdout/Stderr are pre-opened *os.File values implementing io.Reader/Writer.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func os.Rename(oldpath, newpath string) error</code>
+  <code class="snippet">err := os.<span class="fn">Rename</span>(tmpPath, <span class="str">"config.yaml"</span>) <span class="cm">// atomic replace on same filesystem</span></code>
+  <span class="desc">Atomic file replace on the same filesystem; the standard pattern for safe writes is WriteFile→tmpfile, Rename→target, Remove→tmp on error.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func os.CreateTemp(dir, pattern string) (*os.File, error)</code>
+  <code class="snippet">tmp, err := os.<span class="fn">CreateTemp</span>(<span class="str">""</span>, <span class="str">"upload-*.bin"</span>); <span class="kw">defer</span> os.<span class="fn">Remove</span>(tmp.<span class="fn">Name</span>())</code>
+  <span class="desc">Creates a uniquely named temp file; pass "" for dir to use os.TempDir(). Always defer Remove(tmp.Name()) for cleanup.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">*os.File methods: Read / Write / Close / Seek / ReadAt / WriteAt</code>
+  <code class="snippet">f.<span class="fn">Seek</span>(<span class="num">0</span>, io.SeekStart); io.<span class="fn">Copy</span>(w, f) <span class="cm">// rewind after writing, then serve</span></code>
+  <span class="desc">*os.File implements io.Reader, io.Writer, io.Seeker, io.ReaderAt, io.WriterAt; Seek(0, io.SeekStart) rewinds to the beginning.</span>
+</div>
+
 <h2 class="section-heading" id="go-exec">os/exec</h2>
+
+<div class="entry">
+  <code class="sig">func exec.Command(name string, arg ...string) *exec.Cmd</code>
+  <code class="snippet">out, err := exec.<span class="fn">Command</span>(<span class="str">"git"</span>, <span class="str">"log"</span>, <span class="str">"--oneline"</span>, <span class="str">"-10"</span>).<span class="fn">Output</span>()</code>
+  <span class="desc">Creates a Cmd; name is looked up via PATH. In server code always use CommandContext so the subprocess is killed when the request is cancelled.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func exec.CommandContext(ctx context.Context, name string, arg ...string) *exec.Cmd</code>
+  <code class="snippet">out, err := exec.<span class="fn">CommandContext</span>(ctx, <span class="str">"git"</span>, <span class="str">"rev-parse"</span>, <span class="str">"HEAD"</span>).<span class="fn">Output</span>()</code>
+  <span class="desc">Like Command but kills the process when ctx is cancelled; always prefer over Command in server code.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func (*exec.Cmd) Output() ([]byte, error) / CombinedOutput() ([]byte, error)</code>
+  <code class="snippet">out, err := exec.<span class="fn">CommandContext</span>(ctx, <span class="str">"ffprobe"</span>, <span class="str">"-i"</span>, path).<span class="fn">CombinedOutput</span>()</code>
+  <span class="desc">Output returns stdout only; CombinedOutput merges stdout and stderr — useful when the tool writes diagnostics to stderr that you need on error.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func (*exec.Cmd) Run() error / Start() error + Wait() error</code>
+  <code class="snippet">cmd := exec.<span class="fn">CommandContext</span>(ctx, <span class="str">"ffmpeg"</span>, args...); cmd.Stdout = w; cmd.<span class="fn">Start</span>(); <span class="kw">defer</span> cmd.<span class="fn">Wait</span>()</code>
+  <span class="desc">Run = Start + Wait in one call; use Start/Wait separately when you need to stream output or interact with the process while it runs.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Cmd.Stdin io.Reader / Cmd.Stdout io.Writer / Cmd.Stderr io.Writer</code>
+  <code class="snippet">cmd.Stdin = strings.<span class="fn">NewReader</span>(input); cmd.Stdout = &amp;outBuf; cmd.Stderr = os.Stderr</code>
+  <span class="desc">Wire subprocess I/O to any io.Reader/Writer; set Stderr=os.Stderr during development to see tool errors, then capture it in production.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func exec.LookPath(file string) (string, error)</code>
+  <code class="snippet">ffmpegPath, err := exec.<span class="fn">LookPath</span>(<span class="str">"ffmpeg"</span>); <span class="kw">if</span> err != <span class="kw">nil</span> { <span class="kw">return</span> fmt.<span class="fn">Errorf</span>(<span class="str">"ffmpeg not found: %w"</span>, err) }</code>
+  <span class="desc">Searches PATH for an executable; call at startup to fail fast if required tools are missing rather than discovering it at request time.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">type exec.ExitError struct { *os.ProcessState }</code>
+  <code class="snippet"><span class="kw">var</span> exitErr *<span class="ty">exec.ExitError</span>; <span class="kw">if</span> errors.<span class="fn">As</span>(err, &amp;exitErr) { log.<span class="fn">Printf</span>(<span class="str">"exit %d: %s"</span>, exitErr.<span class="fn">ExitCode</span>(), exitErr.Stderr) }</code>
+  <span class="desc">Returned by Run/Output/Wait when the command exits non-zero; ExitCode() gives the status, Stderr field has captured stderr when using Output().</span>
+</div>
 
 <h2 class="section-heading" id="go-bufio">bufio</h2>
 
+<div class="entry">
+  <code class="sig">func bufio.NewReader(rd io.Reader) *bufio.Reader</code>
+  <code class="snippet">r := bufio.<span class="fn">NewReader</span>(conn) <span class="cm">// 4096-byte buffer by default</span></code>
+  <span class="desc">Wraps a Reader with a buffer; reduces syscall count when reading many small chunks from a net.Conn or os.File.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func bufio.NewWriter(w io.Writer) *bufio.Writer</code>
+  <code class="snippet">bw := bufio.<span class="fn">NewWriter</span>(conn); fmt.<span class="fn">Fprintln</span>(bw, <span class="str">"HTTP/1.1 200 OK"</span>); bw.<span class="fn">Flush</span>()</code>
+  <span class="desc">Wraps a Writer with a buffer; always call Flush() when done — unflushed data is silently lost if you forget.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">type bufio.Scanner — Scan() bool, Text() string, Err() error, Split(SplitFunc)</code>
+  <code class="snippet">sc := bufio.<span class="fn">NewScanner</span>(f); <span class="kw">for</span> sc.<span class="fn">Scan</span>() { <span class="fn">process</span>(sc.<span class="fn">Text</span>()) }; <span class="kw">return</span> sc.<span class="fn">Err</span>()</code>
+  <span class="desc">Line-by-line file reader; always check Err() after the loop — Scan returning false doesn't mean no error.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func bufio.NewScanner(r io.Reader) *bufio.Scanner</code>
+  <code class="snippet">sc := bufio.<span class="fn">NewScanner</span>(f); sc.<span class="fn">Buffer</span>(<span class="fn">make</span>([]<span class="ty">byte</span>, <span class="num">1</span>&lt;&lt;<span class="num">20</span>), <span class="num">1</span>&lt;&lt;<span class="num">20</span>) <span class="cm">// 1 MiB lines</span></code>
+  <span class="desc">Default buffer is 64 KiB; call Buffer() before the first Scan() to handle longer lines — otherwise Scan returns false with ErrTooLong.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">var bufio.ScanLines / bufio.ScanWords / bufio.ScanRunes / bufio.ScanBytes SplitFunc</code>
+  <code class="snippet">sc.<span class="fn">Split</span>(bufio.ScanWords); <span class="kw">for</span> sc.<span class="fn">Scan</span>() { words = <span class="fn">append</span>(words, sc.<span class="fn">Text</span>()) }</code>
+  <span class="desc">Built-in split functions; pass to Scanner.Split() before the loop. ScanLines strips the newline; ScanWords splits on whitespace.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func (*bufio.Reader) ReadString(delim byte) (string, error)</code>
+  <code class="snippet">line, err := r.<span class="fn">ReadString</span>(<span class="str">'\n'</span>) <span class="cm">// includes the delimiter</span></code>
+  <span class="desc">Reads until the delimiter (inclusive); returns the partial string AND an error if EOF is hit before the delimiter — handle both.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func (*bufio.Reader) ReadLine() (line []byte, isPrefix bool, err error)</code>
+  <code class="snippet"><span class="kw">for</span> { l, more, err := r.<span class="fn">ReadLine</span>(); buf = <span class="fn">append</span>(buf, l...); <span class="kw">if</span> !more { <span class="kw">break</span> } }</code>
+  <span class="desc">Low-level line reader; isPrefix is true if the line exceeded the buffer — loop to collect all parts. Prefer Scanner.Scan for typical use.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func (*bufio.Writer) Flush() error / WriteString(s string) (int, error)</code>
+  <code class="snippet">bw.<span class="fn">WriteString</span>(line); bw.<span class="fn">WriteByte</span>(<span class="str">'\n'</span>); <span class="kw">if</span> done { bw.<span class="fn">Flush</span>() }</code>
+  <span class="desc">WriteString avoids a string→[]byte allocation; Flush must be called explicitly — bufio.Writer does not flush on Close or GC.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">type bufio.ReadWriter struct { *Reader; *Writer }</code>
+  <code class="snippet">rw := bufio.<span class="fn">NewReadWriter</span>(bufio.<span class="fn">NewReader</span>(conn), bufio.<span class="fn">NewWriter</span>(conn))</code>
+  <span class="desc">Combines a buffered Reader and Writer over the same underlying connection; used when a protocol requires both buffered reads and writes (e.g. HTTP/1.1 hijack).</span>
+</div>
+
 <h2 class="section-heading" id="go-filepath">path/filepath</h2>
 
+<div class="entry">
+  <code class="sig">func filepath.Join(elem ...string) string</code>
+  <code class="snippet">cfgPath := filepath.<span class="fn">Join</span>(os.<span class="fn">UserHomeDir</span>(), <span class="str">".config"</span>, <span class="str">"app"</span>, <span class="str">"config.yaml"</span>)</code>
+  <span class="desc">Joins path elements with the OS separator and cleans the result; handles empty elements and double slashes — never concatenate paths with string +.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func filepath.Base(path string) string / filepath.Dir(path string) string</code>
+  <code class="snippet">dir, file := filepath.<span class="fn">Dir</span>(p), filepath.<span class="fn">Base</span>(p) <span class="cm">// "/var/log/app.log" → "/var/log", "app.log"</span></code>
+  <span class="desc">Base returns the last element; Dir returns everything before the last separator. Both handle trailing slashes consistently.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func filepath.Ext(path string) string</code>
+  <code class="snippet">ext := filepath.<span class="fn">Ext</span>(<span class="str">"avatar.jpg"</span>) <span class="cm">// ".jpg"</span></code>
+  <span class="desc">Returns the file extension including the leading dot; returns "" for paths with no dot in the final element.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func filepath.Abs(path string) (string, error)</code>
+  <code class="snippet">abs, err := filepath.<span class="fn">Abs</span>(flagDataDir) <span class="cm">// resolve relative CLI flag to absolute</span></code>
+  <span class="desc">Returns the absolute path by joining with the working directory; call early in main() on user-provided paths so the rest of the code sees consistent absolute paths.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func filepath.Rel(basepath, targpath string) (string, error)</code>
+  <code class="snippet">rel, err := filepath.<span class="fn">Rel</span>(root, fullPath) <span class="cm">// "/app", "/app/static/x.css" → "static/x.css"</span></code>
+  <span class="desc">Returns a relative path from base to target; errors if the paths can't be made relative (different Windows volumes).</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func filepath.Clean(path string) string</code>
+  <code class="snippet"><span class="kw">if</span> !strings.<span class="fn">HasPrefix</span>(filepath.<span class="fn">Clean</span>(p), root) { <span class="kw">return</span> fmt.<span class="fn">Errorf</span>(<span class="str">"path traversal"</span>) }</code>
+  <span class="desc">Lexically cleans a path by resolving . and ..; apply before checking that a user-supplied path stays within a root directory.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func filepath.IsAbs(path string) bool</code>
+  <code class="snippet"><span class="kw">if</span> !filepath.<span class="fn">IsAbs</span>(p) { p = filepath.<span class="fn">Join</span>(workDir, p) }</code>
+  <span class="desc">Reports whether the path is absolute; use to normalize user input that could be either relative or absolute.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func filepath.WalkDir(root string, fn fs.WalkDirFunc) error</code>
+  <code class="snippet">filepath.<span class="fn">WalkDir</span>(<span class="str">"./migrations"</span>, <span class="kw">func</span>(p <span class="ty">string</span>, d <span class="ty">fs.DirEntry</span>, err <span class="ty">error</span>) <span class="ty">error</span> {
+  <span class="kw">if</span> filepath.<span class="fn">Ext</span>(p) == <span class="str">".sql"</span> { files = <span class="fn">append</span>(files, p) }; <span class="kw">return</span> <span class="kw">nil</span> })</code>
+  <span class="desc">Walks the OS directory tree; prefer over the older filepath.Walk which calls Lstat on every entry — WalkDir is faster because DirEntry avoids extra syscalls.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func filepath.Glob(pattern string) (matches []string, err error)</code>
+  <code class="snippet">configs, _ := filepath.<span class="fn">Glob</span>(<span class="str">"/etc/myapp/*.conf"</span>)</code>
+  <span class="desc">Returns filesystem paths matching the shell pattern; does not recurse — use WalkDir for deep searches.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func filepath.Match(pattern, name string) (matched bool, err error)</code>
+  <code class="snippet">ok, _ := filepath.<span class="fn">Match</span>(<span class="str">"*.log"</span>, filepath.<span class="fn">Base</span>(p))</code>
+  <span class="desc">Shell-style pattern matching for a single path element; supports *, ?, [range] but not **. Use in WalkDir callbacks to filter files.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func filepath.FromSlash(path string) string / filepath.ToSlash(path string) string</code>
+  <code class="snippet">osPath := filepath.<span class="fn">FromSlash</span>(<span class="str">"static/css/main.css"</span>) <span class="cm">// forward→OS separator</span></code>
+  <span class="desc">Convert between forward-slash paths (URLs, embed.FS) and OS paths; necessary on Windows where the separator is backslash.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func filepath.EvalSymlinks(path string) (string, error)</code>
+  <code class="snippet">real, err := filepath.<span class="fn">EvalSymlinks</span>(p) <span class="cm">// resolve symlinks before security checks</span></code>
+  <span class="desc">Resolves all symlinks and returns the canonical path; call before checking that a path is within a safe root to prevent symlink traversal attacks.</span>
+</div>
+
 <h2 class="section-heading" id="go-embed">embed</h2>
+
+<div class="entry">
+  <code class="sig">//go:embed &lt;path&gt;  →  var content string / var data []byte</code>
+  <code class="snippet"><span class="cm">//go:embed schema.sql</span>
+<span class="kw">var</span> schema <span class="ty">string</span> <span class="cm">// populated at compile time</span></code>
+  <span class="desc">Embeds a single file as a string or []byte; the directive must appear on the line immediately before the var declaration with no blank lines between.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">//go:embed &lt;pattern&gt;  →  var assets embed.FS</code>
+  <code class="snippet"><span class="cm">//go:embed static/* templates</span>
+<span class="kw">var</span> assets <span class="ty">embed.FS</span>; http.<span class="fn">Handle</span>(<span class="str">"/static/"</span>, http.<span class="fn">FileServer</span>(http.<span class="fn">FS</span>(assets)))</code>
+  <span class="desc">Embeds a directory tree into the binary at compile time; serve it directly via http.FS without extracting.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">embed.FS.Open(name string) / ReadFile(name string) / ReadDir(name string)</code>
+  <code class="snippet">data, err := assets.<span class="fn">ReadFile</span>(<span class="str">"templates/index.html"</span>)
+entries, _ := assets.<span class="fn">ReadDir</span>(<span class="str">"migrations"</span>); <span class="kw">for</span> _, e := <span class="kw">range</span> entries { <span class="cm">/* run migration */</span> }</code>
+  <span class="desc">embed.FS implements fs.FS, fs.ReadFileFS, and fs.ReadDirFS; paths always use forward slashes regardless of OS.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Serving embedded files over HTTP via http.FS + fs.Sub</code>
+  <code class="snippet">sub, _ := fs.<span class="fn">Sub</span>(assets, <span class="str">"static"</span>)
+http.<span class="fn">Handle</span>(<span class="str">"/static/"</span>, http.<span class="fn">StripPrefix</span>(<span class="str">"/static/"</span>, http.<span class="fn">FileServer</span>(http.<span class="fn">FS</span>(sub))))</code>
+  <span class="desc">Use fs.Sub to expose only a subdirectory; http.FS wraps any fs.FS into an http.FileSystem so the standard file server serves embedded assets with correct MIME types.</span>
+</div>
 
 <h2 class="section-heading" id="go-time">time</h2>
 
