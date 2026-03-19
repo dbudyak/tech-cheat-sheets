@@ -217,6 +217,7 @@ Syntax highlight mapping for Go:
 - [ ] Go tab button added to `.lang-tabs`
 - [ ] Go sidebar `<div class="cat-list" data-lang="go">` with 22 package links (full import paths for multi-segment packages)
 - [ ] Tab-switch JS extended to toggle `.cat-list` using `''` reset value
+- [ ] Tab-switch JS resets `#main` scroll position to 0 on every tab switch
 - [ ] `<section id="go" class="lang-section">` with 22 `<h2>` package sections
 - [ ] ≥220 entries across all 22 packages
 - [ ] Coverage comments on every `<h2>` (≥90% per package via context7)
