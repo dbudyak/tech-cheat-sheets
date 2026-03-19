@@ -69,14 +69,23 @@ Then add a new Go sidebar block immediately after:
   <a class="cat-link" href="#go-sync">sync</a>
   <a class="cat-link" href="#go-atomic">sync/atomic</a>
   <a class="cat-link" href="#go-math">math</a>
+  <a class="cat-link" href="#go-net">net</a>
   <a class="cat-link" href="#go-http">net/http</a>
+  <a class="cat-link" href="#go-httptest">net/http/httptest</a>
+  <a class="cat-link" href="#go-url">net/url</a>
   <a class="cat-link" href="#go-json">encoding/json</a>
+  <a class="cat-link" href="#go-xml">encoding/xml</a>
+  <a class="cat-link" href="#go-csv">encoding/csv</a>
+  <a class="cat-link" href="#go-fs">io/fs</a>
+  <a class="cat-link" href="#go-embed">embed</a>
+  <a class="cat-link" href="#go-exec">os/exec</a>
+  <a class="cat-link" href="#go-runtime">runtime</a>
   <a class="cat-link" href="#go-slog">log/slog</a>
   <a class="cat-link" href="#go-testing">testing</a>
 </div>
 ```
 
-Note: use the full import path as the link label for multi-segment packages (`path/filepath`, `sync/atomic`, `net/http`, `encoding/json`, `log/slog`) to avoid ambiguity.
+Note: use the full import path as the link label for multi-segment packages to avoid ambiguity.
 
 ### JS Tab Switcher Change
 
@@ -124,7 +133,7 @@ No new CSS needed. All existing classes reuse cleanly:
 
 ## Content Structure
 
-### Packages (22 total, Go 1.21+)
+### Packages (31 total, Go 1.21+)
 
 Each package is one `<h2 class="section-heading" id="go-{pkg}">` section inside `<section id="go">`.
 
@@ -140,16 +149,25 @@ Each package is one `<h2 class="section-heading" id="go-{pkg}">` section inside 
 | `go-sort` | `sort` | Slice/SliceStable/SliceIsSorted, Search/SearchInts, Strings/Ints/Float64s, Reverse, Interface (Len/Less/Swap) |
 | `go-errors` | `errors` | New, Is, As, Unwrap, Join |
 | `go-io` | `io` | Reader/Writer/Closer/ReadWriter interfaces, Copy/CopyN/CopyBuffer, ReadAll, WriteString, Pipe, LimitReader, MultiReader/MultiWriter, TeeReader, Discard, NopCloser, EOF, ReadFull, ReadAtLeast, Seeker |
+| `go-fs` | `io/fs` | FS/ReadFileFS/StatFS interfaces, WalkDir/WalkDirFunc, ReadFile, Glob, DirEntry, FileInfo, Sub, ReadDir |
 | `go-os` | `os` | Open/Create/OpenFile, ReadFile/WriteFile, MkdirAll/Mkdir, Remove/RemoveAll, Stat/Lstat, Getenv/Setenv/LookupEnv, Exit, Args, Stdin/Stdout/Stderr, Rename, TempDir/CreateTemp, File.Close/Read/Write/Seek |
+| `go-exec` | `os/exec` | Command/CommandContext, Cmd.Output/Run/Start/Wait, Cmd.Stdin/Stdout/Stderr, Cmd.CombinedOutput, LookPath, ExitError |
 | `go-bufio` | `bufio` | NewReader/NewWriter, Scanner/NewScanner, ScanLines/ScanWords/ScanRunes, ReadString/ReadLine/ReadBytes, Flush, Writer.WriteString, ReadWriter |
 | `go-filepath` | `path/filepath` | Join, Base/Dir/Ext, Abs/Rel, Clean, IsAbs, WalkDir/Walk, Glob, Match, FromSlash/ToSlash, EvalSymlinks |
+| `go-embed` | `embed` | `//go:embed` directive, embed.FS (Open/ReadFile/ReadDir), embedding single files/strings/bytes with `//go:embed` + typed var |
 | `go-time` | `time` | Now/Since/Until, Parse/Format (reference time `2006-01-02`), Duration constants, Add/Sub, Sleep, After/NewTimer/NewTicker/AfterFunc, Truncate/Round, Unix/UnixMilli, Location/LoadLocation/UTC/Local |
 | `go-context` | `context` | Background/TODO, WithCancel/WithCancelCause, WithTimeout/WithDeadline, WithValue, Done/Err/Cause, Value, AfterFunc (1.21) |
 | `go-sync` | `sync` | Mutex (Lock/Unlock/TryLock), RWMutex (RLock/RUnlock), WaitGroup (Add/Done/Wait), Once/OnceFunc/OnceValue (1.21), Map (Load/Store/LoadOrStore/Delete/Range/Swap), Pool (Get/Put), Cond |
 | `go-atomic` | `sync/atomic` | Int32/Int64/Uint32/Uint64/Bool/Uintptr typed atomics (Load/Store/Add/Swap/CompareAndSwap), Pointer[T], Value (Load/Store/Swap/CompareAndSwap) |
 | `go-math` | `math` + `math/rand/v2` *(combined section, label "math")* | Abs/Ceil/Floor/Round/Sqrt/Pow/Log/Log2/Log10/Exp, Min/Max, Inf/IsInf/IsNaN, Pi/E constants; rand.IntN/rand.Float64/rand.N/rand.New/rand.NewPCG |
-| `go-http` | `net/http` | Get/Post/Head, NewRequest/NewRequestWithContext, Client/Do, Handle/HandleFunc, NewServeMux, ListenAndServe, Request (Method/URL/Header/Body/Context/FormValue), ResponseWriter (Header/Write/WriteHeader), http.Error, FileServer/StripPrefix, status constants, Cookie/SetCookie, http.DefaultClient, Transport |
+| `go-net` | `net` | Dial/DialTCP/DialUDP, Listen/ListenTCP, Accept, Conn (Read/Write/Close), Listener, LookupHost/LookupIP/LookupMX, ParseIP, IP/IPNet, ResolveTCPAddr |
+| `go-http` | `net/http` | Get/Post/Head, NewRequest/NewRequestWithContext, Client/Do, Handle/HandleFunc, NewServeMux, ListenAndServe, Request (Method/URL/Header/Body/Context/FormValue), ResponseWriter (Header/Write/WriteHeader), http.Error, FileServer/StripPrefix, status constants, Cookie/SetCookie, Transport |
+| `go-httptest` | `net/http/httptest` | NewRecorder (ResponseRecorder.Body/Code/Result), NewServer/NewTLSServer (URL/Client/Close), NewUnstartedServer |
+| `go-url` | `net/url` | Parse/ParseRequestURI, URL (Scheme/Host/Path/RawQuery/Fragment), Values (Get/Set/Add/Encode), QueryEscape/QueryUnescape, JoinPath |
 | `go-json` | `encoding/json` | Marshal/Unmarshal, MarshalIndent, NewEncoder/Encode, NewDecoder/Decode, RawMessage, Number, struct tags (`omitempty`/`-`/`string`), MarshalJSON/UnmarshalJSON interfaces, Decoder.DisallowUnknownFields |
+| `go-xml` | `encoding/xml` | Marshal/Unmarshal, MarshalIndent, NewEncoder/Encode, NewDecoder/Decode, struct tags (`xml:"name,attr"`, `xml:",chardata"`, `xml:",omitempty"`), Token/RawToken |
+| `go-csv` | `encoding/csv` | NewReader (Read/ReadAll/FieldsPerRecord/LazyQuotes/TrimLeadingSpace), NewWriter (Write/WriteAll/Flush/Error) |
+| `go-runtime` | `runtime` | NumCPU, GOMAXPROCS, Gosched, GC, GOARCH/GOOS constants, Caller/Callers/FuncForPC, Stack, MemStats/ReadMemStats |
 | `go-slog` | `log/slog` | Default logger (Info/Error/Debug/Warn/Log), With/WithGroup, New, NewJSONHandler/NewTextHandler, HandlerOptions/Level, Attr/Group/AnyAttr, SetDefault, LogValuer interface |
 | `go-testing` | `testing` | T.Run (subtests), T.Helper, T.Parallel, T.Cleanup, T.Errorf/T.Fatalf/T.FailNow, T.Logf, T.Skip, B.N/B.ResetTimer/B.ReportAllocs (benchmarks), testing.Short, TestMain |
 
@@ -204,9 +222,9 @@ Syntax highlight mapping for Go:
 
 - Add `<button class="lang-tab" data-lang="go">Go</button>` to `.lang-tabs`
 - **Add** `data-lang="kotlin"` to the existing `<div class="cat-list" id="kotlin-nav">` at line 202
-- Add new `<div class="cat-list" data-lang="go" style="display:none">` with 22 `<a class="cat-link">` links
+- Add new `<div class="cat-list" data-lang="go" style="display:none">` with 31 `<a class="cat-link">` links
 - Extend tab-switch JS to toggle `.cat-list` elements (use `''` not `'block'` for reset)
-- Add `<section id="go" class="lang-section">` containing 22 `<h2>` sections after `</section>` closing the Kotlin block
+- Add `<section id="go" class="lang-section">` containing 31 `<h2>` sections after `</section>` closing the Kotlin block
 - IntersectionObserver: no change needed — Go `<h2 class="section-heading">` headings auto-register at page load
 
 ---
@@ -215,11 +233,11 @@ Syntax highlight mapping for Go:
 
 - [ ] `data-lang="kotlin"` added to existing `#kotlin-nav` div (not re-wrapped)
 - [ ] Go tab button added to `.lang-tabs`
-- [ ] Go sidebar `<div class="cat-list" data-lang="go">` with 22 package links (full import paths for multi-segment packages)
+- [ ] Go sidebar `<div class="cat-list" data-lang="go">` with 31 package links (full import paths for multi-segment packages)
 - [ ] Tab-switch JS extended to toggle `.cat-list` using `''` reset value
 - [ ] Tab-switch JS resets `#main` scroll position to 0 on every tab switch
-- [ ] `<section id="go" class="lang-section">` with 22 `<h2>` package sections
-- [ ] ≥220 entries across all 22 packages
+- [ ] `<section id="go" class="lang-section">` with 31 `<h2>` package sections
+- [ ] ≥280 entries across all 31 packages
 - [ ] Coverage comments on every `<h2>` (≥90% per package via context7)
 - [ ] No external dependencies introduced
 - [ ] `docker build -t tech-recall .` still succeeds
