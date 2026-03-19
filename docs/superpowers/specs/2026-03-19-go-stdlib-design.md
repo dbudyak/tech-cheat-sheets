@@ -196,6 +196,17 @@ mcp__context7__query-docs          library-id: <resolved>, topic: "fmt package"
 
 ---
 
+## Content Quality Bar
+
+Go snippets should be **more memorable than the Kotlin section** — prefer real-world scenarios over toy examples. The test: would a working Go developer recognize this as something they've actually written?
+
+- **Good:** `rows, err := db.QueryContext(ctx, "SELECT id FROM users WHERE active = ?", true)` — recognizable pattern
+- **Bad:** `result := strings.Contains("hello", "ell")` — obvious, teaches nothing
+
+Concreteness beats brevity. If a function's purpose is obvious from its name (`strings.ToLower`), the snippet should show a realistic call site (normalizing user input before DB insert), not a string literal. For packages like `net/http`, `os/exec`, `encoding/json`, `context` — err handling, deadline propagation, and struct tags should appear naturally in the snippet, not be stripped out for cleanliness.
+
+---
+
 ## Entry Format
 
 Identical to Kotlin entries:
