@@ -80,15 +80,30 @@ Note: use the full import path as the link label for multi-segment packages (`pa
 
 ### JS Tab Switcher Change
 
-The existing tab-switch handler already toggles `.lang-section` visibility. Extend it to also toggle `.cat-list` elements:
+The existing tab-switch handler (around line 1823 in `index.html`) toggles `.lang-section` visibility. Extend it by inserting two additional lines **inside the existing click handler, after the `classList.add('visible')` call**:
 
 ```js
-document.querySelectorAll('.cat-list').forEach(cl => {
-  cl.style.display = cl.dataset.lang === lang ? '' : 'none';
+// Existing handler (do not replace — extend):
+document.querySelectorAll('.lang-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    const lang = tab.dataset.lang;
+    document.querySelectorAll('.lang-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.querySelectorAll('.lang-section').forEach(s => s.classList.remove('visible'));
+    document.getElementById(lang).classList.add('visible');
+
+    // ADD THESE TWO LINES:
+    document.querySelectorAll('.cat-list').forEach(cl => {
+      cl.style.display = cl.dataset.lang === lang ? '' : 'none';
+    });
+    document.getElementById('main').scrollTop = 0;  // reset scroll on tab switch
+  });
 });
 ```
 
-**Important:** Use `''` (empty string) to re-show, not `'block'` or `'flex'`. The CSS rule `.cat-list { flex: 1; }` controls the display type — setting `''` lets the stylesheet take over. Setting `'block'` would break the flex layout.
+**Important:** Use `''` (empty string) to re-show `.cat-list`, not `'block'` or `'flex'`. The CSS rule `.cat-list { flex: 1; }` controls the display type — setting `''` lets the stylesheet take over. Setting `'block'` would break the flex layout.
+
+**Scroll reset:** `scrollTop = 0` on `#main` (the scroll container) prevents the user landing mid-document in the new language section after switching tabs.
 
 ### IntersectionObserver
 
@@ -132,7 +147,7 @@ Each package is one `<h2 class="section-heading" id="go-{pkg}">` section inside 
 | `go-context` | `context` | Background/TODO, WithCancel/WithCancelCause, WithTimeout/WithDeadline, WithValue, Done/Err/Cause, Value, AfterFunc (1.21) |
 | `go-sync` | `sync` | Mutex (Lock/Unlock/TryLock), RWMutex (RLock/RUnlock), WaitGroup (Add/Done/Wait), Once/OnceFunc/OnceValue (1.21), Map (Load/Store/LoadOrStore/Delete/Range/Swap), Pool (Get/Put), Cond |
 | `go-atomic` | `sync/atomic` | Int32/Int64/Uint32/Uint64/Bool/Uintptr typed atomics (Load/Store/Add/Swap/CompareAndSwap), Pointer[T], Value (Load/Store/Swap/CompareAndSwap) |
-| `go-math` | `math` + `math/rand/v2` | Abs/Ceil/Floor/Round/Sqrt/Pow/Log/Log2/Log10/Exp, Min/Max, Inf/IsInf/IsNaN, Pi/E constants; rand.IntN/rand.Float64/rand.N/rand.New/rand.NewPCG |
+| `go-math` | `math` + `math/rand/v2` *(combined section, label "math")* | Abs/Ceil/Floor/Round/Sqrt/Pow/Log/Log2/Log10/Exp, Min/Max, Inf/IsInf/IsNaN, Pi/E constants; rand.IntN/rand.Float64/rand.N/rand.New/rand.NewPCG |
 | `go-http` | `net/http` | Get/Post/Head, NewRequest/NewRequestWithContext, Client/Do, Handle/HandleFunc, NewServeMux, ListenAndServe, Request (Method/URL/Header/Body/Context/FormValue), ResponseWriter (Header/Write/WriteHeader), http.Error, FileServer/StripPrefix, status constants, Cookie/SetCookie, http.DefaultClient, Transport |
 | `go-json` | `encoding/json` | Marshal/Unmarshal, MarshalIndent, NewEncoder/Encode, NewDecoder/Decode, RawMessage, Number, struct tags (`omitempty`/`-`/`string`), MarshalJSON/UnmarshalJSON interfaces, Decoder.DisallowUnknownFields |
 | `go-slog` | `log/slog` | Default logger (Info/Error/Debug/Warn/Log), With/WithGroup, New, NewJSONHandler/NewTextHandler, HandlerOptions/Level, Attr/Group/AnyAttr, SetDefault, LogValuer interface |
@@ -151,7 +166,7 @@ mcp__context7__query-docs          library-id: <resolved>, topic: "fmt package"
 
 **Fallback:** If context7 cannot resolve the Go stdlib ID, use `pkg.go.dev/std` as the canonical public reference to count total public symbols per package.
 
-**Target:** ≥90% coverage per package: `included / (total_public - excluded)`
+**Target:** ≥90% coverage per package: `included / (total_public - excluded)`. Packages vary widely in size (`errors` has 5 symbols, `net/http` has 80+) — the 90% target applies per package independently; a small package meeting 90% is fine even if its absolute entry count is low.
 
 **Exclusions (per package):** deprecated symbols; `String()`/`Error()` methods where covered by the interface entry; low-level unsafe/cgo APIs; rarely-used overloads where a primary entry covers the pattern (e.g. `Sscanln` when `Sscanf` is covered)
 
