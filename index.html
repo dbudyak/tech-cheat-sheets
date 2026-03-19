@@ -3490,11 +3490,263 @@ http.<span class="fn">Handle</span>(<span class="str">"/static/"</span>, http.<s
 
 <h2 class="section-heading" id="go-net">net</h2>
 
+<div class="entry">
+  <code class="sig">func net.Dial(network, address string) (net.Conn, error)</code>
+  <code class="snippet">conn, err := net.<span class="fn">Dial</span>(<span class="str">"tcp"</span>, <span class="str">"api.example.com:443"</span>); <span class="kw">if</span> err != <span class="kw">nil</span> { <span class="kw">return</span> err }; <span class="kw">defer</span> conn.<span class="fn">Close</span>()</code>
+  <span class="desc">Opens a TCP connection; use "udp" for UDP or "unix" for Unix domain sockets. Returns an io.ReadWriteCloser.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func net.DialTimeout(network, address string, timeout time.Duration) (net.Conn, error)</code>
+  <code class="snippet">conn, err := net.<span class="fn">DialTimeout</span>(<span class="str">"tcp"</span>, <span class="str">"db.internal:5432"</span>, <span class="num">5</span>*time.Second)</code>
+  <span class="desc">Like Dial but aborts if the connection is not established within the timeout — essential for avoiding indefinite hangs.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func net.Listen(network, address string) (net.Listener, error)</code>
+  <code class="snippet">ln, err := net.<span class="fn">Listen</span>(<span class="str">"tcp"</span>, <span class="str">":8080"</span>); <span class="kw">if</span> err != <span class="kw">nil</span> { log.<span class="fn">Fatal</span>(err) }</code>
+  <span class="desc">Binds a local port and returns a Listener; call Accept in a loop to handle incoming connections.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func (l net.Listener) Accept() (net.Conn, error)</code>
+  <code class="snippet"><span class="kw">for</span> { conn, err := ln.<span class="fn">Accept</span>(); <span class="kw">if</span> err != <span class="kw">nil</span> { <span class="kw">return</span> }; <span class="kw">go</span> <span class="fn">handleConn</span>(conn) }</code>
+  <span class="desc">Blocks until a new connection arrives; spawn a goroutine per connection to avoid blocking the accept loop.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func (c net.Conn) SetDeadline(t time.Time) error</code>
+  <code class="snippet">conn.<span class="fn">SetDeadline</span>(time.<span class="fn">Now</span>().<span class="fn">Add</span>(<span class="num">10</span> * time.Second))</code>
+  <span class="desc">Sets both read and write deadlines; call SetReadDeadline / SetWriteDeadline to control them independently.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func (c net.Conn) Read(b []byte) (n int, err error)  /  Write(b []byte) (n int, err error)</code>
+  <code class="snippet">n, err := conn.<span class="fn">Write</span>([]<span class="ty">byte</span>(<span class="str">"PING\n"</span>)); buf := <span class="fn">make</span>([]<span class="ty">byte</span>, <span class="num">512</span>); n, err = conn.<span class="fn">Read</span>(buf)</code>
+  <span class="desc">Implement io.Reader/Writer; partial reads are normal — wrap with bufio.Scanner or io.ReadFull for framing.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func net.ResolveTCPAddr(network, address string) (*net.TCPAddr, error)</code>
+  <code class="snippet">addr, err := net.<span class="fn">ResolveTCPAddr</span>(<span class="str">"tcp"</span>, <span class="str">"localhost:8080"</span>)</code>
+  <span class="desc">Resolves a host:port string to a structured TCPAddr with IP, Port, and Zone fields.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func net.LookupHost(host string) (addrs []string, err error)</code>
+  <code class="snippet">addrs, err := net.<span class="fn">LookupHost</span>(<span class="str">"example.com"</span>) <span class="cm">// ["93.184.216.34"]</span></code>
+  <span class="desc">DNS A/AAAA lookup returning string addresses; use LookupIP to get net.IP values instead.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func net.LookupMX(name string) ([]*net.MX, error)</code>
+  <code class="snippet">records, err := net.<span class="fn">LookupMX</span>(<span class="str">"gmail.com"</span>); <span class="kw">for</span> _, mx := <span class="kw">range</span> records { fmt.<span class="fn">Println</span>(mx.Host, mx.Pref) }</code>
+  <span class="desc">Returns MX records sorted by preference; useful for validating email domains before sending.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func net.ParseIP(s string) net.IP</code>
+  <code class="snippet">ip := net.<span class="fn">ParseIP</span>(<span class="str">"192.168.1.1"</span>); <span class="kw">if</span> ip == <span class="kw">nil</span> { <span class="kw">return</span> errors.<span class="fn">New</span>(<span class="str">"invalid IP"</span>) }</code>
+  <span class="desc">Parses IPv4 or IPv6 address strings; returns nil for invalid input — always check before using.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func (*net.IPNet) Contains(ip net.IP) bool  — from net.ParseCIDR</code>
+  <code class="snippet">_, network, _ := net.<span class="fn">ParseCIDR</span>(<span class="str">"10.0.0.0/8"</span>); ok := network.<span class="fn">Contains</span>(net.<span class="fn">ParseIP</span>(<span class="str">"10.1.2.3"</span>))</code>
+  <span class="desc">ParseCIDR returns both the host IP and the network; use Contains to check if an IP belongs to a subnet.</span>
+</div>
+
 <h2 class="section-heading" id="go-http">net/http</h2>
+
+<div class="entry">
+  <code class="sig">func http.Get(url string) (*http.Response, error)</code>
+  <code class="snippet">resp, err := http.<span class="fn">Get</span>(<span class="str">"https://api.example.com/data"</span>); <span class="kw">if</span> err != <span class="kw">nil</span> { <span class="kw">return</span> err }; <span class="kw">defer</span> resp.Body.<span class="fn">Close</span>()</code>
+  <span class="desc">Quick GET via DefaultClient — always close Body to release the connection back to the pool.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func http.Post(url, contentType string, body io.Reader) (*http.Response, error)</code>
+  <code class="snippet">resp, err := http.<span class="fn">Post</span>(<span class="str">"https://api.example.com/submit"</span>, <span class="str">"application/json"</span>, bytes.<span class="fn">NewReader</span>(payload))</code>
+  <span class="desc">Convenience POST via DefaultClient; prefer NewRequestWithContext for production to attach timeouts and auth headers.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func http.Head(url string) (*http.Response, error)</code>
+  <code class="snippet">resp, err := http.<span class="fn">Head</span>(<span class="str">"https://cdn.example.com/file.zip"</span>); size := resp.Header.<span class="fn">Get</span>(<span class="str">"Content-Length"</span>)</code>
+  <span class="desc">Fetches only headers — useful for checking file size or ETag before downloading large resources.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func http.NewRequest(method, url string, body io.Reader) (*http.Request, error)</code>
+  <code class="snippet">req, _ := http.<span class="fn">NewRequest</span>(http.MethodDelete, <span class="str">"https://api.example.com/item/42"</span>, <span class="kw">nil</span>)</code>
+  <span class="desc">Creates a Request without a context; prefer NewRequestWithContext in any production code that should be cancellable.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func http.NewRequestWithContext(ctx context.Context, method, url string, body io.Reader) (*http.Request, error)</code>
+  <code class="snippet">req, _ := http.<span class="fn">NewRequestWithContext</span>(ctx, http.MethodPost, endpoint, bytes.<span class="fn">NewReader</span>(payload)); req.Header.<span class="fn">Set</span>(<span class="str">"Authorization"</span>, <span class="str">"Bearer "</span>+token)</code>
+  <span class="desc">Always use the Context variant in production — it enables timeout, cancellation, and tracing propagation.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">http.Client{Timeout: time.Duration}  — Do / Get / Post</code>
+  <code class="snippet">client := &http.Client{Timeout: <span class="num">10</span> * time.Second}; resp, err := client.<span class="fn">Do</span>(req)</code>
+  <span class="desc">Always set a Timeout on your Client — DefaultClient has none, so a slow server will hang your goroutine forever.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">http.DefaultClient  *http.Client</code>
+  <code class="snippet"><span class="cm">// http.Get, Post, Head use DefaultClient — fine for scripts, not for servers</span></code>
+  <span class="desc">DefaultClient has no timeout and a shared Transport; create a custom Client in long-running services.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">http.Transport — RoundTrip, MaxIdleConns, IdleConnTimeout, TLSClientConfig</code>
+  <code class="snippet">tr := &http.Transport{MaxIdleConnsPerHost: <span class="num">20</span>, IdleConnTimeout: <span class="num">90</span> * time.Second}; client := &http.Client{Transport: tr}</code>
+  <span class="desc">Tune the connection pool for high-throughput services; a shared Transport reuses TCP connections across requests.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func http.Handle(pattern string, handler http.Handler)</code>
+  <code class="snippet">http.<span class="fn">Handle</span>(<span class="str">"/static/"</span>, http.<span class="fn">StripPrefix</span>(<span class="str">"/static/"</span>, http.<span class="fn">FileServer</span>(http.<span class="fn">Dir</span>(<span class="str">"./public"</span>))))</code>
+  <span class="desc">Registers on DefaultServeMux; prefer an explicit ServeMux to avoid global state collisions in tests and libraries.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func http.HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request))</code>
+  <code class="snippet">http.<span class="fn">HandleFunc</span>(<span class="str">"/healthz"</span>, <span class="kw">func</span>(w http.ResponseWriter, r *http.Request) { w.<span class="fn">WriteHeader</span>(http.StatusOK) })</code>
+  <span class="desc">Adapts a plain function to http.Handler via http.HandlerFunc; registers on DefaultServeMux.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func http.NewServeMux() *http.ServeMux  — Handle / HandleFunc</code>
+  <code class="snippet">mux := http.<span class="fn">NewServeMux</span>(); mux.<span class="fn">HandleFunc</span>(<span class="str">"GET /users/{id}"</span>, getUser); mux.<span class="fn">HandleFunc</span>(<span class="str">"POST /users"</span>, createUser)</code>
+  <span class="desc">Go 1.22+ supports method+pattern routing ("GET /path/{id}") and PathValue extraction directly on ServeMux.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func http.ListenAndServe(addr string, handler http.Handler) error</code>
+  <code class="snippet"><span class="kw">if</span> err := http.<span class="fn">ListenAndServe</span>(<span class="str">":8080"</span>, mux); err != <span class="kw">nil</span> { log.<span class="fn">Fatal</span>(err) }</code>
+  <span class="desc">Starts an HTTP server; blocks until error — use http.Server with Shutdown for graceful shutdown in production.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func http.ListenAndServeTLS(addr, certFile, keyFile string, handler http.Handler) error</code>
+  <code class="snippet">http.<span class="fn">ListenAndServeTLS</span>(<span class="str">":443"</span>, <span class="str">"cert.pem"</span>, <span class="str">"key.pem"</span>, mux)</code>
+  <span class="desc">Serves HTTPS; provide Let's Encrypt certs via golang.org/x/crypto/acme/autocert for automatic renewal.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">http.Request — Method / URL / Header / Body / Context / FormValue / PathValue</code>
+  <code class="snippet">id := r.<span class="fn">PathValue</span>(<span class="str">"id"</span>); auth := r.Header.<span class="fn">Get</span>(<span class="str">"Authorization"</span>); q := r.URL.Query().<span class="fn">Get</span>(<span class="str">"limit"</span>)</code>
+  <span class="desc">PathValue (Go 1.22) extracts named segments from the mux pattern; FormValue parses both query params and POST body.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">http.ResponseWriter — Header() / Write([]byte) / WriteHeader(statusCode int)</code>
+  <code class="snippet">w.Header().<span class="fn">Set</span>(<span class="str">"Content-Type"</span>, <span class="str">"application/json"</span>); w.<span class="fn">WriteHeader</span>(http.StatusCreated); json.<span class="fn">NewEncoder</span>(w).<span class="fn">Encode</span>(resp)</code>
+  <span class="desc">Set headers before calling WriteHeader or Write — once either is called, headers are sent and cannot be changed.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func http.Error(w http.ResponseWriter, error string, code int)</code>
+  <code class="snippet">http.<span class="fn">Error</span>(w, <span class="str">"not found"</span>, http.StatusNotFound)</code>
+  <span class="desc">Writes a plain-text error response with the given status code; sets Content-Type to text/plain automatically.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">HTTP status constants — http.StatusOK / StatusCreated / StatusNoContent / StatusBadRequest / StatusUnauthorized / StatusForbidden / StatusNotFound / StatusInternalServerError</code>
+  <code class="snippet">w.<span class="fn">WriteHeader</span>(http.StatusUnprocessableEntity) <span class="cm">// 422</span></code>
+  <span class="desc">Named constants from RFC 9110 — use them instead of bare integers to make intent clear and searchable.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func http.FileServer(root http.FileSystem) http.Handler  /  func http.StripPrefix(prefix string, h http.Handler) http.Handler</code>
+  <code class="snippet">mux.<span class="fn">Handle</span>(<span class="str">"/assets/"</span>, http.<span class="fn">StripPrefix</span>(<span class="str">"/assets/"</span>, http.<span class="fn">FileServer</span>(http.<span class="fn">Dir</span>(<span class="str">"./dist"</span>))))</code>
+  <span class="desc">StripPrefix removes the URL prefix before FileServer sees the path — required when the mount point isn't the root.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">http.Cookie  /  func http.SetCookie(w http.ResponseWriter, cookie *http.Cookie)</code>
+  <code class="snippet">http.<span class="fn">SetCookie</span>(w, &http.Cookie{Name: <span class="str">"session"</span>, Value: token, HttpOnly: <span class="kw">true</span>, Secure: <span class="kw">true</span>, SameSite: http.SameSiteLaxMode})</code>
+  <span class="desc">Always set HttpOnly and Secure for session cookies; SameSite: Lax blocks most CSRF without breaking navigation.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func http.MaxBytesReader(w http.ResponseWriter, r io.ReadCloser, n int64) io.ReadCloser</code>
+  <code class="snippet">r.Body = http.<span class="fn">MaxBytesReader</span>(w, r.Body, <span class="num">1</span>&lt;&lt;<span class="num">20</span>) <span class="cm">// 1 MiB limit</span></code>
+  <span class="desc">Wraps the request body with a size limit; returns an error if the client sends more, preventing memory exhaustion.</span>
+</div>
 
 <h2 class="section-heading" id="go-httptest">net/http/httptest</h2>
 
+<div class="entry">
+  <code class="sig">func httptest.NewRecorder() *httptest.ResponseRecorder  — Body *bytes.Buffer, Code int, Result() *http.Response</code>
+  <code class="snippet">w := httptest.<span class="fn">NewRecorder</span>(); <span class="fn">MyHandler</span>(w, httptest.<span class="fn">NewRequest</span>(<span class="str">"GET"</span>, <span class="str">"/healthz"</span>, <span class="kw">nil</span>)); <span class="kw">if</span> w.Code != http.StatusOK { t.<span class="fn">Fail</span>() }</code>
+  <span class="desc">In-memory ResponseWriter for unit testing HTTP handlers; inspect Code and Body without a real server.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func httptest.NewServer(handler http.Handler) *httptest.Server  — URL string, Client *http.Client, Close()</code>
+  <code class="snippet">ts := httptest.<span class="fn">NewServer</span>(mux); <span class="kw">defer</span> ts.<span class="fn">Close</span>(); resp, _ := ts.Client().<span class="fn">Get</span>(ts.URL + <span class="str">"/users/1"</span>)</code>
+  <span class="desc">Starts a real HTTP server on a random localhost port; use ts.Client() to get a pre-configured client that talks to it.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func httptest.NewTLSServer(handler http.Handler) *httptest.Server</code>
+  <code class="snippet">ts := httptest.<span class="fn">NewTLSServer</span>(mux); <span class="kw">defer</span> ts.<span class="fn">Close</span>(); resp, _ := ts.<span class="fn">Client</span>().<span class="fn">Get</span>(ts.URL + <span class="str">"/secure"</span>)</code>
+  <span class="desc">Like NewServer but serves HTTPS with a self-signed cert; ts.Client() is pre-configured to trust it.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func httptest.NewUnstartedServer(handler http.Handler) *httptest.Server  — Start() / StartTLS()</code>
+  <code class="snippet">ts := httptest.<span class="fn">NewUnstartedServer</span>(mux); ts.Config.ReadTimeout = <span class="num">5</span> * time.Second; ts.<span class="fn">Start</span>()</code>
+  <span class="desc">Lets you customise Server fields (timeouts, TLS config) before starting — needed when testing timeout-sensitive handlers.</span>
+</div>
+
 <h2 class="section-heading" id="go-url">net/url</h2>
+
+<div class="entry">
+  <code class="sig">func url.Parse(rawurl string) (*url.URL, error)</code>
+  <code class="snippet">u, err := url.<span class="fn">Parse</span>(<span class="str">"https://api.example.com/v1/users?limit=10#results"</span>)</code>
+  <span class="desc">Parses any URL reference (absolute or relative); use ParseRequestURI when you need to reject relative URLs.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">url.URL — Scheme / Host / Path / RawQuery / Fragment / String()</code>
+  <code class="snippet">u.Scheme = <span class="str">"https"</span>; u.Host = <span class="str">"api.example.com"</span>; u.Path = <span class="str">"/v2/users"</span>; fmt.<span class="fn">Println</span>(u.<span class="fn">String</span>())</code>
+  <span class="desc">URL is a mutable struct — modify fields then call String() to reconstruct; use RawQuery for pre-encoded query strings.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func (u *url.URL) Query() url.Values</code>
+  <code class="snippet">vals := u.<span class="fn">Query</span>(); vals.<span class="fn">Set</span>(<span class="str">"page"</span>, <span class="str">"2"</span>); u.RawQuery = vals.<span class="fn">Encode</span>()</code>
+  <span class="desc">Parses RawQuery into a Values map; mutate, then re-assign Encode() result back to RawQuery.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">url.Values — Get / Set / Add / Del / Encode</code>
+  <code class="snippet">v := url.Values{}; v.<span class="fn">Set</span>(<span class="str">"q"</span>, <span class="str">"golang"</span>); v.<span class="fn">Add</span>(<span class="str">"tag"</span>, <span class="str">"net"</span>); v.<span class="fn">Add</span>(<span class="str">"tag"</span>, <span class="str">"http"</span>); req.URL.RawQuery = v.<span class="fn">Encode</span>()</code>
+  <span class="desc">Values is map[string][]string; Add appends to a key's slice, Set replaces it — Encode produces percent-encoded output.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func url.ParseQuery(query string) (url.Values, error)</code>
+  <code class="snippet">vals, err := url.<span class="fn">ParseQuery</span>(r.URL.RawQuery); limit := vals.<span class="fn">Get</span>(<span class="str">"limit"</span>)</code>
+  <span class="desc">Decodes a query string into Values; equivalent to url.Parse then .Query(), but useful when you already have the raw string.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func url.QueryEscape(s string) string  /  func url.QueryUnescape(s string) (string, error)</code>
+  <code class="snippet">encoded := url.<span class="fn">QueryEscape</span>(<span class="str">"hello world &amp; more"</span>) <span class="cm">// "hello+world+%26+more"</span></code>
+  <span class="desc">QueryEscape encodes spaces as '+' (application/x-www-form-urlencoded); use PathEscape for URL path segments instead.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func url.JoinPath(base string, elem ...string) (string, error)</code>
+  <code class="snippet">u, _ := url.<span class="fn">JoinPath</span>(<span class="str">"https://api.example.com/"</span>, <span class="str">"v1"</span>, <span class="str">"users"</span>, id) <span class="cm">// safe path joining</span></code>
+  <span class="desc">Added in Go 1.19; joins path segments safely, escaping each element — prevents directory traversal bugs from string concat.</span>
+</div>
 
 <h2 class="section-heading" id="go-json">encoding/json</h2>
 
