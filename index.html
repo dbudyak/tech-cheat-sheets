@@ -3142,7 +3142,175 @@ http.<span class="fn">Handle</span>(<span class="str">"/static/"</span>, http.<s
 
 <h2 class="section-heading" id="go-time">time</h2>
 
+<div class="entry">
+  <code class="sig">func time.Now() time.Time</code>
+  <code class="snippet">start := time.<span class="fn">Now</span>(); <span class="cm">// capture before the operation</span></code>
+  <span class="desc">Returns the current local time; use as a snapshot before work you want to measure or log.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func time.Since(t time.Time) time.Duration</code>
+  <code class="snippet">elapsed := time.<span class="fn">Since</span>(start); slog.<span class="fn">Info</span>(<span class="str">"request"</span>, <span class="str">"dur"</span>, elapsed)</code>
+  <span class="desc">Shorthand for time.Now().Sub(t); use to measure elapsed time since a recorded timestamp.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func time.Until(t time.Time) time.Duration</code>
+  <code class="snippet"><span class="kw">if</span> time.<span class="fn">Until</span>(cert.<span class="fn">NotAfter</span>()) &lt; <span class="num">30</span>*time.Hour*<span class="num">24</span> { <span class="fn">renewCert</span>() }</code>
+  <span class="desc">Shorthand for t.Sub(time.Now()); negative when t is in the past. Handy for deadline/expiry checks.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func time.Parse(layout, value string) (time.Time, error)</code>
+  <code class="snippet">t, err := time.<span class="fn">Parse</span>(<span class="str">"2006-01-02"</span>, r.<span class="fn">FormValue</span>(<span class="str">"date"</span>)) <span class="cm">// reference time is Mon Jan 2 15:04:05 MST 2006</span></code>
+  <span class="desc">Parses a time string using Go's reference time as the layout; the magic numbers 2006/01/02/15/04/05 encode year/month/day/hour/min/sec.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func (t time.Time) Format(layout string) string</code>
+  <code class="snippet">ts := t.<span class="fn">Format</span>(<span class="str">"2006-01-02T15:04:05Z07:00"</span>) <span class="cm">// RFC 3339</span></code>
+  <span class="desc">Formats t using Go's reference-time layout; "2006-01-02T15:04:05Z07:00" is RFC 3339 (ISO 8601 with timezone offset).</span>
+</div>
+
+<div class="entry">
+  <code class="sig">const time.Second, time.Minute, time.Hour, time.Millisecond time.Duration</code>
+  <code class="snippet">http.DefaultClient.Timeout = <span class="num">10</span> * time.Second</code>
+  <span class="desc">Pre-defined Duration constants; multiply by an integer literal to get any duration (e.g. 500*time.Millisecond for half a second).</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func (t time.Time) Add(d time.Duration) time.Time</code>
+  <code class="snippet">expiry := time.<span class="fn">Now</span>().<span class="fn">Add</span>(<span class="num">24</span> * time.Hour) <span class="cm">// token valid for one day</span></code>
+  <span class="desc">Returns a new Time offset by d; negative d moves backward. Use for computing deadlines or expiry timestamps.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func (t time.Time) Sub(u time.Time) time.Duration</code>
+  <code class="snippet">age := time.<span class="fn">Now</span>().<span class="fn">Sub</span>(user.CreatedAt); <span class="cm">// how long the account has existed</span></code>
+  <span class="desc">Returns the Duration t-u; positive when t is after u. Use when you need elapsed time between two known timestamps.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func time.Sleep(d time.Duration)</code>
+  <code class="snippet">time.<span class="fn">Sleep</span>(<span class="num">500</span> * time.Millisecond) <span class="cm">// back-off before retry</span></code>
+  <span class="desc">Pauses the current goroutine for at least d; for cancellable sleeps prefer select with time.After and a ctx.Done() case.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func time.After(d time.Duration) &lt;-chan time.Time</code>
+  <code class="snippet"><span class="kw">select</span> { <span class="kw">case</span> res := &lt;-ch: <span class="fn">process</span>(res); <span class="kw">case</span> &lt;-time.<span class="fn">After</span>(<span class="num">2</span> * time.Second): <span class="fn">log</span>.<span class="fn">Println</span>(<span class="str">"timeout"</span>) }</code>
+  <span class="desc">Returns a channel that receives the current time after d; leaks the timer if the channel is never received — prefer time.NewTimer when you need to stop early.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func time.NewTimer(d time.Duration) *time.Timer</code>
+  <code class="snippet">timer := time.<span class="fn">NewTimer</span>(<span class="num">5</span> * time.Second); <span class="kw">defer</span> timer.<span class="fn">Stop</span>()</code>
+  <span class="desc">Creates a timer that fires once after d; always call Stop() when done to release resources, especially in long-running goroutines.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func (t *time.Timer) Stop() bool; func (t *time.Timer) Reset(d time.Duration) bool</code>
+  <code class="snippet"><span class="kw">if</span> !timer.<span class="fn">Stop</span>() { &lt;-timer.C }; timer.<span class="fn">Reset</span>(<span class="num">10</span> * time.Second)</code>
+  <span class="desc">Stop prevents the timer from firing (drain C if it returns false); Reset reschedules — always Stop and drain before Reset per Go docs.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func time.NewTicker(d time.Duration) *time.Ticker</code>
+  <code class="snippet">tick := time.<span class="fn">NewTicker</span>(<span class="num">1</span> * time.Minute); <span class="kw">defer</span> tick.<span class="fn">Stop</span>(); <span class="kw">for</span> <span class="kw">range</span> tick.C { <span class="fn">flushMetrics</span>() }</code>
+  <span class="desc">Sends the current time on its channel at every interval d; always defer Stop() to avoid goroutine and channel leaks.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func time.AfterFunc(d time.Duration, f func()) *time.Timer</code>
+  <code class="snippet">time.<span class="fn">AfterFunc</span>(<span class="num">30</span>*time.Second, <span class="kw">func</span>() { cache.<span class="fn">Evict</span>(key) })</code>
+  <span class="desc">Calls f in a new goroutine after d; returns a Timer whose Stop can cancel f if it hasn't fired yet.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func (t time.Time) Truncate(d time.Duration) time.Time; func (t time.Time) Round(d time.Duration) time.Time</code>
+  <code class="snippet">hour := time.<span class="fn">Now</span>().<span class="fn">Truncate</span>(time.Hour); rounded := t.<span class="fn">Round</span>(time.Minute)</code>
+  <span class="desc">Truncate strips the sub-d remainder (floor); Round goes to the nearest multiple of d. Both operate relative to the zero time, not midnight.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func (t time.Time) Unix() int64; func (t time.Time) UnixMilli() int64; func time.UnixMilli(msec int64) time.Time</code>
+  <code class="snippet">ms := time.<span class="fn">Now</span>().<span class="fn">UnixMilli</span>(); t := time.<span class="fn">UnixMilli</span>(ms) <span class="cm">// round-trip</span></code>
+  <span class="desc">Unix/UnixMilli convert a Time to an integer epoch; time.UnixMilli converts back. Use UnixMilli for JavaScript interop (JS Date.now() is milliseconds).</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func time.LoadLocation(name string) (*time.Location, error); var time.UTC, time.Local *time.Location</code>
+  <code class="snippet">loc, err := time.<span class="fn">LoadLocation</span>(<span class="str">"America/New_York"</span>); t := time.<span class="fn">Now</span>().<span class="fn">In</span>(loc)</code>
+  <span class="desc">LoadLocation parses an IANA timezone name (requires tzdata); time.UTC and time.Local are pre-defined sentinels for UTC and the process's local zone.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func (t time.Time) IsZero() bool; func (t time.Time) Before(u time.Time) bool; func (t time.Time) After(u time.Time) bool</code>
+  <code class="snippet"><span class="kw">if</span> t.<span class="fn">IsZero</span>() { <span class="kw">return</span> errors.<span class="fn">New</span>(<span class="str">"timestamp not set"</span>) }; ok := t.<span class="fn">Before</span>(deadline)</code>
+  <span class="desc">IsZero checks if t is the zero value (Jan 1 year 1); Before/After compare two times and are nil-safe alternatives to t.Sub(u) sign checks.</span>
+</div>
+
 <h2 class="section-heading" id="go-context">context</h2>
+
+<div class="entry">
+  <code class="sig">func context.Background() context.Context; func context.TODO() context.Context</code>
+  <code class="snippet">ctx := context.<span class="fn">Background</span>() <span class="cm">// top-level; use TODO when unsure which parent to use</span></code>
+  <span class="desc">Background is the root context for main, tests, and incoming request handlers; TODO signals a placeholder where the correct context is not yet determined.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func context.WithCancel(parent context.Context) (context.Context, context.CancelFunc)</code>
+  <code class="snippet">ctx, cancel := context.<span class="fn">WithCancel</span>(r.<span class="fn">Context</span>()); <span class="kw">defer</span> <span class="fn">cancel</span>(); <span class="kw">go</span> <span class="fn">worker</span>(ctx)</code>
+  <span class="desc">Returns a child context and a cancel function; calling cancel propagates cancellation to all children. Always defer cancel to prevent goroutine leaks.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func context.WithCancelCause(parent context.Context) (context.Context, context.CancelCauseFunc)</code>
+  <code class="snippet">ctx, cancel := context.<span class="fn">WithCancelCause</span>(parent); cancel(io.<span class="fn">ErrUnexpectedEOF</span>); err := context.<span class="fn">Cause</span>(ctx)</code>
+  <span class="desc">Like WithCancel but the cancel func accepts an error that is retrievable via context.Cause; useful for propagating the root cause through a tree of goroutines.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func context.WithTimeout(parent context.Context, timeout time.Duration) (context.Context, context.CancelFunc)</code>
+  <code class="snippet">ctx, cancel := context.<span class="fn">WithTimeout</span>(r.<span class="fn">Context</span>(), <span class="num">5</span>*time.Second); <span class="kw">defer</span> <span class="fn">cancel</span>()</code>
+  <span class="desc">Returns a context that cancels after the timeout; always defer cancel() immediately to avoid leaking resources.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func context.WithDeadline(parent context.Context, d time.Time) (context.Context, context.CancelFunc)</code>
+  <code class="snippet">dl := time.<span class="fn">Now</span>().<span class="fn">Add</span>(<span class="num">10</span> * time.Second); ctx, cancel := context.<span class="fn">WithDeadline</span>(r.<span class="fn">Context</span>(), dl); <span class="kw">defer</span> <span class="fn">cancel</span>()</code>
+  <span class="desc">Like WithTimeout but takes an absolute deadline; use when you have a wall-clock cutoff (e.g. end of a business window) rather than a duration.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func context.WithValue(parent context.Context, key, val any) context.Context</code>
+  <code class="snippet"><span class="kw">type</span> <span class="ty">ctxKey</span> <span class="kw">struct</span>{}; ctx := context.<span class="fn">WithValue</span>(r.<span class="fn">Context</span>(), <span class="ty">ctxKey</span>{}, userID)</code>
+  <span class="desc">Attaches a key-value pair to a context; use an unexported struct type as the key to prevent collisions between packages.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func (ctx context.Context) Done() &lt;-chan struct{}; func (ctx context.Context) Err() error</code>
+  <code class="snippet"><span class="kw">select</span> { <span class="kw">case</span> &lt;-ctx.<span class="fn">Done</span>(): <span class="kw">return</span> ctx.<span class="fn">Err</span>() <span class="cm">// Canceled or DeadlineExceeded</span></span>; <span class="kw">case</span> res := &lt;-ch: <span class="kw">return</span> <span class="fn">process</span>(res) }</code>
+  <span class="desc">Done returns a channel closed when the context is cancelled; Err returns context.Canceled or context.DeadlineExceeded. Use both in select loops to honour cancellation.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func context.Cause(c context.Context) error</code>
+  <code class="snippet"><span class="kw">if</span> err := context.<span class="fn">Cause</span>(ctx); err != <span class="kw">nil</span> { slog.<span class="fn">Error</span>(<span class="str">"cancelled"</span>, <span class="str">"cause"</span>, err) }</code>
+  <span class="desc">Returns the cause passed to WithCancelCause, or ctx.Err() for ordinary contexts (Go 1.20+); lets you distinguish application-level cancellation reasons.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func (ctx context.Context) Value(key any) any</code>
+  <code class="snippet"><span class="kw">type</span> <span class="ty">ctxKey</span> <span class="kw">struct</span>{}; uid, ok := ctx.<span class="fn">Value</span>(<span class="ty">ctxKey</span>{}).(string)</code>
+  <span class="desc">Retrieves a value stored with WithValue; always type-assert the result and check ok. Only store request-scoped data (trace IDs, auth info), not optional function parameters.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func context.AfterFunc(ctx context.Context, f func()) (stop func() bool)</code>
+  <code class="snippet">stop := context.<span class="fn">AfterFunc</span>(ctx, <span class="kw">func</span>() { conn.<span class="fn">Close</span>() }); <span class="kw">defer</span> <span class="fn">stop</span>()</code>
+  <span class="desc">Schedules f to run in a new goroutine after ctx is done (Go 1.21); stop() cancels the callback if the context hasn't fired yet — useful for cleanup on cancellation.</span>
+</div>
 
 <h2 class="section-heading" id="go-sync">sync</h2>
 
