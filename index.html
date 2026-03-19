@@ -2349,11 +2349,326 @@ m := logRe.<span class="fn">FindStringSubmatch</span>(line)
 
 <h2 class="section-heading" id="go-slices">slices</h2>
 
+<div class="entry">
+  <code class="sig">func slices.Contains[S ~[]E, E comparable](s S, v E) bool</code>
+  <code class="snippet">slices.<span class="fn">Contains</span>(allowedRoles, user.Role)</code>
+  <span class="desc">Reports whether v is in s; requires E to be comparable.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func slices.ContainsFunc[S ~[]E, E any](s S, f func(E) bool) bool</code>
+  <code class="snippet">slices.<span class="fn">ContainsFunc</span>(users, <span class="kw">func</span>(u <span class="ty">User</span>) <span class="ty">bool</span> { <span class="kw">return</span> u.Admin })</code>
+  <span class="desc">Reports whether any element in s satisfies f; use when the element type is not comparable or matching logic is complex.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func slices.Index[S ~[]E, E comparable](s S, v E) int</code>
+  <code class="snippet">i := slices.<span class="fn">Index</span>(headers, <span class="str">"Authorization"</span>)</code>
+  <span class="desc">Returns the index of the first occurrence of v, or -1 if not present.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func slices.IndexFunc[S ~[]E, E any](s S, f func(E) bool) int</code>
+  <code class="snippet">i := slices.<span class="fn">IndexFunc</span>(tasks, <span class="kw">func</span>(t <span class="ty">Task</span>) <span class="ty">bool</span> { <span class="kw">return</span> t.ID == targetID })</code>
+  <span class="desc">Returns the index of the first element satisfying f, or -1.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func slices.Equal[S ~[]E, E comparable](s1, s2 S) bool</code>
+  <code class="snippet">slices.<span class="fn">Equal</span>(got, want) <span class="cm">// in table-driven tests</span></code>
+  <span class="desc">Reports whether two slices are equal element-by-element; both nil and empty slices compare equal to themselves but not each other.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func slices.EqualFunc[S1 ~[]E1, S2 ~[]E2, E1, E2 any](s1 S1, s2 S2, eq func(E1, E2) bool) bool</code>
+  <code class="snippet">slices.<span class="fn">EqualFunc</span>(got, want, <span class="kw">func</span>(a, b <span class="ty">Event</span>) <span class="ty">bool</span> { <span class="kw">return</span> a.ID == b.ID })</code>
+  <span class="desc">Reports element-wise equality using a custom comparator; useful when ignoring irrelevant fields like timestamps.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func slices.Sort[S ~[]E, E cmp.Ordered](x S)</code>
+  <code class="snippet">slices.<span class="fn">Sort</span>(tags) <span class="cm">// sorts []string in place</span></code>
+  <span class="desc">Sorts a slice of ordered values in ascending order in place; not stable.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func slices.SortFunc[S ~[]E, E any](x S, cmp func(a, b E) int)</code>
+  <code class="snippet">slices.<span class="fn">SortFunc</span>(users, <span class="kw">func</span>(a, b <span class="ty">User</span>) <span class="ty">int</span> { <span class="kw">return</span> cmp.<span class="fn">Compare</span>(a.Name, b.Name) })</code>
+  <span class="desc">Sorts a slice in place using a comparison function; use cmp.Compare for ordered types.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func slices.SortStableFunc[S ~[]E, E any](x S, cmp func(a, b E) int)</code>
+  <code class="snippet">slices.<span class="fn">SortStableFunc</span>(events, <span class="kw">func</span>(a, b <span class="ty">Event</span>) <span class="ty">int</span> { <span class="kw">return</span> cmp.<span class="fn">Compare</span>(a.Priority, b.Priority) })</code>
+  <span class="desc">Stable sort preserving original order for equal elements; prefer over SortFunc when secondary ordering matters.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func slices.IsSorted[S ~[]E, E cmp.Ordered](x S) bool</code>
+  <code class="snippet">slices.<span class="fn">IsSorted</span>(ids) <span class="cm">// assert invariant in tests</span></code>
+  <span class="desc">Reports whether x is sorted in ascending order.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func slices.IsSortedFunc[S ~[]E, E any](x S, cmp func(a, b E) int) bool</code>
+  <code class="snippet">slices.<span class="fn">IsSortedFunc</span>(records, <span class="kw">func</span>(a, b <span class="ty">Record</span>) <span class="ty">int</span> { <span class="kw">return</span> a.Timestamp.<span class="fn">Compare</span>(b.Timestamp) })</code>
+  <span class="desc">Reports whether x is sorted according to a custom comparator.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func slices.Reverse[S ~[]E, E any](s S)</code>
+  <code class="snippet">slices.<span class="fn">Reverse</span>(stack) <span class="cm">// reverse in place</span></code>
+  <span class="desc">Reverses the elements of s in place.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func slices.Compact[S ~[]E, E comparable](s S) S</code>
+  <code class="snippet">lines = slices.<span class="fn">Compact</span>(lines) <span class="cm">// remove consecutive duplicate log lines</span></code>
+  <span class="desc">Removes consecutive duplicate elements (like Unix uniq); combine with Sort to deduplicate entirely.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func slices.CompactFunc[S ~[]E, E any](s S, eq func(E, E) bool) S</code>
+  <code class="snippet">slices.<span class="fn">CompactFunc</span>(entries, <span class="kw">func</span>(a, b <span class="ty">LogEntry</span>) <span class="ty">bool</span> { <span class="kw">return</span> a.Msg == b.Msg })</code>
+  <span class="desc">Like Compact but uses eq to determine equality; useful when the element type is not comparable.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func slices.Max[S ~[]E, E cmp.Ordered](x S) E</code>
+  <code class="snippet">peak := slices.<span class="fn">Max</span>(temperatures)</code>
+  <span class="desc">Returns the maximum value in x; panics on empty slice.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func slices.MaxFunc[S ~[]E, E any](x S, cmp func(a, b E) int) E</code>
+  <code class="snippet">latest := slices.<span class="fn">MaxFunc</span>(commits, <span class="kw">func</span>(a, b <span class="ty">Commit</span>) <span class="ty">int</span> { <span class="kw">return</span> a.Time.<span class="fn">Compare</span>(b.Time) })</code>
+  <span class="desc">Returns the maximum element using a custom comparator; panics on empty slice.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func slices.Min[S ~[]E, E cmp.Ordered](x S) E</code>
+  <code class="snippet">floor := slices.<span class="fn">Min</span>(prices)</code>
+  <span class="desc">Returns the minimum value in x; panics on empty slice.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func slices.MinFunc[S ~[]E, E any](x S, cmp func(a, b E) int) E</code>
+  <code class="snippet">oldest := slices.<span class="fn">MinFunc</span>(users, <span class="kw">func</span>(a, b <span class="ty">User</span>) <span class="ty">int</span> { <span class="kw">return</span> a.CreatedAt.<span class="fn">Compare</span>(b.CreatedAt) })</code>
+  <span class="desc">Returns the minimum element using a custom comparator; panics on empty slice.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func slices.BinarySearch[S ~[]E, E cmp.Ordered](x S, target E) (int, bool)</code>
+  <code class="snippet">i, found := slices.<span class="fn">BinarySearch</span>(sortedIDs, targetID)</code>
+  <span class="desc">Binary search on a sorted slice; returns insertion index and whether target was found.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func slices.BinarySearchFunc[S ~[]E, E, T any](x S, target T, cmp func(E, T) int) (int, bool)</code>
+  <code class="snippet">i, ok := slices.<span class="fn">BinarySearchFunc</span>(products, sku, <span class="kw">func</span>(p <span class="ty">Product</span>, s <span class="ty">string</span>) <span class="ty">int</span> { <span class="kw">return</span> strings.<span class="fn">Compare</span>(p.SKU, s) })</code>
+  <span class="desc">Binary search using a custom comparator; target type can differ from element type.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func slices.Collect[E any](seq iter.Seq[E]) []E</code>
+  <code class="snippet">ids := slices.<span class="fn">Collect</span>(maps.<span class="fn">Keys</span>(userMap))</code>
+  <span class="desc">Collects all values from an iterator into a new slice; complements range-over-func iterators added in Go 1.23.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func slices.Concat[S ~[]E, E any](slices ...S) S</code>
+  <code class="snippet">all := slices.<span class="fn">Concat</span>(required, optional, defaults)</code>
+  <span class="desc">Returns a new slice concatenating all argument slices; cleaner than multiple append calls.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func slices.Clip[S ~[]E, E any](s S) S</code>
+  <code class="snippet">results = slices.<span class="fn">Clip</span>(results) <span class="cm">// trim excess capacity before returning</span></code>
+  <span class="desc">Returns s with its capacity trimmed to its length; prevents callers from accidentally appending into the backing array.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func slices.Grow[S ~[]E, E any](s S, n int) S</code>
+  <code class="snippet">buf = slices.<span class="fn">Grow</span>(buf, len(incoming)) <span class="cm">// pre-allocate before batch append</span></code>
+  <span class="desc">Increases the capacity of s by at least n elements; avoids repeated allocations when appending in a loop.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func slices.Delete[S ~[]E, E any](s S, i, j int) S</code>
+  <code class="snippet">items = slices.<span class="fn">Delete</span>(items, idx, idx+<span class="num">1</span>) <span class="cm">// remove one element</span></code>
+  <span class="desc">Removes elements s[i:j] from s, shifting the tail left; modifies the underlying array.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func slices.DeleteFunc[S ~[]E, E any](s S, del func(E) bool) S</code>
+  <code class="snippet">jobs = slices.<span class="fn">DeleteFunc</span>(jobs, <span class="kw">func</span>(j <span class="ty">Job</span>) <span class="ty">bool</span> { <span class="kw">return</span> j.Status == StatusCancelled })</code>
+  <span class="desc">Removes all elements for which del returns true, in place; replaces the filter-then-copy idiom.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func slices.Insert[S ~[]E, E any](s S, i int, v ...E) S</code>
+  <code class="snippet">pipeline = slices.<span class="fn">Insert</span>(pipeline, <span class="num">0</span>, authMiddleware, rateLimiter)</code>
+  <span class="desc">Inserts v at index i, shifting existing elements right; may allocate a new backing array.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func slices.Replace[S ~[]E, E any](s S, i, j int, v ...E) S</code>
+  <code class="snippet">tokens = slices.<span class="fn">Replace</span>(tokens, start, end, replacement...)</code>
+  <span class="desc">Replaces s[i:j] with v; equivalent to Delete followed by Insert but in one allocation.</span>
+</div>
+
 <h2 class="section-heading" id="go-maps">maps</h2>
+
+<div class="entry">
+  <code class="sig">func maps.Keys[Map ~map[K]V, K comparable, V any](m Map) iter.Seq[K]</code>
+  <code class="snippet">ids := slices.<span class="fn">Collect</span>(maps.<span class="fn">Keys</span>(userIndex))</code>
+  <span class="desc">Returns an iterator over the map's keys (Go 1.23+); wrap with slices.Collect to materialise as a slice.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func maps.Values[Map ~map[K]V, K comparable, V any](m Map) iter.Seq[V]</code>
+  <code class="snippet"><span class="kw">for</span> cfg := <span class="kw">range</span> maps.<span class="fn">Values</span>(featureFlags) { cfg.<span class="fn">Validate</span>() }</code>
+  <span class="desc">Returns an iterator over the map's values; order is undefined, same as ranging over the map directly.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func maps.Clone[Map ~map[K]V, K comparable, V any](m Map) Map</code>
+  <code class="snippet">snapshot := maps.<span class="fn">Clone</span>(config) <span class="cm">// shallow copy before mutation</span></code>
+  <span class="desc">Returns a shallow copy of m; values are not deep-copied, so pointer/slice values still alias the original.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func maps.Copy[Map1 ~map[K]V, Map2 ~map[K]V, K comparable, V any](dst Map1, src Map2)</code>
+  <code class="snippet">maps.<span class="fn">Copy</span>(merged, overrides) <span class="cm">// overrides wins on key collision</span></code>
+  <span class="desc">Copies all key-value pairs from src into dst, overwriting existing keys; modifies dst in place.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func maps.DeleteFunc[Map ~map[K]V, K comparable, V any](m Map, del func(K, V) bool)</code>
+  <code class="snippet">maps.<span class="fn">DeleteFunc</span>(cache, <span class="kw">func</span>(k <span class="ty">string</span>, v <span class="ty">CacheEntry</span>) <span class="ty">bool</span> { <span class="kw">return</span> v.ExpiresAt.<span class="fn">Before</span>(now) })</code>
+  <span class="desc">Deletes all entries for which del returns true; the idiomatic way to prune a map without building a separate delete list.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func maps.Collect[K comparable, V any](seq iter.Seq2[K, V]) map[K]V</code>
+  <code class="snippet">lookup := maps.<span class="fn">Collect</span>(slices.<span class="fn">All</span>(rows))</code>
+  <span class="desc">Collects a key-value iterator into a new map; pairs with maps.All or slices.All to build index maps.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func maps.Insert[Map ~map[K]V, K comparable, V any](m Map, seq iter.Seq2[K, V])</code>
+  <code class="snippet">maps.<span class="fn">Insert</span>(index, slices.<span class="fn">All</span>(newItems))</code>
+  <span class="desc">Inserts all key-value pairs from seq into m, overwriting duplicates; the mutable counterpart of maps.Collect.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func maps.All[Map ~map[K]V, K comparable, V any](m Map) iter.Seq2[K, V]</code>
+  <code class="snippet"><span class="kw">for</span> k, v := <span class="kw">range</span> maps.<span class="fn">All</span>(settings) { <span class="fn">applyOverride</span>(k, v) }</code>
+  <span class="desc">Returns an iterator over all key-value pairs; useful for passing a map to iterator-accepting functions.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func maps.Equal[Map1, Map2 ~map[K]V, K, V comparable](m1 Map1, m2 Map2) bool</code>
+  <code class="snippet">maps.<span class="fn">Equal</span>(gotHeaders, wantHeaders) <span class="cm">// in HTTP handler tests</span></code>
+  <span class="desc">Reports whether two maps contain the same key-value pairs; both K and V must be comparable.</span>
+</div>
 
 <h2 class="section-heading" id="go-sort">sort</h2>
 
+<div class="entry">
+  <code class="sig">func sort.Slice(x any, less func(i, j int) bool)</code>
+  <code class="snippet">sort.<span class="fn">Slice</span>(events, <span class="kw">func</span>(i, j <span class="ty">int</span>) <span class="ty">bool</span> { <span class="kw">return</span> events[i].Time.<span class="fn">Before</span>(events[j].Time) })</code>
+  <span class="desc">Sorts a slice in place; not stable — use SliceStable when equal elements must keep original order.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func sort.SliceStable(x any, less func(i, j int) bool)</code>
+  <code class="snippet">sort.<span class="fn">SliceStable</span>(rows, <span class="kw">func</span>(i, j <span class="ty">int</span>) <span class="ty">bool</span> { <span class="kw">return</span> rows[i].Priority > rows[j].Priority })</code>
+  <span class="desc">Stable sort preserving the relative order of equal elements; use when a secondary sort key was applied first.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func sort.SliceIsSorted(x any, less func(i, j int) bool) bool</code>
+  <code class="snippet">sort.<span class="fn">SliceIsSorted</span>(results, <span class="kw">func</span>(i, j <span class="ty">int</span>) <span class="ty">bool</span> { <span class="kw">return</span> results[i].Score > results[j].Score })</code>
+  <span class="desc">Reports whether a slice satisfies the given less function; useful as an assertion in tests.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func sort.Search(n int, f func(int) bool) int</code>
+  <code class="snippet">i := sort.<span class="fn">Search</span>(<span class="fn">len</span>(entries), <span class="kw">func</span>(i <span class="ty">int</span>) <span class="ty">bool</span> { <span class="kw">return</span> entries[i].Offset >= target })</code>
+  <span class="desc">Binary search returning the smallest index where f is true; f must be false then true (monotone). Returns n if never true.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func sort.SearchInts(a []int, x int) int</code>
+  <code class="snippet">pos := sort.<span class="fn">SearchInts</span>(breakpoints, value)</code>
+  <span class="desc">Returns the index to insert x into a sorted []int to keep it sorted; specialisation of sort.Search.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func sort.Strings(x []string)</code>
+  <code class="snippet">sort.<span class="fn">Strings</span>(tags) <span class="cm">// normalise before dedup or binary search</span></code>
+  <span class="desc">Sorts a []string in ascending order in place; consider slices.Sort for generics-based code.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func sort.Ints(x []int)</code>
+  <code class="snippet">sort.<span class="fn">Ints</span>(ports) <span class="cm">// sort before presenting in UI</span></code>
+  <span class="desc">Sorts a []int in ascending order in place.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func sort.Float64s(x []float64)</code>
+  <code class="snippet">sort.<span class="fn">Float64s</span>(latencies) <span class="cm">// sort before computing percentiles</span></code>
+  <span class="desc">Sorts a []float64 in ascending order in place; NaN values sort before other values.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func sort.Reverse(data sort.Interface) sort.Interface</code>
+  <code class="snippet">sort.<span class="fn">Sort</span>(sort.<span class="fn">Reverse</span>(sort.<span class="fn">StringSlice</span>(tags)))</code>
+  <span class="desc">Wraps a sort.Interface to sort in descending order; compose with any Interface implementation.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">type sort.Interface interface { Len() int; Less(i, j int) bool; Swap(i, j int) }</code>
+  <code class="snippet"><span class="kw">func</span> (b <span class="ty">ByDeadline</span>) <span class="fn">Len</span>() <span class="ty">int</span>           { <span class="kw">return</span> <span class="fn">len</span>(b) }
+<span class="kw">func</span> (b <span class="ty">ByDeadline</span>) <span class="fn">Less</span>(i, j <span class="ty">int</span>) <span class="ty">bool</span> { <span class="kw">return</span> b[i].Deadline.<span class="fn">Before</span>(b[j].Deadline) }
+<span class="kw">func</span> (b <span class="ty">ByDeadline</span>) <span class="fn">Swap</span>(i, j <span class="ty">int</span>)      { b[i], b[j] = b[j], b[i] }</code>
+  <span class="desc">Implement Len/Less/Swap on a named slice type to use sort.Sort, sort.Stable, and sort.Reverse.</span>
+</div>
+
 <h2 class="section-heading" id="go-errors">errors</h2>
+
+<div class="entry">
+  <code class="sig">func errors.New(text string) error</code>
+  <code class="snippet"><span class="kw">var</span> ErrNotFound = errors.<span class="fn">New</span>(<span class="str">"record not found"</span>)</code>
+  <span class="desc">Creates a new error with a static message; declare as a package-level var so callers can compare with errors.Is.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func errors.Is(err, target error) bool</code>
+  <code class="snippet"><span class="kw">if</span> errors.<span class="fn">Is</span>(err, ErrNotFound) { <span class="kw">return</span> http.StatusNotFound }</code>
+  <span class="desc">Checks whether any error in the chain matches target; handles wrapped errors — prefer over direct == comparison.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func errors.As(err error, target any) bool</code>
+  <code class="snippet"><span class="kw">var</span> pgErr *<span class="ty">pgconn.PgError</span>; <span class="kw">if</span> errors.<span class="fn">As</span>(err, &amp;pgErr) { log.<span class="fn">Println</span>(pgErr.Code) }</code>
+  <span class="desc">Finds the first error in the chain matching target's type and assigns it; use instead of type assertion on wrapped errors.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func errors.Unwrap(err error) error</code>
+  <code class="snippet">cause := errors.<span class="fn">Unwrap</span>(err) <span class="cm">// one level; nil if err doesn't implement Unwrap</span></code>
+  <span class="desc">Returns the directly wrapped error; errors.Is/As are usually preferable for traversing the full chain.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func errors.Join(errs ...error) error</code>
+  <code class="snippet">errs = <span class="kw">append</span>(errs, <span class="fn">validate</span>(field, value))
+<span class="kw">return</span> errors.<span class="fn">Join</span>(errs...)</code>
+  <span class="desc">Combines multiple errors into one; the joined error's Error() concatenates non-nil messages with newlines. errors.Is/As traverse all branches.</span>
+</div>
 
 <h2 class="section-heading" id="go-io">io</h2>
 
