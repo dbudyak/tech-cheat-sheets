@@ -3918,9 +3918,231 @@ http.<span class="fn">Handle</span>(<span class="str">"/static/"</span>, http.<s
 
 <h2 class="section-heading" id="go-runtime">runtime</h2>
 
+<div class="entry">
+  <code class="sig">func runtime.NumCPU() int</code>
+  <code class="snippet">workers := runtime.<span class="fn">NumCPU</span>() * <span class="num">2</span>; sem := <span class="fn">make</span>(<span class="kw">chan</span> <span class="kw">struct</span>{}, workers)</code>
+  <span class="desc">Returns the number of logical CPUs available to the process; multiply by 2–4 to size worker pools or buffered semaphore channels.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func runtime.GOMAXPROCS(n int) int</code>
+  <code class="snippet">prev := runtime.<span class="fn">GOMAXPROCS</span>(runtime.<span class="fn">NumCPU</span>()) <span class="cm">// returns old value; 0 = query without changing</span></code>
+  <span class="desc">Sets the maximum number of OS threads that can execute Go code simultaneously; defaults to NumCPU since Go 1.5; call with 0 to query the current value.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func runtime.Gosched()</code>
+  <code class="snippet"><span class="kw">for</span> !atomic.<span class="fn">CompareAndSwapInt32</span>(&amp;ready, <span class="num">0</span>, <span class="num">1</span>) { runtime.<span class="fn">Gosched</span>() } <span class="cm">// yield in spin-wait</span></code>
+  <span class="desc">Yields the processor, allowing other goroutines to run; use in tight spin-loops to avoid starving the scheduler on GOMAXPROCS=1 or CPU-bound goroutines.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func runtime.GC()</code>
+  <code class="snippet">b.<span class="fn">ResetTimer</span>(); runtime.<span class="fn">GC</span>() <span class="cm">// force GC before benchmark iteration to get clean heap baseline</span></code>
+  <span class="desc">Forces an immediate garbage collection; useful in benchmarks or tests to isolate heap effects; not needed in production code — the runtime GC is self-tuning.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">runtime.GOOS string / runtime.GOARCH string</code>
+  <code class="snippet"><span class="kw">if</span> runtime.GOOS == <span class="str">"windows"</span> { sep = <span class="str">'\\'</span> }; <span class="kw">if</span> runtime.GOARCH == <span class="str">"arm64"</span> { <span class="cm">/* Apple Silicon path */</span> }</code>
+  <span class="desc">Package-level string constants set at compile time; use instead of os.Getenv("GOOS") for zero-cost platform detection in library code.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func runtime.Caller(skip int) (pc uintptr, file string, line int, ok bool)</code>
+  <code class="snippet">_, file, line, _ := runtime.<span class="fn">Caller</span>(<span class="num">1</span>); fmt.<span class="fn">Printf</span>(<span class="str">"%s:%d"</span>, filepath.<span class="fn">Base</span>(file), line) <span class="cm">// caller of this func</span></code>
+  <span class="desc">Returns program counter, source file, and line number of the call stack at the given skip depth; skip=0 is Caller itself, skip=1 is the function that called Caller.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func runtime.Callers(skip int, pcs []uintptr) int</code>
+  <code class="snippet">pcs := <span class="fn">make</span>([]<span class="ty">uintptr</span>, <span class="num">32</span>); n := runtime.<span class="fn">Callers</span>(<span class="num">2</span>, pcs); frames := runtime.<span class="fn">CallersFrames</span>(pcs[:n])</code>
+  <span class="desc">Fills pcs with return program counters of the call stack; pass the slice to runtime.CallersFrames to get File/Line/Function for each frame — cheaper than Stack for structured use.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func runtime.FuncForPC(pc uintptr) *runtime.Func</code>
+  <code class="snippet">pc, _, _, _ := runtime.<span class="fn">Caller</span>(<span class="num">1</span>); fn := runtime.<span class="fn">FuncForPC</span>(pc); fmt.<span class="fn">Println</span>(fn.<span class="fn">Name</span>()) <span class="cm">// e.g. "main.handleRequest"</span></code>
+  <span class="desc">Returns the *Func describing the function containing the given PC; call .Name() for the fully qualified function name, .FileLine(pc) for source location.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func runtime.Stack(buf []byte, all bool) int</code>
+  <code class="snippet">buf := <span class="fn">make</span>([]<span class="ty">byte</span>, <span class="num">64</span>&lt;&lt;<span class="num">10</span>); n := runtime.<span class="fn">Stack</span>(buf, <span class="kw">false</span>); log.<span class="fn">Printf</span>(<span class="str">"goroutine stack:\n%s"</span>, buf[:n])</code>
+  <span class="desc">Writes goroutine stack trace(s) into buf and returns the byte count; all=false captures only the current goroutine, all=true captures every goroutine — useful in panic handlers.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func runtime.ReadMemStats(m *runtime.MemStats)</code>
+  <code class="snippet"><span class="kw">var</span> m runtime.<span class="ty">MemStats</span>; runtime.<span class="fn">ReadMemStats</span>(&amp;m); fmt.<span class="fn">Printf</span>(<span class="str">"alloc=%d MB numGC=%d"</span>, m.Alloc&gt;&gt;<span class="num">20</span>, m.NumGC)</code>
+  <span class="desc">Populates MemStats with current heap/GC metrics; stops the world briefly — avoid in tight loops; useful in health-check endpoints or profiling scripts to expose live memory figures.</span>
+</div>
+
 <h2 class="section-heading" id="go-slog">log/slog</h2>
 
+<div class="entry">
+  <code class="sig">func slog.Info(msg string, args ...any)</code>
+  <code class="snippet">slog.<span class="fn">Info</span>(<span class="str">"request completed"</span>, <span class="str">"user_id"</span>, userID, <span class="str">"latency_ms"</span>, latency.<span class="fn">Milliseconds</span>())</code>
+  <span class="desc">Logs at Info level using the default logger; alternating key/value pairs become structured fields; no allocation for disabled levels (zerolog-style fast path since Go 1.21).</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func slog.Error(msg string, args ...any)</code>
+  <code class="snippet">slog.<span class="fn">Error</span>(<span class="str">"db query failed"</span>, <span class="str">"request_id"</span>, reqID, <span class="str">"err"</span>, err)</code>
+  <span class="desc">Logs at Error level; pass the error as the "err" key — slog formats it via its Error() string; use instead of log.Printf so structured handlers can index the error field.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func slog.Debug(msg string, args ...any) / func slog.Warn(msg string, args ...any)</code>
+  <code class="snippet">slog.<span class="fn">Debug</span>(<span class="str">"cache miss"</span>, <span class="str">"key"</span>, key); slog.<span class="fn">Warn</span>(<span class="str">"quota near limit"</span>, <span class="str">"used_pct"</span>, pct)</code>
+  <span class="desc">Debug is a no-op when the handler level is Info or above — zero allocation; Warn sits between Info and Error for non-fatal anomalies that need monitoring attention.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func slog.Log(ctx context.Context, level slog.Level, msg string, args ...any)</code>
+  <code class="snippet">slog.<span class="fn">Log</span>(ctx, slog.LevelInfo+<span class="num">2</span>, <span class="str">"audit"</span>, <span class="str">"actor"</span>, actor, <span class="str">"action"</span>, action) <span class="cm">// custom level between Info and Warn</span></code>
+  <span class="desc">Logs at an arbitrary Level, including custom numeric levels; the ctx is passed to the handler so it can extract trace-IDs or deadlines from context values.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func slog.With(args ...any) *slog.Logger</code>
+  <code class="snippet">logger := slog.<span class="fn">With</span>(<span class="str">"service"</span>, <span class="str">"payments"</span>, <span class="str">"env"</span>, os.<span class="fn">Getenv</span>(<span class="str">"ENV"</span>)); logger.<span class="fn">Info</span>(<span class="str">"started"</span>)</code>
+  <span class="desc">Returns a new Logger derived from the default logger with the given attributes pre-attached to every subsequent log line — ideal for request-scoped or service-level fields.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func (*slog.Logger) WithGroup(name string) *slog.Logger</code>
+  <code class="snippet">reqLog := slog.<span class="fn">Default</span>().<span class="fn">WithGroup</span>(<span class="str">"request"</span>); reqLog.<span class="fn">Info</span>(<span class="str">"handled"</span>, <span class="str">"method"</span>, r.Method, <span class="str">"path"</span>, r.URL.Path) <span class="cm">// JSON: {"request":{"method":"GET","path":"/"}}</span></code>
+  <span class="desc">Nests subsequent fields under the given group name in the output; in JSON handlers this produces a nested object, in text handlers it prefixes keys with "group.".</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func slog.New(h slog.Handler) *slog.Logger</code>
+  <code class="snippet">logger := slog.<span class="fn">New</span>(slog.<span class="fn">NewJSONHandler</span>(os.Stderr, <span class="kw">nil</span>)); logger.<span class="fn">Info</span>(<span class="str">"ready"</span>, <span class="str">"pid"</span>, os.<span class="fn">Getpid</span>())</code>
+  <span class="desc">Creates a Logger wrapping any slog.Handler; use to swap handlers in tests (e.g. slogtest.NewTestHandler) without changing call sites that use the logger.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func slog.NewJSONHandler(w io.Writer, opts *slog.HandlerOptions) *slog.JSONHandler</code>
+  <code class="snippet">logger := slog.<span class="fn">New</span>(slog.<span class="fn">NewJSONHandler</span>(os.Stdout, &amp;slog.<span class="ty">HandlerOptions</span>{Level: slog.LevelInfo})); slog.<span class="fn">SetDefault</span>(logger)</code>
+  <span class="desc">Creates a structured JSON logger; call SetDefault so top-level slog.Info/Error use it throughout the program.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func slog.NewTextHandler(w io.Writer, opts *slog.HandlerOptions) *slog.TextHandler</code>
+  <code class="snippet">h := slog.<span class="fn">NewTextHandler</span>(os.Stderr, &amp;slog.<span class="ty">HandlerOptions</span>{Level: slog.LevelDebug, AddSource: <span class="kw">true</span>}); slog.<span class="fn">SetDefault</span>(slog.<span class="fn">New</span>(h))</code>
+  <span class="desc">Outputs logfmt-style key=value lines; AddSource=true appends file:line to every record — useful during local development when JSON is hard to scan quickly.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">slog.HandlerOptions{Level slog.Leveler, AddSource bool, ReplaceAttr func(groups []string, a slog.Attr) slog.Attr}</code>
+  <code class="snippet">opts := &amp;slog.<span class="ty">HandlerOptions</span>{Level: slog.LevelDebug, AddSource: <span class="kw">true</span>, ReplaceAttr: <span class="kw">func</span>(groups []<span class="ty">string</span>, a slog.<span class="ty">Attr</span>) slog.<span class="ty">Attr</span> { <span class="kw">if</span> a.Key == slog.TimeKey { a.Key = <span class="str">"ts"</span> }; <span class="kw">return</span> a }}</code>
+  <span class="desc">ReplaceAttr lets you rename, redact, or drop fields globally — rename "time" to "ts" for Elasticsearch, scrub "password" values, or drop the source key in prod builds.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">slog.LevelDebug / slog.LevelInfo / slog.LevelWarn / slog.LevelError</code>
+  <code class="snippet">minLevel := slog.LevelInfo; <span class="kw">if</span> os.<span class="fn">Getenv</span>(<span class="str">"DEBUG"</span>) == <span class="str">"1"</span> { minLevel = slog.LevelDebug }; slog.<span class="fn">SetDefault</span>(slog.<span class="fn">New</span>(slog.<span class="fn">NewJSONHandler</span>(os.Stdout, &amp;slog.<span class="ty">HandlerOptions</span>{Level: minLevel})))</code>
+  <span class="desc">Predefined Level constants (int values -4/0/4/8); compare or combine arithmetically to define custom levels between them (e.g. LevelInfo+2 for a "notice" level).</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func slog.String(key, value string) slog.Attr / slog.Int / slog.Bool / slog.Duration / slog.Any</code>
+  <code class="snippet">slog.<span class="fn">Info</span>(<span class="str">"signup"</span>, slog.<span class="fn">String</span>(<span class="str">"user_id"</span>, uid), slog.<span class="fn">Int</span>(<span class="str">"plan"</span>, planID), slog.<span class="fn">Duration</span>(<span class="str">"latency"</span>, d))</code>
+  <span class="desc">Typed Attr constructors avoid reflection — prefer over bare key/value pairs in hot paths where the allocator matters; slog.Any handles arbitrary values via fmt.Stringer or json.Marshaler.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func slog.Group(key string, args ...any) slog.Attr</code>
+  <code class="snippet">slog.<span class="fn">Info</span>(<span class="str">"request"</span>, slog.<span class="fn">Group</span>(<span class="str">"http"</span>, <span class="str">"method"</span>, r.Method, <span class="str">"status"</span>, code, <span class="str">"bytes"</span>, written)) <span class="cm">// JSON: {"http":{"method":"GET","status":200}}</span></code>
+  <span class="desc">Creates a nested attribute group inline at the call site; equivalent to WithGroup but scoped to a single log line rather than all subsequent calls on the logger.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func slog.SetDefault(l *slog.Logger)</code>
+  <code class="snippet">slog.<span class="fn">SetDefault</span>(slog.<span class="fn">New</span>(slog.<span class="fn">NewJSONHandler</span>(os.Stdout, <span class="kw">nil</span>))); slog.<span class="fn">Info</span>(<span class="str">"server starting"</span>, <span class="str">"addr"</span>, addr) <span class="cm">// also redirects log.Printf output</span></code>
+  <span class="desc">Replaces the package-level default logger; also bridges the old log package so log.Printf output is routed through the new structured handler — migrate incrementally.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">type slog.LogValuer interface { LogValue() slog.Value }</code>
+  <code class="snippet"><span class="kw">type</span> <span class="ty">Secret</span> <span class="kw">struct</span>{ v <span class="ty">string</span> }; <span class="kw">func</span> (s <span class="ty">Secret</span>) <span class="fn">LogValue</span>() slog.<span class="ty">Value</span> { <span class="kw">return</span> slog.<span class="fn">StringValue</span>(<span class="str">"[REDACTED]"</span>) }; slog.<span class="fn">Info</span>(<span class="str">"auth"</span>, <span class="str">"token"</span>, Secret{tok})</code>
+  <span class="desc">Implement LogValuer on sensitive types so they always log as "[REDACTED]" regardless of call site — safer than relying on every caller to remember to redact.</span>
+</div>
+
 <h2 class="section-heading" id="go-testing">testing</h2>
+
+<div class="entry">
+  <code class="sig">func (t *testing.T) Run(name string, f func(t *testing.T)) bool</code>
+  <code class="snippet"><span class="kw">for</span> _, tc := <span class="kw">range</span> []<span class="kw">struct</span>{ in <span class="ty">string</span>; want <span class="ty">int</span> }{{<span class="str">"abc"</span>, <span class="num">3</span>}, {<span class="str">""</span>, <span class="num">0</span>}}{ tc := tc; t.<span class="fn">Run</span>(tc.in, <span class="kw">func</span>(t *testing.<span class="ty">T</span>) { <span class="kw">if</span> <span class="fn">got</span> := <span class="fn">Len</span>(tc.in); got != tc.want { t.<span class="fn">Errorf</span>(<span class="str">"got %d"</span>, got) } }) }</code>
+  <span class="desc">Runs a subtest; each subtest appears as TestFoo/name in output and can be run individually with -run; capture tc := tc before the closure when parallelising to avoid the loop-variable capture bug.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func (t *testing.T) Helper()</code>
+  <code class="snippet"><span class="kw">func</span> <span class="fn">assertEqual</span>(t *testing.<span class="ty">T</span>, got, want <span class="ty">int</span>) { t.<span class="fn">Helper</span>(); <span class="kw">if</span> got != want { t.<span class="fn">Errorf</span>(<span class="str">"got %d want %d"</span>, got, want) } }</code>
+  <span class="desc">Marks the calling function as a test helper so that t.Errorf reports the caller's file/line, not the helper's — every assertion helper should call t.Helper() as its first statement.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func (t *testing.T) Parallel()</code>
+  <code class="snippet">t.<span class="fn">Run</span>(<span class="str">"heavy"</span>, <span class="kw">func</span>(t *testing.<span class="ty">T</span>) { t.<span class="fn">Parallel</span>(); <span class="cm">/* runs concurrently with other Parallel subtests */</span> })</code>
+  <span class="desc">Signals that this test can run in parallel with other parallel tests; the test pauses until its parent test function returns, then resumes alongside other parallel subtests — speeds up I/O-bound test suites.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func (t *testing.T) Cleanup(f func())</code>
+  <code class="snippet">db := <span class="fn">openTestDB</span>(t); t.<span class="fn">Cleanup</span>(<span class="kw">func</span>() { db.<span class="fn">Close</span>() }) <span class="cm">// runs after test and all subtests</span></code>
+  <span class="desc">Registers a cleanup function that runs when the test and all its subtests finish; prefer over defer for shared resources because it runs even if the test calls t.FailNow or t.Skip.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func (t *testing.T) Errorf(format string, args ...any) / func (t *testing.T) Fatalf(format string, args ...any)</code>
+  <code class="snippet"><span class="kw">if</span> got != want { t.<span class="fn">Errorf</span>(<span class="str">"Parse(%q) = %v, want %v"</span>, input, got, want) } <span class="cm">// Fatalf calls FailNow — stops the test immediately</span></code>
+  <span class="desc">Errorf marks the test failed and continues; Fatalf marks failed and calls runtime.Goexit() to stop the goroutine immediately — use Fatalf when subsequent code would panic on bad state.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func (t *testing.T) FailNow()</code>
+  <code class="snippet"><span class="kw">if</span> err != <span class="kw">nil</span> { t.<span class="fn">Logf</span>(<span class="str">"setup failed: %v"</span>, err); t.<span class="fn">FailNow</span>() } <span class="cm">// same as Fatalf without a message</span></code>
+  <span class="desc">Marks the test as failed and stops execution by calling runtime.Goexit(); unlike os.Exit it still runs Cleanup and defer functions registered on the test goroutine.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func (t *testing.T) Logf(format string, args ...any)</code>
+  <code class="snippet">t.<span class="fn">Logf</span>(<span class="str">"response body: %s"</span>, body) <span class="cm">// only printed when test fails or -v flag is set</span></code>
+  <span class="desc">Appends a formatted message to the test's log output; the message is only shown on failure or with -v — use freely for diagnostic context without noisy CI output on passing runs.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func (t *testing.T) Skip(args ...any) / func (t *testing.T) Skipf(format string, args ...any)</code>
+  <code class="snippet"><span class="kw">if</span> os.<span class="fn">Getenv</span>(<span class="str">"INTEGRATION"</span>) == <span class="str">""</span> { t.<span class="fn">Skip</span>(<span class="str">"set INTEGRATION=1 to run"</span>) }; <span class="kw">if</span> testing.<span class="fn">Short</span>() { t.<span class="fn">Skipf</span>(<span class="str">"skipping %s in short mode"</span>, t.<span class="fn">Name</span>()) }</code>
+  <span class="desc">Marks the test as skipped and stops execution; the skip reason appears in test output; use to guard integration tests or slow tests that shouldn't run in CI fast mode.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func (b *testing.B) N int / b.ResetTimer() / b.ReportAllocs() / b.RunParallel(body func(*testing.PB))</code>
+  <code class="snippet"><span class="kw">func</span> <span class="fn">BenchmarkEncode</span>(b *testing.<span class="ty">B</span>) { b.<span class="fn">ReportAllocs</span>(); b.<span class="fn">ResetTimer</span>(); <span class="kw">for</span> i := <span class="num">0</span>; i &lt; b.N; i++ { <span class="fn">encode</span>(payload) } }</code>
+  <span class="desc">B.N is auto-tuned by the framework; ResetTimer excludes setup time; ReportAllocs prints allocs/op and B/op columns; RunParallel measures throughput across GOMAXPROCS goroutines.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func (b *testing.B) RunParallel(body func(*testing.PB))</code>
+  <code class="snippet">b.<span class="fn">RunParallel</span>(<span class="kw">func</span>(pb *testing.<span class="ty">PB</span>) { <span class="kw">for</span> pb.<span class="fn">Next</span>() { <span class="fn">encode</span>(payload) } }) <span class="cm">// measures lock contention under parallel load</span></code>
+  <span class="desc">Runs the body in parallel across GOMAXPROCS goroutines; use to benchmark concurrent-safe functions or measure lock contention; pb.Next() replaces the b.N loop inside the body.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func testing.Short() bool</code>
+  <code class="snippet"><span class="kw">if</span> testing.<span class="fn">Short</span>() { t.<span class="fn">Skip</span>(<span class="str">"skipping integration test in -short mode"</span>) }</code>
+  <span class="desc">Returns true when the test binary was invoked with -test.short; convention is that -short skips slow tests — use in CI pipelines to run a fast subset before a full nightly suite.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func testing.TestMain(m *testing.M)</code>
+  <code class="snippet"><span class="kw">func</span> <span class="fn">TestMain</span>(m *testing.<span class="ty">M</span>) { <span class="fn">setupDB</span>(); code := m.<span class="fn">Run</span>(); <span class="fn">teardownDB</span>(); os.<span class="fn">Exit</span>(code) }</code>
+  <span class="desc">Replaces the default test runner; m.Run() executes all tests and returns the exit code; use for global test fixtures (database migrations, Docker containers) that are too expensive to repeat per test.</span>
+</div>
 
   </section>
 </main>
