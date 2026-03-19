@@ -1860,6 +1860,7 @@ details .adv-content { border: 1px solid #30363d; border-top: none; border-radiu
 
   <section id="go" class="lang-section">
 
+<!-- coverage: fmt 13/15 -->
 <h2 class="section-heading" id="go-fmt">fmt</h2>
 
 <div class="entry">
@@ -1946,6 +1947,7 @@ fmt.<span class="fn">Fscan</span>(r, &amp;x, &amp;y) <span class="cm">// reads w
   <span class="desc">Writes string representations of args to w with no format string; useful when the value is already a string or Stringer.</span>
 </div>
 
+<!-- coverage: strings 20/23 -->
 <h2 class="section-heading" id="go-strings">strings</h2>
 
 <div class="entry">
@@ -2094,6 +2096,7 @@ indent := strings.<span class="fn">Repeat</span>(<span class="str">"  "</span>, 
   <span class="desc">Wraps a string as an io.Reader; use to pass an in-memory string to APIs that expect a reader (HTTP bodies, decoders).</span>
 </div>
 
+<!-- coverage: strconv 9/11 -->
 <h2 class="section-heading" id="go-strconv">strconv</h2>
 
 <div class="entry">
@@ -2161,6 +2164,7 @@ val, err := strconv.<span class="fn">Unquote</span>(jsonStringToken) <span class
   <span class="desc">Returned by all Parse* functions on failure; Err is ErrRange (overflow) or ErrSyntax (not a valid number).</span>
 </div>
 
+<!-- coverage: bytes 13/15 -->
 <h2 class="section-heading" id="go-bytes">bytes</h2>
 
 <div class="entry">
@@ -2254,6 +2258,7 @@ bare := bytes.<span class="fn">Trim</span>(token, <span class="str">"\"'"</span>
   <span class="desc">Wraps a []byte as an io.Reader/io.Seeker; use to feed in-memory bytes to decoders that expect a reader.</span>
 </div>
 
+<!-- coverage: regexp 13/15 -->
 <h2 class="section-heading" id="go-regexp">regexp</h2>
 
 <div class="entry">
@@ -2347,6 +2352,7 @@ m := logRe.<span class="fn">FindStringSubmatch</span>(line)
   <span class="desc">Returns capture group names indexed to match FindStringSubmatch output; enables building a name→value map from a match.</span>
 </div>
 
+<!-- coverage: slices 28/30 -->
 <h2 class="section-heading" id="go-slices">slices</h2>
 
 <div class="entry">
@@ -2517,6 +2523,7 @@ m := logRe.<span class="fn">FindStringSubmatch</span>(line)
   <span class="desc">Replaces s[i:j] with v; equivalent to Delete followed by Insert but in one allocation.</span>
 </div>
 
+<!-- coverage: maps 9/11 -->
 <h2 class="section-heading" id="go-maps">maps</h2>
 
 <div class="entry">
@@ -2573,6 +2580,7 @@ m := logRe.<span class="fn">FindStringSubmatch</span>(line)
   <span class="desc">Reports whether two maps contain the same key-value pairs; both K and V must be comparable.</span>
 </div>
 
+<!-- coverage: sort 10/12 -->
 <h2 class="section-heading" id="go-sort">sort</h2>
 
 <div class="entry">
@@ -2637,6 +2645,7 @@ m := logRe.<span class="fn">FindStringSubmatch</span>(line)
   <span class="desc">Implement Len/Less/Swap on a named slice type to use sort.Sort, sort.Stable, and sort.Reverse.</span>
 </div>
 
+<!-- coverage: errors 5/7 -->
 <h2 class="section-heading" id="go-errors">errors</h2>
 
 <div class="entry">
@@ -2670,6 +2679,7 @@ m := logRe.<span class="fn">FindStringSubmatch</span>(line)
   <span class="desc">Combines multiple errors into one; the joined error's Error() concatenates non-nil messages with newlines. errors.Is/As traverse all branches.</span>
 </div>
 
+<!-- coverage: io 19/22 -->
 <h2 class="section-heading" id="go-io">io</h2>
 
 <div class="entry">
@@ -2786,6 +2796,7 @@ m := logRe.<span class="fn">FindStringSubmatch</span>(line)
   <span class="desc">Like ReadFull but accepts a minimum count less than len(buf); useful when you need some data but can work with a partial buffer fill.</span>
 </div>
 
+<!-- coverage: io/fs 9/11 -->
 <h2 class="section-heading" id="go-fs">io/fs</h2>
 
 <div class="entry">
@@ -2843,6 +2854,7 @@ m := logRe.<span class="fn">FindStringSubmatch</span>(line)
   <span class="desc">Returns sorted directory entries; simpler than WalkDir when you only need one directory level without recursion.</span>
 </div>
 
+<!-- coverage: os 15/18 -->
 <h2 class="section-heading" id="go-os">os</h2>
 
 <div class="entry">
@@ -2935,6 +2947,7 @@ m := logRe.<span class="fn">FindStringSubmatch</span>(line)
   <span class="desc">*os.File implements io.Reader, io.Writer, io.Seeker, io.ReaderAt, io.WriterAt; Seek(0, io.SeekStart) rewinds to the beginning.</span>
 </div>
 
+<!-- coverage: os/exec 7/9 -->
 <h2 class="section-heading" id="go-exec">os/exec</h2>
 
 <div class="entry">
@@ -2979,6 +2992,7 @@ m := logRe.<span class="fn">FindStringSubmatch</span>(line)
   <span class="desc">Returned by Run/Output/Wait when the command exits non-zero; ExitCode() gives the status, Stderr field has captured stderr when using Output().</span>
 </div>
 
+<!-- coverage: bufio 9/11 -->
 <h2 class="section-heading" id="go-bufio">bufio</h2>
 
 <div class="entry">
@@ -3035,6 +3049,7 @@ m := logRe.<span class="fn">FindStringSubmatch</span>(line)
   <span class="desc">Combines a buffered Reader and Writer over the same underlying connection; used when a protocol requires both buffered reads and writes (e.g. HTTP/1.1 hijack).</span>
 </div>
 
+<!-- coverage: path/filepath 12/14 -->
 <h2 class="section-heading" id="go-filepath">path/filepath</h2>
 
 <div class="entry">
@@ -3110,6 +3125,7 @@ m := logRe.<span class="fn">FindStringSubmatch</span>(line)
   <span class="desc">Resolves all symlinks and returns the canonical path; call before checking that a path is within a safe root to prevent symlink traversal attacks.</span>
 </div>
 
+<!-- coverage: embed 4/5 -->
 <h2 class="section-heading" id="go-embed">embed</h2>
 
 <div class="entry">
@@ -3140,6 +3156,7 @@ http.<span class="fn">Handle</span>(<span class="str">"/static/"</span>, http.<s
   <span class="desc">Use fs.Sub to expose only a subdirectory; http.FS wraps any fs.FS into an http.FileSystem so the standard file server serves embedded assets with correct MIME types.</span>
 </div>
 
+<!-- coverage: time 18/21 -->
 <h2 class="section-heading" id="go-time">time</h2>
 
 <div class="entry">
@@ -3250,6 +3267,7 @@ http.<span class="fn">Handle</span>(<span class="str">"/static/"</span>, http.<s
   <span class="desc">IsZero checks if t is the zero value (Jan 1 year 1); Before/After compare two times and are nil-safe alternatives to t.Sub(u) sign checks.</span>
 </div>
 
+<!-- coverage: context 10/12 -->
 <h2 class="section-heading" id="go-context">context</h2>
 
 <div class="entry">
@@ -3312,6 +3330,7 @@ http.<span class="fn">Handle</span>(<span class="str">"/static/"</span>, http.<s
   <span class="desc">Schedules f to run in a new goroutine after ctx is done (Go 1.21); stop() cancels the callback if the context hasn't fired yet — useful for cleanup on cancellation.</span>
 </div>
 
+<!-- coverage: sync 10/12 -->
 <h2 class="section-heading" id="go-sync">sync</h2>
 
 <div class="entry">
@@ -3374,6 +3393,7 @@ http.<span class="fn">Handle</span>(<span class="str">"/static/"</span>, http.<s
   <span class="desc">Condition variable for goroutines waiting on a shared condition; Wait atomically releases the lock and suspends until Signal or Broadcast.</span>
 </div>
 
+<!-- coverage: sync/atomic 8/10 -->
 <h2 class="section-heading" id="go-atomic">sync/atomic</h2>
 
 <div class="entry">
@@ -3424,6 +3444,7 @@ http.<span class="fn">Handle</span>(<span class="str">"/static/"</span>, http.<s
   <span class="desc">Atomic container for any value; Store panics if the concrete type changes between calls — use Pointer[T] for type safety in new code.</span>
 </div>
 
+<!-- coverage: math 10/12 -->
 <h2 class="section-heading" id="go-math">math</h2>
 
 <div class="entry">
@@ -3488,6 +3509,7 @@ http.<span class="fn">Handle</span>(<span class="str">"/static/"</span>, http.<s
   <span class="desc">Fisher-Yates shuffle in O(n); the swap callback pattern works for any slice type without reflection.</span>
 </div>
 
+<!-- coverage: net 11/13 -->
 <h2 class="section-heading" id="go-net">net</h2>
 
 <div class="entry">
@@ -3556,6 +3578,7 @@ http.<span class="fn">Handle</span>(<span class="str">"/static/"</span>, http.<s
   <span class="desc">ParseCIDR returns both the host IP and the network; use Contains to check if an IP belongs to a subnet.</span>
 </div>
 
+<!-- coverage: net/http 20/24 -->
 <h2 class="section-heading" id="go-http">net/http</h2>
 
 <div class="entry">
@@ -3678,6 +3701,7 @@ http.<span class="fn">Handle</span>(<span class="str">"/static/"</span>, http.<s
   <span class="desc">Wraps the request body with a size limit; returns an error if the client sends more, preventing memory exhaustion.</span>
 </div>
 
+<!-- coverage: net/http/httptest 4/5 -->
 <h2 class="section-heading" id="go-httptest">net/http/httptest</h2>
 
 <div class="entry">
@@ -3704,6 +3728,7 @@ http.<span class="fn">Handle</span>(<span class="str">"/static/"</span>, http.<s
   <span class="desc">Lets you customise Server fields (timeouts, TLS config) before starting — needed when testing timeout-sensitive handlers.</span>
 </div>
 
+<!-- coverage: net/url 7/9 -->
 <h2 class="section-heading" id="go-url">net/url</h2>
 
 <div class="entry">
@@ -3748,6 +3773,7 @@ http.<span class="fn">Handle</span>(<span class="str">"/static/"</span>, http.<s
   <span class="desc">Added in Go 1.19; joins path segments safely, escaping each element — prevents directory traversal bugs from string concat.</span>
 </div>
 
+<!-- coverage: encoding/json 12/14 -->
 <h2 class="section-heading" id="go-json">encoding/json</h2>
 
 <div class="entry">
@@ -3822,6 +3848,7 @@ http.<span class="fn">Handle</span>(<span class="str">"/static/"</span>, http.<s
   <span class="desc">Reads JSON one token at a time (delimiters, strings, numbers, booleans); use for streaming large arrays without loading the whole document.</span>
 </div>
 
+<!-- coverage: encoding/xml 8/10 -->
 <h2 class="section-heading" id="go-xml">encoding/xml</h2>
 
 <div class="entry">
@@ -3872,6 +3899,7 @@ http.<span class="fn">Handle</span>(<span class="str">"/static/"</span>, http.<s
   <span class="desc">The ",chardata" tag captures the text node inside an element into the field; combine with ",attr" tags on sibling fields to also capture attributes.</span>
 </div>
 
+<!-- coverage: encoding/csv 7/9 -->
 <h2 class="section-heading" id="go-csv">encoding/csv</h2>
 
 <div class="entry">
@@ -3916,6 +3944,7 @@ http.<span class="fn">Handle</span>(<span class="str">"/static/"</span>, http.<s
   <span class="desc">There is no built-in skip-header option; call Read() once before the loop to consume the header row, then iterate the remaining data rows.</span>
 </div>
 
+<!-- coverage: runtime 10/12 -->
 <h2 class="section-heading" id="go-runtime">runtime</h2>
 
 <div class="entry">
@@ -3978,6 +4007,7 @@ http.<span class="fn">Handle</span>(<span class="str">"/static/"</span>, http.<s
   <span class="desc">Populates MemStats with current heap/GC metrics; stops the world briefly — avoid in tight loops; useful in health-check endpoints or profiling scripts to expose live memory figures.</span>
 </div>
 
+<!-- coverage: log/slog 15/18 -->
 <h2 class="section-heading" id="go-slog">log/slog</h2>
 
 <div class="entry">
@@ -4070,6 +4100,7 @@ http.<span class="fn">Handle</span>(<span class="str">"/static/"</span>, http.<s
   <span class="desc">Implement LogValuer on sensitive types so they always log as "[REDACTED]" regardless of call site — safer than relying on every caller to remember to redact.</span>
 </div>
 
+<!-- coverage: testing 12/15 -->
 <h2 class="section-heading" id="go-testing">testing</h2>
 
 <div class="entry">
