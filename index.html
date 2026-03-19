@@ -3750,9 +3750,171 @@ http.<span class="fn">Handle</span>(<span class="str">"/static/"</span>, http.<s
 
 <h2 class="section-heading" id="go-json">encoding/json</h2>
 
+<div class="entry">
+  <code class="sig">func json.Marshal(v any) ([]byte, error)</code>
+  <code class="snippet">b, err := json.<span class="fn">Marshal</span>(resp); w.<span class="fn">Header</span>().<span class="fn">Set</span>(<span class="str">"Content-Type"</span>, <span class="str">"application/json"</span>); w.<span class="fn">Write</span>(b)</code>
+  <span class="desc">Encodes v to JSON bytes; returns error for unserializable types (channels, functions, cyclic structs).</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func json.Unmarshal(data []byte, v any) error</code>
+  <code class="snippet"><span class="kw">var</span> order <span class="ty">Order</span>; <span class="kw">if</span> err := json.<span class="fn">Unmarshal</span>(body, &amp;order); err != <span class="kw">nil</span> { <span class="fn">http.Error</span>(w, err.<span class="fn">Error</span>(), http.StatusBadRequest); <span class="kw">return</span> }</code>
+  <span class="desc">Decodes JSON bytes into v; numbers decode as float64 unless the target field is typed otherwise. Always pass a pointer.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func json.MarshalIndent(v any, prefix, indent string) ([]byte, error)</code>
+  <code class="snippet">b, _ := json.<span class="fn">MarshalIndent</span>(cfg, <span class="str">""</span>, <span class="str">"  "</span>); os.<span class="fn">WriteFile</span>(<span class="str">"config.json"</span>, b, <span class="num">0644</span>)</code>
+  <span class="desc">Same as Marshal but pretty-prints with indentation; handy for writing human-readable config files or debug dumps.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func json.NewEncoder(w io.Writer) *json.Encoder  — Encode(v any) error</code>
+  <code class="snippet">enc := json.<span class="fn">NewEncoder</span>(w); enc.SetIndent(<span class="str">""</span>, <span class="str">"  "</span>); <span class="kw">if</span> err := enc.<span class="fn">Encode</span>(payload); err != <span class="kw">nil</span> { <span class="fn">log.Fatal</span>(err) }</code>
+  <span class="desc">Writes JSON directly to a writer without buffering the full byte slice — preferred for HTTP response bodies and large structs.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func json.NewDecoder(r io.Reader) *json.Decoder  — Decode(v any) error, DisallowUnknownFields()</code>
+  <code class="snippet">dec := json.<span class="fn">NewDecoder</span>(r.Body); dec.<span class="fn">DisallowUnknownFields</span>(); <span class="kw">if</span> err := dec.<span class="fn">Decode</span>(&amp;req); err != <span class="kw">nil</span> { }</code>
+  <span class="desc">Streams JSON from a reader; DisallowUnknownFields rejects payloads with keys not in the struct — use in APIs to catch client bugs early.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">json.RawMessage  (type RawMessage []byte)</code>
+  <code class="snippet"><span class="kw">type</span> <span class="ty">Event</span> <span class="kw">struct</span> { Type <span class="ty">string</span>; Payload json.<span class="ty">RawMessage</span> }; <span class="kw">var</span> e <span class="ty">Event</span>; json.<span class="fn">Unmarshal</span>(data, &amp;e); json.<span class="fn">Unmarshal</span>(e.Payload, &amp;specific)</code>
+  <span class="desc">Defers decoding of a JSON subtree; useful for polymorphic events where you decode the envelope first, then the payload based on Type.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">json.Number  (type Number string)  — Int64() (int64, error), Float64() (float64, error), String() string</code>
+  <code class="snippet">dec := json.<span class="fn">NewDecoder</span>(r); dec.<span class="fn">UseNumber</span>(); <span class="kw">var</span> m <span class="kw">map</span>[<span class="ty">string</span>]<span class="kw">any</span>; dec.<span class="fn">Decode</span>(&amp;m); id, _ := m[<span class="str">"id"</span>].(json.<span class="ty">Number</span>).<span class="fn">Int64</span>()</code>
+  <span class="desc">Preserves large integers without float64 precision loss; call Decoder.UseNumber() so numeric values decode as json.Number instead of float64.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Struct tags: json:"name" / json:"name,omitempty" / json:"-" / json:"name,string"</code>
+  <code class="snippet"><span class="kw">type</span> <span class="ty">User</span> <span class="kw">struct</span> {<br>&nbsp;&nbsp;ID       <span class="ty">int64</span>   <span class="str">`json:"id,string"`</span>   <span class="cm">// encode int as JSON string</span><br>&nbsp;&nbsp;Email    <span class="ty">string</span>  <span class="str">`json:"email"`</span><br>&nbsp;&nbsp;Password <span class="ty">string</span>  <span class="str">`json:"-"`</span>           <span class="cm">// never marshaled</span><br>&nbsp;&nbsp;Bio      <span class="ty">string</span>  <span class="str">`json:"bio,omitempty"`</span><br>}</code>
+  <span class="desc">Tags control field names and marshaling behavior; omitempty skips zero values; "-" excludes the field entirely; "string" coerces the value to a JSON string.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">interface json.Marshaler  — MarshalJSON() ([]byte, error)</code>
+  <code class="snippet"><span class="kw">func</span> (d <span class="ty">Date</span>) <span class="fn">MarshalJSON</span>() ([]<span class="ty">byte</span>, <span class="ty">error</span>) {<br>&nbsp;&nbsp;<span class="kw">return</span> json.<span class="fn">Marshal</span>(d.Time.<span class="fn">Format</span>(<span class="str">"2006-01-02"</span>))<br>}</code>
+  <span class="desc">Implement MarshalJSON on a type to customize its JSON representation — used for time.Time formatting, enum strings, or redacted fields.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">interface json.Unmarshaler  — UnmarshalJSON([]byte) error</code>
+  <code class="snippet"><span class="kw">func</span> (d *<span class="ty">Date</span>) <span class="fn">UnmarshalJSON</span>(b []<span class="ty">byte</span>) <span class="ty">error</span> {<br>&nbsp;&nbsp;<span class="kw">var</span> s <span class="ty">string</span>; json.<span class="fn">Unmarshal</span>(b, &amp;s); d.Time, _ = time.<span class="fn">Parse</span>(<span class="str">"2006-01-02"</span>, s); <span class="kw">return</span> <span class="kw">nil</span><br>}</code>
+  <span class="desc">Implement UnmarshalJSON to parse non-standard JSON formats into your type — the raw bytes include surrounding quotes for strings.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func json.Valid(data []byte) bool</code>
+  <code class="snippet"><span class="kw">if</span> !json.<span class="fn">Valid</span>(body) { <span class="fn">http.Error</span>(w, <span class="str">"invalid JSON"</span>, http.StatusBadRequest); <span class="kw">return</span> }</code>
+  <span class="desc">Reports whether data is valid JSON without unmarshaling it — cheap pre-validation before storing raw bytes or forwarding to another service.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Decoder.Token() (json.Token, error)  — streaming token-by-token parse</code>
+  <code class="snippet">dec := json.<span class="fn">NewDecoder</span>(r); <span class="kw">for</span> dec.<span class="fn">More</span>() { t, _ := dec.<span class="fn">Token</span>(); <span class="cm">/* handle Delim, string, float64, bool, nil */</span> }</code>
+  <span class="desc">Reads JSON one token at a time (delimiters, strings, numbers, booleans); use for streaming large arrays without loading the whole document.</span>
+</div>
+
 <h2 class="section-heading" id="go-xml">encoding/xml</h2>
 
+<div class="entry">
+  <code class="sig">func xml.Marshal(v any) ([]byte, error)</code>
+  <code class="snippet">b, err := xml.<span class="fn">Marshal</span>(invoice); <span class="kw">if</span> err != <span class="kw">nil</span> { <span class="kw">return</span> err }; w.<span class="fn">Write</span>([]<span class="ty">byte</span>(xml.Header)); w.<span class="fn">Write</span>(b)</code>
+  <span class="desc">Encodes v to XML; prepend xml.Header ("&lt;?xml version=…?&gt;\n") for well-formed documents. Uses XMLName field or type name as root element.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func xml.Unmarshal(data []byte, v any) error</code>
+  <code class="snippet"><span class="kw">var</span> inv <span class="ty">Invoice</span>; <span class="kw">if</span> err := xml.<span class="fn">Unmarshal</span>(body, &amp;inv); err != <span class="kw">nil</span> { <span class="kw">return</span> <span class="fn">fmt.Errorf</span>(<span class="str">"parse invoice: %w"</span>, err) }</code>
+  <span class="desc">Decodes XML into v; struct fields are matched by their xml tag name; unknown elements are silently ignored by default.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func xml.MarshalIndent(v any, prefix, indent string) ([]byte, error)</code>
+  <code class="snippet">b, _ := xml.<span class="fn">MarshalIndent</span>(catalog, <span class="str">""</span>, <span class="str">"\t"</span>); os.<span class="fn">WriteFile</span>(<span class="str">"catalog.xml"</span>, b, <span class="num">0644</span>)</code>
+  <span class="desc">Same as Marshal but formats the output with indentation — useful for writing human-readable XML config or fixture files.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func xml.NewEncoder(w io.Writer) *xml.Encoder  — Encode(v any) error, EncodeToken(t xml.Token) error, Flush() error</code>
+  <code class="snippet">enc := xml.<span class="fn">NewEncoder</span>(w); enc.<span class="fn">Indent</span>(<span class="str">""</span>, <span class="str">"  "</span>); enc.<span class="fn">Encode</span>(item); enc.<span class="fn">Flush</span>()</code>
+  <span class="desc">Streams XML to a writer; call Flush() to ensure buffered tokens are written — essential when writing to a network connection.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Encoder.EncodeToken(t xml.Token) error  — StartElement, EndElement, CharData, Comment, ProcInst</code>
+  <code class="snippet">enc.<span class="fn">EncodeToken</span>(xml.<span class="ty">StartElement</span>{Name: xml.<span class="ty">Name</span>{Local: <span class="str">"price"</span>}}); enc.<span class="fn">EncodeToken</span>(xml.<span class="ty">CharData</span>(<span class="str">"19.99"</span>)); enc.<span class="fn">EncodeToken</span>(xml.<span class="ty">EndElement</span>{Name: xml.<span class="ty">Name</span>{Local: <span class="str">"price"</span>}})</code>
+  <span class="desc">Writes individual XML tokens for fine-grained control — use when building XML documents with dynamic structure not expressible via struct tags.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func xml.NewDecoder(r io.Reader) *xml.Decoder  — Decode(v any) error, Token() (xml.Token, error), RawToken() (xml.Token, error)</code>
+  <code class="snippet">dec := xml.<span class="fn">NewDecoder</span>(resp.Body); <span class="kw">for</span> { t, err := dec.<span class="fn">Token</span>(); <span class="kw">if</span> err == io.EOF { <span class="kw">break</span> }; <span class="cm">/* process StartElement, CharData … */</span> }</code>
+  <span class="desc">Streams XML parsing; Token resolves entities and handles namespaces, RawToken skips entity expansion — use for large feeds where loading the whole doc is impractical.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Struct tags: xml:"name" / xml:"name,attr" / xml:",chardata" / xml:",omitempty" / xml:",innerxml"</code>
+  <code class="snippet"><span class="kw">type</span> <span class="ty">Product</span> <span class="kw">struct</span> {<br>&nbsp;&nbsp;XMLName  xml.<span class="ty">Name</span>  <span class="str">`xml:"product"`</span><br>&nbsp;&nbsp;SKU      <span class="ty">string</span>   <span class="str">`xml:"sku,attr"`</span>      <span class="cm">// &lt;product sku="…"&gt;</span><br>&nbsp;&nbsp;Name     <span class="ty">string</span>   <span class="str">`xml:"name"`</span><br>&nbsp;&nbsp;Price    <span class="ty">float64</span>  <span class="str">`xml:"price,omitempty"`</span><br>&nbsp;&nbsp;RawSpec  <span class="ty">string</span>   <span class="str">`xml:",innerxml"`</span>     <span class="cm">// raw inner XML preserved</span><br>}</code>
+  <span class="desc">Tags control element names, attributes, and character data; ",attr" maps to an XML attribute; ",chardata" captures text content; ",innerxml" preserves raw XML subtrees.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">xml:",chardata" — capture element text content</code>
+  <code class="snippet"><span class="kw">type</span> <span class="ty">Description</span> <span class="kw">struct</span> {<br>&nbsp;&nbsp;Lang  <span class="ty">string</span> <span class="str">`xml:"lang,attr"`</span><br>&nbsp;&nbsp;Text  <span class="ty">string</span> <span class="str">`xml:",chardata"`</span><br>}<br><span class="cm">// &lt;description lang="en"&gt;Great product&lt;/description&gt;</span></code>
+  <span class="desc">The ",chardata" tag captures the text node inside an element into the field; combine with ",attr" tags on sibling fields to also capture attributes.</span>
+</div>
+
 <h2 class="section-heading" id="go-csv">encoding/csv</h2>
+
+<div class="entry">
+  <code class="sig">func csv.NewReader(r io.Reader) *csv.Reader  — Read() ([]string, error), ReadAll() ([][]string, error)</code>
+  <code class="snippet">f, _ := os.<span class="fn">Open</span>(<span class="str">"prices.csv"</span>); <span class="kw">defer</span> f.<span class="fn">Close</span>(); r := csv.<span class="fn">NewReader</span>(f); r.TrimLeadingSpace = <span class="kw">true</span>; records, err := r.<span class="fn">ReadAll</span>()</code>
+  <span class="desc">Parses CSV from any Reader; ReadAll loads the entire file into memory; for large price catalogs iterate with Read() in a loop to process row by row.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Reader.FieldsPerRecord int  — 0=infer from first row, -1=allow variable, N=require exactly N</code>
+  <code class="snippet">r := csv.<span class="fn">NewReader</span>(f); r.FieldsPerRecord = -<span class="num">1</span>; <span class="kw">for</span> { row, err := r.<span class="fn">Read</span>(); <span class="kw">if</span> err == io.EOF { <span class="kw">break</span> }; <span class="fn">processRow</span>(row) }</code>
+  <span class="desc">Set to -1 to tolerate rows with varying column counts (common in legacy exports); set to a positive N to enforce schema and get an error on malformed rows.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Reader.LazyQuotes bool / Reader.TrimLeadingSpace bool / Reader.Comment rune</code>
+  <code class="snippet">r := csv.<span class="fn">NewReader</span>(f); r.LazyQuotes = <span class="kw">true</span>; r.TrimLeadingSpace = <span class="kw">true</span>; r.Comment = <span class="str">'#'</span></code>
+  <span class="desc">LazyQuotes accepts bare quotes inside unquoted fields (fixes many real-world dirty CSVs); Comment skips lines beginning with that rune (e.g., metadata headers).</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func csv.NewWriter(w io.Writer) *csv.Writer  — Write(record []string) error, WriteAll(records [][]string) error, Flush(), Error() error</code>
+  <code class="snippet">w := csv.<span class="fn">NewWriter</span>(os.Stdout); w.<span class="fn">WriteAll</span>(rows); <span class="kw">if</span> err := w.<span class="fn">Error</span>(); err != <span class="kw">nil</span> { <span class="kw">return</span> err }</code>
+  <span class="desc">Writes CSV; WriteAll flushes automatically; always check Error() after Flush/WriteAll since Write buffers and errors surface only then.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Writer.Comma rune / Writer.UseCRLF bool</code>
+  <code class="snippet">w := csv.<span class="fn">NewWriter</span>(f); w.Comma = <span class="str">';'</span>; w.UseCRLF = <span class="kw">true</span>; w.<span class="fn">WriteAll</span>(rows); w.<span class="fn">Flush</span>()</code>
+  <span class="desc">Comma defaults to ','; change to ';' or '\t' for TSV and European locale exports; UseCRLF=true for Windows-compatible line endings required by Excel.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">csv streaming write — per-row Write + Flush</code>
+  <code class="snippet">w := csv.<span class="fn">NewWriter</span>(gzipWriter); <span class="kw">for</span> _, order := <span class="kw">range</span> orders { w.<span class="fn">Write</span>([]<span class="ty">string</span>{order.ID, order.SKU, <span class="fn">fmt.Sprint</span>(order.Qty)}); }; w.<span class="fn">Flush</span>(); <span class="kw">if</span> err := w.<span class="fn">Error</span>(); err != <span class="kw">nil</span> { <span class="kw">return</span> err }</code>
+  <span class="desc">Use Write in a loop for large exports (streaming to gzip, S3, etc.) to avoid holding all rows in memory; a single Flush at the end flushes the buffer.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">csv skip header row — Read once before loop</code>
+  <code class="snippet">r := csv.<span class="fn">NewReader</span>(f); header, _ := r.<span class="fn">Read</span>(); _ = header; <span class="kw">for</span> { row, err := r.<span class="fn">Read</span>(); <span class="kw">if</span> err == io.EOF { <span class="kw">break</span> }; <span class="cm">/* row[0]=SKU, row[1]=price */</span> }</code>
+  <span class="desc">There is no built-in skip-header option; call Read() once before the loop to consume the header row, then iterate the remaining data rows.</span>
+</div>
 
 <h2 class="section-heading" id="go-runtime">runtime</h2>
 
