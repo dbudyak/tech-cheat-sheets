@@ -1862,13 +1862,490 @@ details .adv-content { border: 1px solid #30363d; border-top: none; border-radiu
 
 <h2 class="section-heading" id="go-fmt">fmt</h2>
 
+<div class="entry">
+  <code class="sig">func fmt.Printf(format string, a ...any) (n int, err error)</code>
+  <code class="snippet">fmt.<span class="fn">Printf</span>(<span class="str">"[%s] %s %s → %d (%v)\n"</span>, time.<span class="fn">Now</span>().<span class="fn">Format</span>(<span class="ty">time</span>.RFC3339), method, path, status, elapsed)</code>
+  <span class="desc">Writes formatted output to stdout; the workhorse for quick debugging and CLI programs.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func fmt.Fprintf(w io.Writer, format string, a ...any) (n int, err error)</code>
+  <code class="snippet">fmt.<span class="fn">Fprintf</span>(w, <span class="str">"HTTP/1.1 %d %s\r\nContent-Length: %d\r\n\r\n"</span>, code, <span class="ty">http</span>.<span class="fn">StatusText</span>(code), len(body))</code>
+  <span class="desc">Writes to any io.Writer — HTTP response writers, files, buffers — the same way as Printf.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func fmt.Sprintf(format string, a ...any) string</code>
+  <code class="snippet">key := fmt.<span class="fn">Sprintf</span>(<span class="str">"user:%d:session:%s"</span>, userID, sessionToken) <span class="cm">// Redis key</span></code>
+  <span class="desc">Returns the formatted string rather than writing it; use for building keys, labels, or error messages.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func fmt.Println(a ...any) (n int, err error)</code>
+  <code class="snippet">fmt.<span class="fn">Println</span>(<span class="str">"listening on"</span>, addr) <span class="cm">// spaces inserted automatically between args</span></code>
+  <span class="desc">Adds spaces between operands and appends a newline; handy for quick diagnostics when format strings are overkill.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func fmt.Fprintln(w io.Writer, a ...any) (n int, err error)</code>
+  <code class="snippet">fmt.<span class="fn">Fprintln</span>(os.Stderr, <span class="str">"fatal:"</span>, err)</code>
+  <span class="desc">Like Println but to any writer; useful for writing error lines to stderr or a log file.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func fmt.Errorf(format string, a ...any) error</code>
+  <code class="snippet"><span class="kw">if</span> err := db.<span class="fn">QueryRow</span>(q, id).<span class="fn">Scan</span>(&amp;u); err != <span class="kw">nil</span> {
+    <span class="kw">return</span> <span class="kw">nil</span>, fmt.<span class="fn">Errorf</span>(<span class="str">"fetchUser %d: %w"</span>, id, err)
+  }</code>
+  <span class="desc">Creates an error with context; %w wraps the original so callers can use errors.Is / errors.As.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func fmt.Sscanf(str string, format string, a ...any) (n int, err error)</code>
+  <code class="snippet"><span class="kw">var</span> major, minor, patch <span class="ty">int</span>
+fmt.<span class="fn">Sscanf</span>(versionStr, <span class="str">"%d.%d.%d"</span>, &amp;major, &amp;minor, &amp;patch)</code>
+  <span class="desc">Parses structured text from a string using a scanf-style format; cleaner than splitting and Atoi for fixed layouts.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func fmt.Fscanf(r io.Reader, format string, a ...any) (n int, err error)</code>
+  <code class="snippet"><span class="kw">var</span> op <span class="ty">string</span>; <span class="kw">var</span> amount <span class="ty">float64</span>
+fmt.<span class="fn">Fscanf</span>(conn, <span class="str">"%s %f\n"</span>, &amp;op, &amp;amount)</code>
+  <span class="desc">Reads and parses formatted tokens from any reader; used for simple text-protocol parsing over a net.Conn or file.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func fmt.Fscan(r io.Reader, a ...any) (n int, err error)</code>
+  <code class="snippet"><span class="kw">var</span> x, y <span class="ty">float64</span>
+fmt.<span class="fn">Fscan</span>(r, &amp;x, &amp;y) <span class="cm">// reads whitespace-separated tokens</span></code>
+  <span class="desc">Scans whitespace-separated values from a reader without a format string; convenient for space-delimited numeric input.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">type fmt.Stringer interface { String() string }</code>
+  <code class="snippet"><span class="kw">func</span> (s <span class="ty">Status</span>) <span class="fn">String</span>() <span class="ty">string</span> { <span class="kw">return</span> statusLabels[s] }
+<span class="cm">// fmt.Println(job.Status) now prints "pending" instead of "0"</span></code>
+  <span class="desc">Any type that implements String() is formatted with it by all fmt verbs; eliminates manual %s conversions.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func fmt.Sprint(a ...any) string</code>
+  <code class="snippet">label := fmt.<span class="fn">Sprint</span>(<span class="str">"worker-"</span>, workerID) <span class="cm">// no format verbs needed</span></code>
+  <span class="desc">Concatenates args into a string with spaces between non-string adjacent values; use when you have mixed types but no format string.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func fmt.Sprintln(a ...any) string</code>
+  <code class="snippet">msg := fmt.<span class="fn">Sprintln</span>(<span class="str">"connected:"</span>, remoteAddr) <span class="cm">// trailing \n included</span></code>
+  <span class="desc">Like Sprint but adds spaces between all args and appends a newline; useful when building lines for a log buffer.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func fmt.Fprint(w io.Writer, a ...any) (n int, err error)</code>
+  <code class="snippet">fmt.<span class="fn">Fprint</span>(w, chunk) <span class="cm">// write a pre-built chunk to an http.ResponseWriter</span></code>
+  <span class="desc">Writes string representations of args to w with no format string; useful when the value is already a string or Stringer.</span>
+</div>
+
 <h2 class="section-heading" id="go-strings">strings</h2>
+
+<div class="entry">
+  <code class="sig">type strings.Builder struct{ ... } — WriteString(s string) / String() string / Reset() / Len() int</code>
+  <code class="snippet"><span class="kw">var</span> b <span class="ty">strings.Builder</span>
+<span class="kw">for</span> _, seg := <span class="kw">range</span> pathSegments {
+  b.<span class="fn">WriteByte</span>(<span class="str">'/'</span>); b.<span class="fn">WriteString</span>(seg)
+}
+<span class="kw">return</span> b.<span class="fn">String</span>()</code>
+  <span class="desc">Zero-allocation string builder; prefer over += in loops. Reset() reuses the buffer across calls.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func strings.Contains(s, substr string) bool</code>
+  <code class="snippet"><span class="kw">if</span> strings.<span class="fn">Contains</span>(r.Header.<span class="fn">Get</span>(<span class="str">"Content-Type"</span>), <span class="str">"application/json"</span>) { ... }</code>
+  <span class="desc">Reports whether substr is anywhere in s; use for header/MIME sniffing and log filtering.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func strings.ContainsAny(s, chars string) bool</code>
+  <code class="snippet"><span class="kw">if</span> strings.<span class="fn">ContainsAny</span>(username, <span class="str">"@/\\ "</span>) {
+  <span class="kw">return</span> <span class="fn">fmt.Errorf</span>(<span class="str">"username contains invalid characters"</span>)
+}</code>
+  <span class="desc">Returns true if any Unicode code point in chars appears in s; handy for input validation against a forbidden character set.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func strings.HasPrefix(s, prefix string) bool / func strings.HasSuffix(s, suffix string) bool</code>
+  <code class="snippet"><span class="kw">if</span> strings.<span class="fn">HasPrefix</span>(path, <span class="str">"/api/v2/"</span>) { <span class="fn">handleV2</span>(w, r) }
+<span class="kw">if</span> strings.<span class="fn">HasSuffix</span>(filename, <span class="str">".pb.go"</span>) { <span class="kw">continue</span> } <span class="cm">// skip generated files</span></code>
+  <span class="desc">Check if s starts or ends with a given string; essential for routing decisions and file-extension filtering.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func strings.Cut(s, sep string) (before, after string, found bool)</code>
+  <code class="snippet">host, port, ok := strings.<span class="fn">Cut</span>(addr, <span class="str">":"</span>)
+<span class="kw">if</span> !ok { <span class="kw">return</span> <span class="fn">fmt.Errorf</span>(<span class="str">"invalid addr %q"</span>, addr) }
+<span class="cm">// "db.prod:5432" → "db.prod", "5432"</span></code>
+  <span class="desc">Splits around the first sep; cleaner than Index+slicing for host:port, key=value, or scheme://rest splits.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func strings.Fields(s string) []string</code>
+  <code class="snippet">args := strings.<span class="fn">Fields</span>(cmdLine) <span class="cm">// splits on any whitespace, trims leading/trailing</span>
+<span class="kw">if</span> len(args) == <span class="num">0</span> { <span class="kw">return</span> <span class="fn">fmt.Errorf</span>(<span class="str">"empty command"</span>) }</code>
+  <span class="desc">Splits on any whitespace and ignores leading/trailing whitespace; prefer over Split(s," ") for user-typed input.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func strings.FieldsFunc(s string, f func(rune) bool) []string</code>
+  <code class="snippet">tokens := strings.<span class="fn">FieldsFunc</span>(csvLine, <span class="kw">func</span>(r <span class="ty">rune</span>) <span class="ty">bool</span> {
+  <span class="kw">return</span> r == <span class="str">','</span> || r == <span class="str">';'</span>
+})</code>
+  <span class="desc">Like Fields but splits wherever f returns true for a rune; useful for multi-delimiter tokenization.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func strings.Join(elems []string, sep string) string</code>
+  <code class="snippet">placeholders := strings.<span class="fn">Join</span>(<span class="fn">make</span>([]<span class="ty">string</span>, len(ids)), <span class="str">", "</span>) <span class="cm">// "?, ?, ?"</span>
+query := <span class="str">"SELECT * FROM users WHERE id IN ("</span> + placeholders + <span class="str">")"</span></code>
+  <span class="desc">Concatenates slice elements with sep between each; the idiomatic way to build comma-separated lists.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func strings.Split(s, sep string) []string</code>
+  <code class="snippet">parts := strings.<span class="fn">Split</span>(r.URL.Path, <span class="str">"/"</span>) <span class="cm">// "/api/users/42" → ["", "api", "users", "42"]</span></code>
+  <span class="desc">Splits at every occurrence of sep; note that a leading sep produces a leading empty string.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func strings.SplitN(s, sep string, n int) []string</code>
+  <code class="snippet">kv := strings.<span class="fn">SplitN</span>(line, <span class="str">"="</span>, <span class="num">2</span>) <span class="cm">// "KEY=val=with=equals" → ["KEY", "val=with=equals"]</span>
+<span class="kw">if</span> len(kv) != <span class="num">2</span> { <span class="kw">continue</span> }</code>
+  <span class="desc">Like Split but stops after n substrings; use n=2 for key=value parsing where values may contain the separator.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func strings.Replace(s, old, new string, n int) string / func strings.ReplaceAll(s, old, new string) string</code>
+  <code class="snippet">safe := strings.<span class="fn">ReplaceAll</span>(userInput, <span class="str">"'"</span>, <span class="str">"''"</span>) <span class="cm">// escape single quotes for SQL</span>
+slug := strings.<span class="fn">ReplaceAll</span>(strings.<span class="fn">ToLower</span>(title), <span class="str">" "</span>, <span class="str">"-"</span>)</code>
+  <span class="desc">Replace replaces first n occurrences (n=-1 means all); ReplaceAll is shorthand for Replace(s,old,new,-1).</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func strings.TrimSpace(s string) string</code>
+  <code class="snippet">email := strings.<span class="fn">TrimSpace</span>(r.<span class="fn">FormValue</span>(<span class="str">"email"</span>)) <span class="cm">// strip accidental whitespace from form input</span></code>
+  <span class="desc">Removes leading and trailing whitespace (space, tab, newline, etc.); always trim before storing or comparing user input.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func strings.TrimPrefix(s, prefix string) string / func strings.TrimSuffix(s, suffix string) string</code>
+  <code class="snippet">topic := strings.<span class="fn">TrimPrefix</span>(queueName, <span class="str">"events."</span>) <span class="cm">// "events.user.created" → "user.created"</span>
+base := strings.<span class="fn">TrimSuffix</span>(filename, <span class="str">".tmpl"</span>)</code>
+  <span class="desc">Removes a specific prefix or suffix only if present; safer than slicing because it won't panic on short strings.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func strings.Trim(s, cutset string) string / func strings.TrimFunc(s string, f func(rune) bool) string</code>
+  <code class="snippet">clean := strings.<span class="fn">Trim</span>(raw, <span class="str">"{}[] \t\n"</span>) <span class="cm">// strip JSON delimiters from partial messages</span>
+alpha := strings.<span class="fn">TrimFunc</span>(token, <span class="kw">func</span>(r <span class="ty">rune</span>) <span class="ty">bool</span> { <span class="kw">return</span> !unicode.<span class="fn">IsLetter</span>(r) })</code>
+  <span class="desc">Trim removes any rune in cutset from both ends; TrimFunc removes runes while the predicate holds.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func strings.ToLower(s string) string / func strings.ToUpper(s string) string</code>
+  <code class="snippet">row := db.<span class="fn">QueryRow</span>(<span class="str">"SELECT id FROM users WHERE email = $1"</span>, strings.<span class="fn">ToLower</span>(email))
+header := strings.<span class="fn">ToUpper</span>(method) <span class="cm">// normalize HTTP verb from config</span></code>
+  <span class="desc">Case-fold an entire string using Unicode rules; lowercase before DB lookups or map keys so "Admin@Example.COM" matches.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func strings.Map(mapping func(rune) rune, s string) string</code>
+  <code class="snippet">sanitized := strings.<span class="fn">Map</span>(<span class="kw">func</span>(r <span class="ty">rune</span>) <span class="ty">rune</span> {
+  <span class="kw">if</span> unicode.<span class="fn">IsPunct</span>(r) { <span class="kw">return</span> -<span class="num">1</span> } <span class="cm">// -1 drops the rune</span>
+  <span class="kw">return</span> unicode.<span class="fn">ToLower</span>(r)
+}, userText)</code>
+  <span class="desc">Applies mapping to every rune; return -1 to drop a rune. More expressive than ReplaceAll for rune-level transforms.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func strings.EqualFold(s, t string) bool</code>
+  <code class="snippet"><span class="kw">if</span> !strings.<span class="fn">EqualFold</span>(r.Header.<span class="fn">Get</span>(<span class="str">"Upgrade"</span>), <span class="str">"websocket"</span>) {
+  <span class="fn">http.Error</span>(w, <span class="str">"expected Upgrade: websocket"</span>, <span class="num">400</span>)
+}</code>
+  <span class="desc">Case-insensitive equality without allocating; preferred over ToLower(a)==ToLower(b) for header and config comparisons.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func strings.Count(s, substr string) int / func strings.Index(s, substr string) int / func strings.LastIndex(s, substr string) int</code>
+  <code class="snippet">depth := strings.<span class="fn">Count</span>(path, <span class="str">"/"</span>) <span class="cm">// route depth</span>
+dotIdx := strings.<span class="fn">LastIndex</span>(filename, <span class="str">"."</span>) <span class="cm">// extension boundary</span></code>
+  <span class="desc">Count reports non-overlapping occurrences; Index / LastIndex return byte offsets (-1 if absent).</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func strings.Repeat(s string, count int) string</code>
+  <code class="snippet">padding := strings.<span class="fn">Repeat</span>(<span class="str">"="</span>, termWidth) <span class="cm">// CLI separator line</span>
+indent := strings.<span class="fn">Repeat</span>(<span class="str">"  "</span>, nestLevel)</code>
+  <span class="desc">Returns s repeated count times; useful for generating separators, padding, or indentation strings.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func strings.NewReader(s string) *strings.Reader</code>
+  <code class="snippet">resp, err := http.<span class="fn">Post</span>(url, <span class="str">"application/json"</span>, strings.<span class="fn">NewReader</span>(jsonPayload))
+<span class="cm">// strings.NewReader satisfies io.Reader without copying into []byte</span></code>
+  <span class="desc">Wraps a string as an io.Reader; use to pass an in-memory string to APIs that expect a reader (HTTP bodies, decoders).</span>
+</div>
 
 <h2 class="section-heading" id="go-strconv">strconv</h2>
 
+<div class="entry">
+  <code class="sig">func strconv.Atoi(s string) (int, error) / func strconv.Itoa(i int) string</code>
+  <code class="snippet">userID, err := strconv.<span class="fn">Atoi</span>(r.PathValue(<span class="str">"id"</span>))
+<span class="kw">if</span> err != <span class="kw">nil</span> { <span class="fn">http.Error</span>(w, <span class="str">"invalid id"</span>, <span class="num">400</span>); <span class="kw">return</span> }
+header.<span class="fn">Set</span>(<span class="str">"X-Request-ID"</span>, strconv.<span class="fn">Itoa</span>(requestID))</code>
+  <span class="desc">Atoi parses a decimal string to int; Itoa formats an int to string. Both are shortcuts for the common base-10 case.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func strconv.ParseInt(s string, base int, bitSize int) (int64, error)</code>
+  <code class="snippet">perms, err := strconv.<span class="fn">ParseInt</span>(cfg.<span class="fn">Get</span>(<span class="str">"file_mode"</span>), <span class="num">8</span>, <span class="num">32</span>) <span class="cm">// "0644" octal</span>
+<span class="kw">if</span> err != <span class="kw">nil</span> { <span class="kw">return</span> fmt.<span class="fn">Errorf</span>(<span class="str">"parse file_mode: %w"</span>, err) }</code>
+  <span class="desc">Parses integers in any base (2–36); use base=0 to auto-detect 0x hex, 0o octal, 0b binary prefixes.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func strconv.ParseFloat(s string, bitSize int) (float64, error)</code>
+  <code class="snippet">price, err := strconv.<span class="fn">ParseFloat</span>(fields[<span class="num">2</span>], <span class="num">64</span>)
+<span class="kw">if</span> err != <span class="kw">nil</span> { <span class="kw">return</span> fmt.<span class="fn">Errorf</span>(<span class="str">"row %d price: %w"</span>, lineNo, err) }</code>
+  <span class="desc">Parses a floating-point string; bitSize=32 constrains to float32 range. Always check error — user CSV data is unreliable.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func strconv.ParseBool(str string) (bool, error)</code>
+  <code class="snippet">debug, err := strconv.<span class="fn">ParseBool</span>(os.<span class="fn">Getenv</span>(<span class="str">"DEBUG"</span>))
+<span class="kw">if</span> err != <span class="kw">nil</span> { debug = <span class="kw">false</span> } <span class="cm">// "1","t","true","TRUE","T" → true</span></code>
+  <span class="desc">Accepts "1", "t", "T", "true", "TRUE", "True", "0", "f", "F", "false", "FALSE", "False"; useful for env-var flags.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func strconv.FormatInt(i int64, base int) string / func strconv.FormatFloat(f float64, fmt byte, prec, bitSize int) string</code>
+  <code class="snippet">hexColor := <span class="str">"#"</span> + strconv.<span class="fn">FormatInt</span>(int64(rgb), <span class="num">16</span>) <span class="cm">// 16711680 → "#ff0000"</span>
+latStr := strconv.<span class="fn">FormatFloat</span>(coord.Lat, <span class="str">'f'</span>, <span class="num">6</span>, <span class="num">64</span>)  <span class="cm">// "37.774929"</span></code>
+  <span class="desc">FormatInt converts to any base; FormatFloat's fmt byte controls notation: 'f' fixed, 'e' scientific, 'g' shortest.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func strconv.FormatBool(b bool) string</code>
+  <code class="snippet">rec.<span class="fn">Set</span>(<span class="str">"active"</span>, strconv.<span class="fn">FormatBool</span>(user.Active)) <span class="cm">// writes "true" or "false" to CSV field</span></code>
+  <span class="desc">Converts bool to "true" or "false"; use instead of fmt.Sprintf("%v") when you only need the bool representation.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func strconv.AppendInt(dst []byte, i int64, base int) []byte</code>
+  <code class="snippet">buf = strconv.<span class="fn">AppendInt</span>(buf, int64(statusCode), <span class="num">10</span>) <span class="cm">// append without allocating a string</span>
+buf = <span class="fn">append</span>(buf, <span class="str">' '</span>)</code>
+  <span class="desc">Appends the string representation of i to dst without allocation; critical in hot paths like request-logging loops.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func strconv.Quote(s string) string / func strconv.Unquote(s string) (string, error)</code>
+  <code class="snippet">log.<span class="fn">Printf</span>(<span class="str">"received key %s"</span>, strconv.<span class="fn">Quote</span>(key)) <span class="cm">// logs "k\x00ey" safely</span>
+val, err := strconv.<span class="fn">Unquote</span>(jsonStringToken) <span class="cm">// strip outer quotes + unescape</span></code>
+  <span class="desc">Quote wraps a string in double quotes with Go escape sequences (safe for logging untrusted input); Unquote reverses it.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">type strconv.NumError struct { Func string; Num string; Err error }</code>
+  <code class="snippet"><span class="kw">var</span> numErr *<span class="ty">strconv.NumError</span>
+<span class="kw">if</span> errors.<span class="fn">As</span>(err, &amp;numErr) &amp;&amp; numErr.Err == strconv.<span class="ty">ErrRange</span> {
+  <span class="kw">return</span> fmt.<span class="fn">Errorf</span>(<span class="str">"value %q overflows int64"</span>, numErr.Num)
+}</code>
+  <span class="desc">Returned by all Parse* functions on failure; Err is ErrRange (overflow) or ErrSyntax (not a valid number).</span>
+</div>
+
 <h2 class="section-heading" id="go-bytes">bytes</h2>
 
+<div class="entry">
+  <code class="sig">type bytes.Buffer — Write(p []byte) / WriteString(s string) / WriteByte(c byte) / Bytes() []byte / String() string / Reset() / Len() int</code>
+  <code class="snippet"><span class="kw">var</span> buf <span class="ty">bytes.Buffer</span>
+<span class="kw">if</span> err := tmpl.<span class="fn">Execute</span>(&amp;buf, data); err != <span class="kw">nil</span> { <span class="kw">return</span> err }
+w.<span class="fn">Header</span>().<span class="fn">Set</span>(<span class="str">"Content-Length"</span>, strconv.<span class="fn">Itoa</span>(buf.<span class="fn">Len</span>()))
+w.<span class="fn">Write</span>(buf.<span class="fn">Bytes</span>())</code>
+  <span class="desc">Growable byte buffer; execute templates into it first to capture length and avoid partial writes on error.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func bytes.NewBuffer(buf []byte) *bytes.Buffer / func bytes.NewBufferString(s string) *bytes.Buffer</code>
+  <code class="snippet">buf := bytes.<span class="fn">NewBuffer</span>(rawFrame) <span class="cm">// wrap received []byte for sequential reading</span>
+hdr := <span class="fn">make</span>([]<span class="ty">byte</span>, <span class="num">4</span>); buf.<span class="fn">Read</span>(hdr)</code>
+  <span class="desc">NewBuffer seeds the buffer with existing data for reading; NewBufferString does the same from a string.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func bytes.Contains(b, subslice []byte) bool / func bytes.HasPrefix(b, prefix []byte) bool / func bytes.HasSuffix(b, suffix []byte) bool</code>
+  <code class="snippet"><span class="kw">if</span> bytes.<span class="fn">HasPrefix</span>(line, []<span class="ty">byte</span>(<span class="str">"#"</span>)) { <span class="kw">continue</span> } <span class="cm">// skip comment lines without string conversion</span>
+<span class="kw">if</span> bytes.<span class="fn">Contains</span>(body, []<span class="ty">byte</span>(<span class="str">"&lt;/html&gt;"</span>)) { <span class="fn">parseHTML</span>(body) }</code>
+  <span class="desc">Byte-slice equivalents of strings functions; use when working with []byte from io.ReadAll or net.Conn to avoid allocations.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func bytes.Cut(s, sep []byte) (before, after []byte, found bool)</code>
+  <code class="snippet">key, val, ok := bytes.<span class="fn">Cut</span>(headerLine, []<span class="ty">byte</span>(<span class="str">": "</span>))
+<span class="kw">if</span> !ok { <span class="kw">continue</span> } <span class="cm">// malformed header line</span></code>
+  <span class="desc">Like strings.Cut but for []byte; avoids converting to string when parsing HTTP/2 frame headers or binary protocols.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func bytes.Fields(s []byte) [][]byte</code>
+  <code class="snippet">words := bytes.<span class="fn">Fields</span>(logLine) <span class="cm">// split syslog line on whitespace without string alloc</span>
+level := <span class="ty">string</span>(words[<span class="num">3</span>]) <span class="cm">// convert only what you need</span></code>
+  <span class="desc">Splits on whitespace, returns sub-slices of the original; avoids the string allocation until you actually need a field as text.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func bytes.Join(s [][]byte, sep []byte) []byte</code>
+  <code class="snippet">payload := bytes.<span class="fn">Join</span>(chunks, []<span class="ty">byte</span>(<span class="str">"\r\n"</span>)) <span class="cm">// reassemble fragmented protocol frames</span></code>
+  <span class="desc">Concatenates byte slices with sep between each; mirrors strings.Join for binary/protocol work.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func bytes.Split(s, sep []byte) [][]byte</code>
+  <code class="snippet">lines := bytes.<span class="fn">Split</span>(fileContent, []<span class="ty">byte</span>(<span class="str">"\n"</span>))
+<span class="kw">for</span> _, line := <span class="kw">range</span> lines { <span class="fn">processLine</span>(line) }</code>
+  <span class="desc">Splits byte slice at every sep; sub-slices share the original backing array so no extra allocation per line.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func bytes.Replace(s, old, new []byte, n int) []byte / func bytes.ReplaceAll(s, old, new []byte) []byte</code>
+  <code class="snippet">out := bytes.<span class="fn">ReplaceAll</span>(tmplBytes, []<span class="ty">byte</span>(<span class="str">"{{SERVICE}}"</span>), []<span class="ty">byte</span>(serviceName))</code>
+  <span class="desc">Substitutes occurrences of old with new in a byte slice; n=-1 or ReplaceAll replaces all occurrences.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func bytes.TrimSpace(s []byte) []byte / func bytes.Trim(s []byte, cutset string) []byte</code>
+  <code class="snippet">val := bytes.<span class="fn">TrimSpace</span>(scanned) <span class="cm">// strip \r\n from network readline</span>
+bare := bytes.<span class="fn">Trim</span>(token, <span class="str">"\"'"</span>) <span class="cm">// strip surrounding quotes from config value</span></code>
+  <span class="desc">TrimSpace removes leading/trailing whitespace; Trim removes any rune in the cutset string from both ends.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func bytes.ToLower(s []byte) []byte / func bytes.ToUpper(s []byte) []byte</code>
+  <code class="snippet"><span class="kw">if</span> bytes.<span class="fn">Equal</span>(bytes.<span class="fn">ToLower</span>(method), []<span class="ty">byte</span>(<span class="str">"get"</span>)) { ... } <span class="cm">// normalize without string conversion</span></code>
+  <span class="desc">Returns a new lowercased/uppercased copy of the slice using Unicode rules; avoids round-tripping through string.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func bytes.Equal(a, b []byte) bool</code>
+  <code class="snippet"><span class="kw">if</span> !bytes.<span class="fn">Equal</span>(computedMAC, receivedMAC) {
+  <span class="kw">return</span> fmt.<span class="fn">Errorf</span>(<span class="str">"HMAC mismatch"</span>)
+} <span class="cm">// note: use hmac.Equal for constant-time comparison in security contexts</span></code>
+  <span class="desc">Reports whether two byte slices are identical; equivalent to string(a)==string(b) but without allocation.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func bytes.Index(s, sep []byte) int</code>
+  <code class="snippet">i := bytes.<span class="fn">Index</span>(frame, []<span class="ty">byte</span>(<span class="str">"\r\n\r\n"</span>)) <span class="cm">// find end of HTTP header block</span>
+<span class="kw">if</span> i == -<span class="num">1</span> { <span class="kw">return</span> <span class="fn">fmt.Errorf</span>(<span class="str">"incomplete header"</span>) }</code>
+  <span class="desc">Returns byte index of the first occurrence of sep, or -1; essential for protocol parsing where you scan raw []byte.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func bytes.NewReader(b []byte) *bytes.Reader</code>
+  <code class="snippet">dec := json.<span class="fn">NewDecoder</span>(bytes.<span class="fn">NewReader</span>(cachedBody))
+<span class="kw">if</span> err := dec.<span class="fn">Decode</span>(&amp;result); err != <span class="kw">nil</span> { <span class="kw">return</span> err }</code>
+  <span class="desc">Wraps a []byte as an io.Reader/io.Seeker; use to feed in-memory bytes to decoders that expect a reader.</span>
+</div>
+
 <h2 class="section-heading" id="go-regexp">regexp</h2>
+
+<div class="entry">
+  <code class="sig">func regexp.Compile(expr string) (*regexp.Regexp, error) / func regexp.MustCompile(str string) *regexp.Regexp</code>
+  <code class="snippet"><span class="kw">var</span> slugRe = regexp.<span class="fn">MustCompile</span>(<span class="str">`^[a-z0-9]+(?:-[a-z0-9]+)*$`</span>) <span class="cm">// package-level: compile once</span>
+re, err := regexp.<span class="fn">Compile</span>(pattern) <span class="cm">// user-supplied patterns: handle error</span></code>
+  <span class="desc">MustCompile panics on bad syntax — safe at package level with literals; use Compile for runtime/user-supplied patterns.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func regexp.MatchString(pattern, s string) (matched bool, err error)</code>
+  <code class="snippet">ok, err := regexp.<span class="fn">MatchString</span>(<span class="str">`^\d{1,3}(\.\d{1,3}){3}$`</span>, ipStr)
+<span class="kw">if</span> err != <span class="kw">nil</span> || !ok { <span class="kw">return</span> fmt.<span class="fn">Errorf</span>(<span class="str">"invalid IP: %s"</span>, ipStr) }</code>
+  <span class="desc">One-shot match without compiling; compiles fresh on each call so only use for ad-hoc validation, not hot paths.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func (*Regexp).FindString(s string) string</code>
+  <code class="snippet">token := authRe.<span class="fn">FindString</span>(r.Header.<span class="fn">Get</span>(<span class="str">"Authorization"</span>)) <span class="cm">// "" if no match</span></code>
+  <span class="desc">Returns the leftmost match as a string, or "" if none; use when you only need the matched text, not capture groups.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func (*Regexp).Find(b []byte) []byte</code>
+  <code class="snippet">match := boundaryRe.<span class="fn">Find</span>(frameData) <span class="cm">// avoids string conversion for []byte inputs</span></code>
+  <span class="desc">Like FindString but operates on []byte; the result is a sub-slice of the input, avoiding an extra allocation.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func (*Regexp).FindAllString(s string, n int) []string</code>
+  <code class="snippet">emails := emailRe.<span class="fn">FindAllString</span>(body, -<span class="num">1</span>) <span class="cm">// n=-1 returns all matches</span>
+<span class="kw">for</span> _, addr := <span class="kw">range</span> emails { queue.<span class="fn">Enqueue</span>(addr) }</code>
+  <span class="desc">Returns all non-overlapping matches; n limits count (-1 = unlimited). Use when you need every occurrence in a corpus.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func (*Regexp).FindAll(b []byte, n int) [][]byte</code>
+  <code class="snippet">tags := tagRe.<span class="fn">FindAll</span>(htmlBytes, -<span class="num">1</span>) <span class="cm">// sub-slices of htmlBytes, no extra alloc</span></code>
+  <span class="desc">[]byte variant of FindAllString; sub-slices share the original backing array, efficient for large HTML/binary scanning.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func (*Regexp).FindStringSubmatch(s string) []string</code>
+  <code class="snippet">m := semverRe.<span class="fn">FindStringSubmatch</span>(tag) <span class="cm">// ["v1.2.3", "1", "2", "3"]</span>
+<span class="kw">if</span> m == <span class="kw">nil</span> { <span class="kw">return</span> fmt.<span class="fn">Errorf</span>(<span class="str">"not a semver tag: %s"</span>, tag) }
+major, _ := strconv.<span class="fn">Atoi</span>(m[<span class="num">1</span>])</code>
+  <span class="desc">Returns full match at [0] then capture groups at [1..]; nil if no match. Essential for extracting structured data.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func (*Regexp).FindSubmatch(b []byte) [][]byte</code>
+  <code class="snippet">groups := headerRe.<span class="fn">FindSubmatch</span>(rawLine) <span class="cm">// groups[1] is the header name, groups[2] the value</span>
+<span class="kw">if</span> groups == <span class="kw">nil</span> { <span class="kw">continue</span> }</code>
+  <span class="desc">Like FindStringSubmatch but for []byte; sub-slices of the input avoid allocation when parsing binary protocols.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func (*Regexp).ReplaceAllString(src, repl string) string</code>
+  <code class="snippet">slug := spaceRe.<span class="fn">ReplaceAllString</span>(strings.<span class="fn">ToLower</span>(title), <span class="str">"-"</span>)
+slug = nonAlphaRe.<span class="fn">ReplaceAllString</span>(slug, <span class="str">""</span>) <span class="cm">// strip punctuation</span></code>
+  <span class="desc">Replaces all matches with repl; repl can reference groups with $1 or ${name}. Returns a new string.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func (*Regexp).ReplaceAllFunc(src []byte, repl func([]byte) []byte) []byte</code>
+  <code class="snippet">out := placeholderRe.<span class="fn">ReplaceAllFunc</span>(tmpl, <span class="kw">func</span>(m []<span class="ty">byte</span>) []<span class="ty">byte</span> {
+  key := <span class="ty">string</span>(m[<span class="num">2</span> : len(m)-<span class="num">2</span>]) <span class="cm">// strip {{ }}</span>
+  <span class="kw">return</span> []<span class="ty">byte</span>(vars[key])
+})</code>
+  <span class="desc">Replaces each match with the return value of a callback; use when the replacement depends on the match content.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func (*Regexp).ReplaceAll(src, repl []byte) []byte</code>
+  <code class="snippet">sanitized := ctrlRe.<span class="fn">ReplaceAll</span>(rawBytes, []<span class="ty">byte</span>(<span class="str">""</span>)) <span class="cm">// strip control characters from binary log</span></code>
+  <span class="desc">[]byte variant of ReplaceAllString; avoids string round-trip when input and output are both []byte.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func (*Regexp).Split(s string, n int) []string</code>
+  <code class="snippet">fields := delimRe.<span class="fn">Split</span>(record, -<span class="num">1</span>) <span class="cm">// split on /\s*,\s*/ — handles CSV with inconsistent spacing</span></code>
+  <span class="desc">Splits s at each match of the pattern; useful when the delimiter is a pattern rather than a fixed string.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func (*Regexp).SubexpNames() []string</code>
+  <code class="snippet"><span class="kw">var</span> logRe = regexp.<span class="fn">MustCompile</span>(<span class="str">`(?P&lt;ts&gt;\S+) (?P&lt;level&gt;\w+) (?P&lt;msg&gt;.*)`</span>)
+names := logRe.<span class="fn">SubexpNames</span>() <span class="cm">// ["", "ts", "level", "msg"]</span>
+m := logRe.<span class="fn">FindStringSubmatch</span>(line)
+<span class="kw">for</span> i, name := <span class="kw">range</span> names { <span class="kw">if</span> name != <span class="str">""</span> { fields[name] = m[i] } }</code>
+  <span class="desc">Returns capture group names indexed to match FindStringSubmatch output; enables building a name→value map from a match.</span>
+</div>
 
 <h2 class="section-heading" id="go-slices">slices</h2>
 
