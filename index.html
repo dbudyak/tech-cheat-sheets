@@ -3314,9 +3314,179 @@ http.<span class="fn">Handle</span>(<span class="str">"/static/"</span>, http.<s
 
 <h2 class="section-heading" id="go-sync">sync</h2>
 
+<div class="entry">
+  <code class="sig">type sync.Mutex — Lock(), Unlock(), TryLock() bool</code>
+  <code class="snippet">mu.<span class="fn">Lock</span>(); <span class="kw">defer</span> mu.<span class="fn">Unlock</span>(); cache[key] = value</code>
+  <span class="desc">Mutual exclusion lock; always defer Unlock immediately after Lock to prevent deadlock on panic.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">type sync.RWMutex — RLock(), RUnlock(), Lock(), Unlock(), TryLock() bool, TryRLock() bool</code>
+  <code class="snippet">mu.<span class="fn">RLock</span>(); <span class="kw">defer</span> mu.<span class="fn">RUnlock</span>(); <span class="kw">return</span> cache[key] <span class="cm">// multiple readers OK</span></code>
+  <span class="desc">Reader/writer mutex; multiple goroutines can RLock simultaneously, but Lock is exclusive — ideal for read-heavy caches.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">type sync.WaitGroup — Add(delta int), Done(), Wait()</code>
+  <code class="snippet"><span class="kw">var</span> wg sync.<span class="ty">WaitGroup</span>; <span class="kw">for</span> _, url := <span class="kw">range</span> urls { wg.<span class="fn">Add</span>(<span class="num">1</span>); <span class="kw">go</span> <span class="kw">func</span>() { <span class="kw">defer</span> wg.<span class="fn">Done</span>(); <span class="fn">fetch</span>(url) }() }; wg.<span class="fn">Wait</span>()</code>
+  <span class="desc">Waits for a collection of goroutines to finish; Add before launching, Done deferred inside the goroutine, Wait to block.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">type sync.Once — Do(f func())</code>
+  <code class="snippet"><span class="kw">var</span> once sync.<span class="ty">Once</span>; once.<span class="fn">Do</span>(<span class="kw">func</span>() { db = <span class="fn">openDB</span>() }) <span class="cm">// runs exactly once</span></code>
+  <span class="desc">Guarantees f is executed at most once across all goroutines — classic lazy singleton initialisation.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func sync.OnceFunc(f func()) func() (Go 1.21)</code>
+  <code class="snippet">loadConfig := sync.<span class="fn">OnceFunc</span>(<span class="kw">func</span>() { cfg = <span class="fn">parseFile</span>(<span class="str">"config.yaml"</span>) }); loadConfig(); loadConfig()</code>
+  <span class="desc">Returns a function that calls f only on the first invocation; panics in f are re-panicked on every subsequent call, unlike Once.Do.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func sync.OnceValue[T any](f func() T) func() T (Go 1.21)</code>
+  <code class="snippet">getConn := sync.<span class="fn">OnceValue</span>(<span class="kw">func</span>() *sql.<span class="ty">DB</span> { <span class="kw">return</span> <span class="fn">mustOpen</span>(dsn) }); db := <span class="fn">getConn</span>()</code>
+  <span class="desc">Like OnceFunc but the wrapped function returns a value — every call returns the same cached result without a mutex.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">type sync.Map — Load(key any) (any, bool), Store(key, value any), LoadOrStore, Delete, Range, Swap, CompareAndSwap</code>
+  <code class="snippet">m.<span class="fn">Store</span>(<span class="str">"hits"</span>, <span class="num">0</span>); v, ok := m.<span class="fn">Load</span>(<span class="str">"hits"</span>); m.<span class="fn">Range</span>(<span class="kw">func</span>(k, v <span class="kw">any</span>) <span class="kw">bool</span> { <span class="fn">fmt</span>.<span class="fn">Println</span>(k, v); <span class="kw">return</span> <span class="kw">true</span> })</code>
+  <span class="desc">Concurrent map safe for goroutine use without extra locking; best when keys are written once and read many times (e.g. caches, registries).</span>
+</div>
+
+<div class="entry">
+  <code class="sig">sync.Map — LoadOrStore(key, value any) (actual any, loaded bool)</code>
+  <code class="snippet">actual, loaded := m.<span class="fn">LoadOrStore</span>(id, <span class="fn">newConn</span>()); <span class="kw">if</span> loaded { <span class="fn">newConn</span>().<span class="fn">Close</span>() }</code>
+  <span class="desc">Atomically loads an existing value or stores and returns a new one; loaded is false when the value was freshly stored.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">type sync.Pool — Get() any, Put(x any)</code>
+  <code class="snippet"><span class="kw">var</span> bufPool = sync.<span class="ty">Pool</span>{New: <span class="kw">func</span>() <span class="kw">any</span> { <span class="kw">return</span> <span class="fn">new</span>(bytes.<span class="ty">Buffer</span>) }}; b := bufPool.<span class="fn">Get</span>().(*bytes.<span class="ty">Buffer</span>); b.<span class="fn">Reset</span>(); <span class="kw">defer</span> bufPool.<span class="fn">Put</span>(b)</code>
+  <span class="desc">Reusable free-list for temporary objects; reduces GC pressure — must Reset before reuse as GC may evict pooled items any time.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">type sync.Cond — Wait(), Signal(), Broadcast(); sync.NewCond(l sync.Locker) *Cond</code>
+  <code class="snippet">cond := sync.<span class="fn">NewCond</span>(&amp;mu); mu.<span class="fn">Lock</span>(); <span class="kw">for</span> !ready { cond.<span class="fn">Wait</span>() }; mu.<span class="fn">Unlock</span>(); <span class="cm">// producer: cond.Broadcast()</span></code>
+  <span class="desc">Condition variable for goroutines waiting on a shared condition; Wait atomically releases the lock and suspends until Signal or Broadcast.</span>
+</div>
+
 <h2 class="section-heading" id="go-atomic">sync/atomic</h2>
 
+<div class="entry">
+  <code class="sig">type atomic.Int64 — Load() int64, Store(v int64), Add(delta int64) int64, Swap(new int64) int64, CompareAndSwap(old, new int64) bool</code>
+  <code class="snippet"><span class="kw">var</span> reqs atomic.<span class="ty">Int64</span>; reqs.<span class="fn">Add</span>(<span class="num">1</span>) <span class="cm">// safe from multiple goroutines</span></code>
+  <span class="desc">Lock-free counter; prefer typed atomics (Int64, Bool) over the old Add/Load functions for type safety.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">type atomic.Int32 — Load() int32, Store(v int32), Add(delta int32) int32, Swap, CompareAndSwap</code>
+  <code class="snippet"><span class="kw">var</span> activeConns atomic.<span class="ty">Int32</span>; activeConns.<span class="fn">Add</span>(<span class="num">1</span>); <span class="kw">defer</span> activeConns.<span class="fn">Add</span>(-<span class="num">1</span>)</code>
+  <span class="desc">Typed 32-bit signed atomic integer; same API as Int64 but uses half the memory — useful when the counter fits in 32 bits.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">type atomic.Uint32 — Load() uint32, Store(v uint32), Add(delta uint32) uint32, Swap, CompareAndSwap</code>
+  <code class="snippet"><span class="kw">var</span> seq atomic.<span class="ty">Uint32</span>; id := seq.<span class="fn">Add</span>(<span class="num">1</span>) <span class="cm">// monotonic request ID</span></code>
+  <span class="desc">Unsigned 32-bit atomic; wraps around at 2^32 — good for sequence numbers that never go negative.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">type atomic.Uint64 — Load() uint64, Store(v uint64), Add(delta uint64) uint64, Swap, CompareAndSwap</code>
+  <code class="snippet"><span class="kw">var</span> bytesWritten atomic.<span class="ty">Uint64</span>; bytesWritten.<span class="fn">Add</span>(uint64(<span class="fn">len</span>(buf)))</code>
+  <span class="desc">Unsigned 64-bit atomic; covers byte counts and timestamps beyond int64 range without wrapping to negative.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">type atomic.Bool — Load() bool, Store(v bool), Swap(new bool) bool, CompareAndSwap(old, new bool) bool</code>
+  <code class="snippet"><span class="kw">var</span> shutdownFlag atomic.<span class="ty">Bool</span>; shutdownFlag.<span class="fn">Store</span>(<span class="kw">true</span>); <span class="kw">if</span> shutdownFlag.<span class="fn">Load</span>() { <span class="kw">return</span> }</code>
+  <span class="desc">Atomic boolean flag — cleaner than an int32 used as a bool; zero value is false, safe to use without initialisation.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">type atomic.Uintptr — Load() uintptr, Store(v uintptr), Add(delta uintptr) uintptr, Swap, CompareAndSwap</code>
+  <code class="snippet"><span class="kw">var</span> epoch atomic.<span class="ty">Uintptr</span>; epoch.<span class="fn">Add</span>(<span class="num">1</span>) <span class="cm">// generation counter for invalidation</span></code>
+  <span class="desc">Atomic uintptr; typically used to store raw pointer-sized integers or cache-generation counters without full Pointer[T] overhead.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">type atomic.Pointer[T any] — Load() *T, Store(v *T), Swap(new *T) *T, CompareAndSwap(old, new *T) bool</code>
+  <code class="snippet"><span class="kw">var</span> cfg atomic.<span class="ty">Pointer</span>[<span class="ty">Config</span>]; cfg.<span class="fn">Store</span>(&amp;newCfg); cur := cfg.<span class="fn">Load</span>() <span class="cm">// hot-swap config</span></code>
+  <span class="desc">Type-safe atomic pointer — store a newly allocated value to atomically publish it to all readers without locks (copy-on-write pattern).</span>
+</div>
+
+<div class="entry">
+  <code class="sig">type atomic.Value — Load() any, Store(v any), Swap(new any) any, CompareAndSwap(old, new any) bool</code>
+  <code class="snippet"><span class="kw">var</span> routes atomic.<span class="ty">Value</span>; routes.<span class="fn">Store</span>(newRouteTable); tbl := routes.<span class="fn">Load</span>().(RouteTable)</code>
+  <span class="desc">Atomic container for any value; Store panics if the concrete type changes between calls — use Pointer[T] for type safety in new code.</span>
+</div>
+
 <h2 class="section-heading" id="go-math">math</h2>
+
+<div class="entry">
+  <code class="sig">func math.Abs(x float64) float64 — math.Ceil, math.Floor, math.Round</code>
+  <code class="snippet">math.<span class="fn">Abs</span>(-<span class="num">3.7</span>) <span class="cm">// 3.7</span>; math.<span class="fn">Ceil</span>(<span class="num">1.2</span>) <span class="cm">// 2</span>; math.<span class="fn">Floor</span>(<span class="num">1.9</span>) <span class="cm">// 1</span>; math.<span class="fn">Round</span>(<span class="num">1.5</span>) <span class="cm">// 2</span></code>
+  <span class="desc">Basic rounding/absolute-value helpers; Round uses round-half-away-from-zero, unlike banker's rounding.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func math.Sqrt(x float64) float64 — math.Pow(x, y float64) float64 — math.Exp(x float64) float64</code>
+  <code class="snippet">dist := math.<span class="fn">Sqrt</span>(dx*dx + dy*dy); prob := math.<span class="fn">Exp</span>(-cost / temp) <span class="cm">// simulated annealing</span></code>
+  <span class="desc">Sqrt is faster than Pow(x, 0.5); Exp(x) computes e^x and is the inverse of Log — common in probability and physics simulations.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func math.Log(x float64) float64 — math.Log2(x float64) float64 — math.Log10(x float64) float64</code>
+  <code class="snippet">bits := <span class="fn">int</span>(math.<span class="fn">Log2</span>(<span class="kw">float64</span>(n))) + <span class="num">1</span> <span class="cm">// number of bits needed</span>; math.<span class="fn">Log10</span>(<span class="num">1000</span>) <span class="cm">// 3</span></code>
+  <span class="desc">Log is natural (base e); Log2 and Log10 are exact for powers of 2/10; use Log(x)/Log(b) for arbitrary base b.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func math.Min(x, y float64) float64 — math.Max(x, y float64) float64</code>
+  <code class="snippet">clamp := math.<span class="fn">Min</span>(math.<span class="fn">Max</span>(val, lo), hi) <span class="cm">// clamp val to [lo, hi]</span></code>
+  <span class="desc">Float64 min/max; note Go 1.21+ adds builtin min/max for ordered types — prefer builtins for integers, math.Min/Max for floats with NaN handling.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func math.Inf(sign int) float64 — math.IsInf(f float64, sign int) bool — math.IsNaN(f float64) bool</code>
+  <code class="snippet"><span class="kw">if</span> math.<span class="fn">IsNaN</span>(v) || math.<span class="fn">IsInf</span>(v, <span class="num">0</span>) { <span class="kw">return</span> <span class="fn">fmt</span>.<span class="fn">Errorf</span>(<span class="str">"invalid sensor reading: %v"</span>, v) }</code>
+  <span class="desc">math.Inf(1) is +Inf, math.Inf(-1) is -Inf; IsInf(f, 0) checks either sign — always validate float inputs from external sources.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">const math.Pi — const math.E — const math.Phi — const math.Sqrt2</code>
+  <code class="snippet">circumference := <span class="num">2</span> * math.<span class="ty">Pi</span> * radius; area := math.<span class="ty">Pi</span> * radius * radius</code>
+  <span class="desc">High-precision float64 constants (Pi has 20+ decimal digits of precision); use math.Pi rather than defining your own 3.14159…</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func math.Sin(x float64) float64 — math.Cos — math.Tan — math.Atan2(y, x float64) float64</code>
+  <code class="snippet">angle := math.<span class="fn">Atan2</span>(dy, dx) <span class="cm">// heading in radians</span>; x := r * math.<span class="fn">Cos</span>(angle); y := r * math.<span class="fn">Sin</span>(angle)</code>
+  <span class="desc">Atan2 handles all quadrants correctly (unlike Atan) — use it to convert Cartesian to polar coordinates.</span>
+</div>
+
+<div class="sub-heading">math/rand/v2</div>
+
+<div class="entry">
+  <code class="sig">func rand.IntN(n int) int — rand.Float64() float64 — rand.N[T constraints.Integer](n T) T (Go 1.22)</code>
+  <code class="snippet">i := rand.<span class="fn">IntN</span>(<span class="num">100</span>) <span class="cm">// [0,100)</span>; f := rand.<span class="fn">Float64</span>() <span class="cm">// [0.0,1.0)</span>; d := rand.<span class="fn">N</span>(time.<span class="ty">Second</span>) <span class="cm">// random duration</span></code>
+  <span class="desc">Package-level functions use a global PCG source; math/rand/v2 is not seeded with 1 at startup — safe for random output without manual seeding.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func rand.New(src rand.Source) *rand.Rand — rand.NewPCG(seed1, seed2 uint64) *rand.PCG</code>
+  <code class="snippet">rng := rand.<span class="fn">New</span>(rand.<span class="fn">NewPCG</span>(<span class="num">42</span>, <span class="num">0</span>)); rng.<span class="fn">IntN</span>(<span class="num">1000</span>) <span class="cm">// deterministic sequence</span></code>
+  <span class="desc">Create a seeded Rand for reproducible tests or simulations; PCG is the default source in v2 — faster and higher quality than the old LCG.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">func (*rand.Rand) Shuffle(n int, swap func(i, j int))</code>
+  <code class="snippet">rng.<span class="fn">Shuffle</span>(<span class="fn">len</span>(deck), <span class="kw">func</span>(i, j <span class="kw">int</span>) { deck[i], deck[j] = deck[j], deck[i] })</code>
+  <span class="desc">Fisher-Yates shuffle in O(n); the swap callback pattern works for any slice type without reflection.</span>
+</div>
 
 <h2 class="section-heading" id="go-net">net</h2>
 
