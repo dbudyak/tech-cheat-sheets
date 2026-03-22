@@ -4404,7 +4404,371 @@ http.<span class="fn">Handle</span>(<span class="str">"/static/"</span>, http.<s
 
 
 <h2 class="section-heading" id="java-lang">java.lang</h2>
-<!-- entries coming in Task 4 -->
+<div class="sub-heading">String</div>
+
+<div class="entry">
+  <code class="sig">String.length() → int | String.charAt(int index) → char | String.isEmpty() → boolean</code>
+  <code class="snippet"><span class="ty">String</span> s = <span class="str">"hello"</span>;
+s.<span class="fn">length</span>();          <span class="cm">// 5</span>
+s.<span class="fn">charAt</span>(<span class="num">1</span>);         <span class="cm">// 'e'</span>
+<span class="str">""</span>.<span class="fn">isEmpty</span>();         <span class="cm">// true</span></code>
+  <span class="desc">Fundamental accessors: <code>length()</code> returns the number of UTF-16 code units; <code>charAt(i)</code> returns the char at index i (throws IndexOutOfBoundsException if out of range); <code>isEmpty()</code> is equivalent to <code>length() == 0</code>.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">String.substring(int beginIndex, int endIndex) → String | String.indexOf(String str) → int | String.lastIndexOf(String str) → int</code>
+  <code class="snippet"><span class="ty">String</span> s = <span class="str">"hello world"</span>;
+s.<span class="fn">substring</span>(<span class="num">6</span>);           <span class="cm">// "world"</span>
+s.<span class="fn">substring</span>(<span class="num">0</span>, <span class="num">5</span>);       <span class="cm">// "hello"</span>
+s.<span class="fn">indexOf</span>(<span class="str">"o"</span>);           <span class="cm">// 4</span>
+s.<span class="fn">lastIndexOf</span>(<span class="str">"o"</span>);       <span class="cm">// 7</span></code>
+  <span class="desc"><code>substring(begin, end)</code> returns chars from <code>begin</code> (inclusive) to <code>end</code> (exclusive); <code>indexOf</code> returns first occurrence index or -1; <code>lastIndexOf</code> returns the last occurrence.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">String.contains(CharSequence s) → boolean | String.startsWith(String prefix) → boolean | String.endsWith(String suffix) → boolean</code>
+  <code class="snippet"><span class="ty">String</span> url = <span class="str">"https://example.com/api"</span>;
+url.<span class="fn">startsWith</span>(<span class="str">"https"</span>);   <span class="cm">// true</span>
+url.<span class="fn">endsWith</span>(<span class="str">"/api"</span>);      <span class="cm">// true</span>
+url.<span class="fn">contains</span>(<span class="str">"example"</span>);   <span class="cm">// true</span></code>
+  <span class="desc">Membership tests that read naturally left-to-right; all return <code>false</code> rather than throwing on null argument (<code>contains</code> throws NullPointerException on null).</span>
+</div>
+
+<div class="entry">
+  <code class="sig">String.replace(char oldChar, char newChar) → String | String.replaceAll(String regex, String replacement) → String | String.replaceFirst(String regex, String replacement) → String</code>
+  <code class="snippet"><span class="str">"a.b.c"</span>.<span class="fn">replace</span>(<span class="str">'.'</span>, <span class="str">'-'</span>);              <span class="cm">// "a-b-c"</span>
+<span class="str">"foo123bar456"</span>.<span class="fn">replaceAll</span>(<span class="str">"\\d+"</span>, <span class="str">"#"</span>); <span class="cm">// "foo#bar#"</span>
+<span class="str">"foo123bar456"</span>.<span class="fn">replaceFirst</span>(<span class="str">"\\d+"</span>, <span class="str">"#"</span>);<span class="cm">// "foo#bar456"</span></code>
+  <span class="desc"><code>replace(char,char)</code> and <code>replace(CharSequence,CharSequence)</code> use literal matching; <code>replaceAll</code>/<code>replaceFirst</code> use regex — remember to escape regex metacharacters like <code>.</code>.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">String.strip() → String | String.stripLeading() → String | String.stripTrailing() → String | String.isBlank() → boolean (Java 11+)</code>
+  <code class="snippet"><span class="ty">String</span> s = <span class="str">"  hello  "</span>;
+s.<span class="fn">strip</span>();          <span class="cm">// "hello"  — Unicode-aware (vs trim())</span>
+s.<span class="fn">stripLeading</span>();   <span class="cm">// "hello  "</span>
+s.<span class="fn">stripTrailing</span>(); <span class="cm">// "  hello"</span>
+<span class="str">"  \t\n"</span>.<span class="fn">isBlank</span>(); <span class="cm">// true</span></code>
+  <span class="desc">Java 11+ Unicode-aware whitespace handling; prefer <code>strip()</code> over the legacy <code>trim()</code> which only handles ASCII control chars ≤ U+0020. <code>isBlank()</code> is true when empty or all whitespace.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">String.lines() → Stream&lt;String&gt; (Java 11+)</code>
+  <code class="snippet"><span class="kw">long</span> count = <span class="str">"line1\nline2\nline3"</span>
+    .<span class="fn">lines</span>()
+    .<span class="fn">filter</span>(l -&gt; l.<span class="fn">contains</span>(<span class="str">"line"</span>))
+    .<span class="fn">count</span>();  <span class="cm">// 3</span></code>
+  <span class="desc">Splits on <code>\n</code>, <code>\r</code>, or <code>\r\n</code> and returns a lazy <code>Stream&lt;String&gt;</code>; trailing empty strings are not included — useful for processing multi-line text without pre-splitting.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">String.repeat(int count) → String (Java 11+)</code>
+  <code class="snippet"><span class="str">"ab"</span>.<span class="fn">repeat</span>(<span class="num">3</span>);   <span class="cm">// "ababab"</span>
+<span class="str">"-"</span>.<span class="fn">repeat</span>(<span class="num">40</span>);   <span class="cm">// "----------------------------------------"</span></code>
+  <span class="desc">Returns a new string that is this string repeated <code>count</code> times; throws <code>IllegalArgumentException</code> if count is negative. Replaces the common <code>Stream.generate</code>/<code>StringBuilder</code> workarounds.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">String.formatted(Object... args) → String (Java 15+)</code>
+  <code class="snippet"><span class="kw">var</span> msg = <span class="str">"User %s (id=%d) logged in from %s"</span>
+    .<span class="fn">formatted</span>(name, id, ip);</code>
+  <span class="desc">Instance-method shorthand for <code>String.format(this, args)</code>; reads left-to-right without the static prefix. Supports the same format specifiers as <code>printf</code>: <code>%s</code>, <code>%d</code>, <code>%f</code>, <code>%n</code>, etc.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">String.split(String regex) → String[] | String.join(CharSequence delimiter, Iterable&lt;? extends CharSequence&gt; elements) → String</code>
+  <code class="snippet"><span class="ty">String</span>[] parts = <span class="str">"a,b,c"</span>.<span class="fn">split</span>(<span class="str">","</span>);    <span class="cm">// ["a","b","c"]</span>
+<span class="ty">String</span> joined = <span class="ty">String</span>.<span class="fn">join</span>(<span class="str">", "</span>, <span class="ty">List</span>.<span class="fn">of</span>(<span class="str">"x"</span>, <span class="str">"y"</span>, <span class="str">"z"</span>));
+<span class="cm">// "x, y, z"</span></code>
+  <span class="desc"><code>split(regex)</code> uses a regex and trims trailing empty strings by default; pass <code>-1</code> as limit to keep them. <code>String.join</code> is the inverse — delegates to <code>StringJoiner</code> internally.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">String.toUpperCase() → String | String.toLowerCase() → String | String.toCharArray() → char[] | String.chars() → IntStream</code>
+  <code class="snippet"><span class="str">"hello"</span>.<span class="fn">toUpperCase</span>();  <span class="cm">// "HELLO"</span>
+<span class="str">"HELLO"</span>.<span class="fn">toLowerCase</span>();  <span class="cm">// "hello"</span>
+<span class="kw">char</span>[] arr = <span class="str">"abc"</span>.<span class="fn">toCharArray</span>();
+<span class="kw">long</span> vowels = <span class="str">"hello"</span>.<span class="fn">chars</span>()
+  .<span class="fn">filter</span>(c -&gt; <span class="str">"aeiou"</span>.<span class="fn">indexOf</span>(c) &gt;= <span class="num">0</span>)
+  .<span class="fn">count</span>(); <span class="cm">// 2</span></code>
+  <span class="desc"><code>toUpperCase()</code>/<code>toLowerCase()</code> are locale-sensitive — use the overload with explicit <code>Locale</code> for locale-safe code. <code>chars()</code> returns UTF-16 code units as <code>IntStream</code>, useful for stream processing.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">String.valueOf(Object obj) → String | String.format(String format, Object... args) → String | String.intern() → String</code>
+  <code class="snippet"><span class="ty">String</span>.<span class="fn">valueOf</span>(<span class="num">42</span>);          <span class="cm">// "42"</span>
+<span class="ty">String</span>.<span class="fn">valueOf</span>(<span class="kw">null</span>);        <span class="cm">// "null" (no NPE)</span>
+<span class="ty">String</span>.<span class="fn">format</span>(<span class="str">"%.2f"</span>, <span class="num">3.14159</span>); <span class="cm">// "3.14"</span>
+<span class="ty">String</span> s = <span class="kw">new</span> <span class="ty">String</span>(<span class="str">"hello"</span>).<span class="fn">intern</span>(); <span class="cm">// canonical instance</span></code>
+  <span class="desc"><code>valueOf(Object)</code> calls <code>toString()</code> but safely returns <code>"null"</code> for null references. <code>intern()</code> returns the canonical string pool reference — useful when memory matters but rarely needed in modern code.</span>
+</div>
+
+<div class="sub-heading">StringBuilder</div>
+
+<div class="entry">
+  <code class="sig">StringBuilder.append(Object obj) → StringBuilder (chaining)</code>
+  <code class="snippet"><span class="ty">String</span> result = <span class="kw">new</span> <span class="ty">StringBuilder</span>()
+    .<span class="fn">append</span>(<span class="str">"Hello"</span>)
+    .<span class="fn">append</span>(<span class="str">", "</span>)
+    .<span class="fn">append</span>(name)
+    .<span class="fn">append</span>(<span class="str">"!"</span>)
+    .<span class="fn">toString</span>();</code>
+  <span class="desc"><code>append</code> accepts any type (calls <code>String.valueOf</code> internally) and returns <code>this</code> for chaining. Prefer <code>StringBuilder</code> over <code>+</code> in loops to avoid O(n²) string allocation.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">StringBuilder.insert(int offset, String str) → StringBuilder | StringBuilder.delete(int start, int end) → StringBuilder | StringBuilder.deleteCharAt(int index) → StringBuilder</code>
+  <code class="snippet"><span class="kw">var</span> sb = <span class="kw">new</span> <span class="ty">StringBuilder</span>(<span class="str">"hello world"</span>);
+sb.<span class="fn">insert</span>(<span class="num">5</span>, <span class="str">","</span>);       <span class="cm">// "hello, world"</span>
+sb.<span class="fn">delete</span>(<span class="num">5</span>, <span class="num">6</span>);         <span class="cm">// "hello world"</span>
+sb.<span class="fn">deleteCharAt</span>(<span class="num">4</span>);      <span class="cm">// "hell world"</span></code>
+  <span class="desc"><code>insert</code> shifts existing chars right; <code>delete(start, end)</code> removes chars from start (inclusive) to end (exclusive); <code>deleteCharAt</code> removes a single char by index.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">StringBuilder.reverse() → StringBuilder</code>
+  <code class="snippet"><span class="kw">var</span> sb = <span class="kw">new</span> <span class="ty">StringBuilder</span>(<span class="str">"racecar"</span>);
+<span class="kw">boolean</span> isPalindrome = sb.<span class="fn">toString</span>()
+    .<span class="fn">equals</span>(sb.<span class="fn">reverse</span>().<span class="fn">toString</span>()); <span class="cm">// true</span></code>
+  <span class="desc">Reverses the character sequence in-place (handles surrogate pairs correctly) and returns <code>this</code>. Common palindrome check idiom.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">StringBuilder.replace(int start, int end, String str) → StringBuilder | StringBuilder.indexOf(String str) → int | StringBuilder.length() → int | StringBuilder.charAt(int index) → char</code>
+  <code class="snippet"><span class="kw">var</span> sb = <span class="kw">new</span> <span class="ty">StringBuilder</span>(<span class="str">"hello world"</span>);
+sb.<span class="fn">replace</span>(<span class="num">6</span>, <span class="num">11</span>, <span class="str">"Java"</span>);  <span class="cm">// "hello Java"</span>
+sb.<span class="fn">indexOf</span>(<span class="str">"Java"</span>);           <span class="cm">// 6</span>
+sb.<span class="fn">length</span>();                   <span class="cm">// 10</span>
+sb.<span class="fn">charAt</span>(<span class="num">0</span>);                  <span class="cm">// 'h'</span></code>
+  <span class="desc"><code>replace(start, end, str)</code> removes the range and inserts the new string, which may be shorter or longer. Mutation methods all return <code>this</code> for chaining.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">StringBuilder.toString() → String | StringBuilder(int capacity) constructor</code>
+  <code class="snippet"><span class="kw">var</span> sb = <span class="kw">new</span> <span class="ty">StringBuilder</span>(<span class="num">256</span>); <span class="cm">// pre-allocate for performance</span>
+<span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; items.<span class="fn">size</span>(); i++) {
+    <span class="kw">if</span> (i &gt; <span class="num">0</span>) sb.<span class="fn">append</span>(<span class="str">", "</span>);
+    sb.<span class="fn">append</span>(items.<span class="fn">get</span>(i));
+}
+<span class="ty">String</span> csv = sb.<span class="fn">toString</span>();</code>
+  <span class="desc">Specifying initial capacity avoids internal array resizing (default 16 chars). Call <code>toString()</code> once at the end — it creates a new <code>String</code> backed by a copy of the internal array.</span>
+</div>
+
+<div class="sub-heading">Math</div>
+
+<div class="entry">
+  <code class="sig">Math.abs(T n) | Math.min(T a, T b) | Math.max(T a, T b)</code>
+  <code class="snippet"><span class="ty">Math</span>.<span class="fn">abs</span>(-<span class="num">7</span>);           <span class="cm">// 7</span>
+<span class="ty">Math</span>.<span class="fn">min</span>(<span class="num">3</span>, <span class="num">5</span>);          <span class="cm">// 3</span>
+<span class="ty">Math</span>.<span class="fn">max</span>(<span class="num">3</span>, <span class="num">5</span>);          <span class="cm">// 5</span>
+<span class="ty">Math</span>.<span class="fn">abs</span>(<span class="ty">Integer</span>.MIN_VALUE); <span class="cm">// still MIN_VALUE! (overflow)</span></code>
+  <span class="desc">Overloaded for int, long, float, double. Watch for the <code>Math.abs(Integer.MIN_VALUE)</code> trap — the result overflows and returns <code>MIN_VALUE</code> itself; use <code>Math.absExact</code> (Java 15+) to get an exception instead.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Math.pow(double a, double b) → double | Math.sqrt(double a) → double | Math.cbrt(double a) → double</code>
+  <code class="snippet"><span class="ty">Math</span>.<span class="fn">pow</span>(<span class="num">2</span>, <span class="num">10</span>);    <span class="cm">// 1024.0</span>
+<span class="ty">Math</span>.<span class="fn">sqrt</span>(<span class="num">144</span>);    <span class="cm">// 12.0</span>
+<span class="ty">Math</span>.<span class="fn">cbrt</span>(<span class="num">27</span>);     <span class="cm">// 3.0</span></code>
+  <span class="desc">All return <code>double</code>. <code>pow</code> is general but slow for integer exponents — use multiplication for small fixed exponents. <code>cbrt</code> handles negative inputs correctly (returns negative result), unlike <code>pow(x, 1.0/3)</code>.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Math.floor(double a) → double | Math.ceil(double a) → double | Math.round(double a) → long</code>
+  <code class="snippet"><span class="ty">Math</span>.<span class="fn">floor</span>(<span class="num">2.9</span>);   <span class="cm">// 2.0</span>
+<span class="ty">Math</span>.<span class="fn">ceil</span>(<span class="num">2.1</span>);    <span class="cm">// 3.0</span>
+<span class="ty">Math</span>.<span class="fn">round</span>(<span class="num">2.5</span>);   <span class="cm">// 3  (half-up rounding)</span>
+<span class="ty">Math</span>.<span class="fn">round</span>(-<span class="num">2.5</span>);  <span class="cm">// -2 (not -3)</span></code>
+  <span class="desc"><code>floor</code>/<code>ceil</code> return <code>double</code> while <code>round</code> returns <code>long</code>. Java uses half-up rounding (not banker's rounding); <code>BigDecimal</code> offers configurable rounding modes for financial calculations.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Math.log(double a) → double | Math.log10(double a) → double | Math.exp(double a) → double | Math.PI | Math.E</code>
+  <code class="snippet"><span class="ty">Math</span>.<span class="fn">log</span>(<span class="ty">Math</span>.E);      <span class="cm">// 1.0  (natural log)</span>
+<span class="ty">Math</span>.<span class="fn">log10</span>(<span class="num">1000</span>);     <span class="cm">// 3.0</span>
+<span class="ty">Math</span>.<span class="fn">exp</span>(<span class="num">1</span>);           <span class="cm">// 2.718... (e^1)</span>
+<span class="ty">Math</span>.PI;               <span class="cm">// 3.141592653589793</span>
+<span class="ty">Math</span>.E;                <span class="cm">// 2.718281828459045</span></code>
+  <span class="desc"><code>log</code> is natural logarithm (base e); <code>log10</code> is base 10. These are native methods in the JVM and typically hardware-accelerated. <code>Math.PI</code> and <code>Math.E</code> are <code>static final double</code> constants.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Math.clamp(long value, long min, long max) → long (Java 21+)</code>
+  <code class="snippet"><span class="ty">Math</span>.<span class="fn">clamp</span>(<span class="num">150</span>, <span class="num">0</span>, <span class="num">100</span>);  <span class="cm">// 100</span>
+<span class="ty">Math</span>.<span class="fn">clamp</span>(-<span class="num">5</span>, <span class="num">0</span>, <span class="num">100</span>);   <span class="cm">// 0</span>
+<span class="ty">Math</span>.<span class="fn">clamp</span>(<span class="num">50</span>, <span class="num">0</span>, <span class="num">100</span>);   <span class="cm">// 50</span>
+<span class="cm">// also overloaded for int, double, float</span></code>
+  <span class="desc">Added in Java 21 — constrains a value within [min, max]. Replaces the common <code>Math.min(max, Math.max(min, value))</code> idiom. Overloaded for int, long, float, and double.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Math.random() → double | Math.signum(double d) → double | Math.hypot(double x, double y) → double</code>
+  <code class="snippet"><span class="ty">Math</span>.<span class="fn">random</span>();           <span class="cm">// [0.0, 1.0)</span>
+<span class="kw">int</span> dice = (<span class="kw">int</span>)(<span class="ty">Math</span>.<span class="fn">random</span>() * <span class="num">6</span>) + <span class="num">1</span>; <span class="cm">// 1-6</span>
+<span class="ty">Math</span>.<span class="fn">signum</span>(-<span class="num">3.5</span>);        <span class="cm">// -1.0</span>
+<span class="ty">Math</span>.<span class="fn">hypot</span>(<span class="num">3</span>, <span class="num">4</span>);         <span class="cm">// 5.0 (Pythagorean)</span></code>
+  <span class="desc"><code>Math.random()</code> is thread-safe but contended — prefer <code>ThreadLocalRandom.current().nextInt()</code> in multi-threaded code. <code>hypot</code> avoids intermediate overflow that direct sqrt(x²+y²) can suffer.</span>
+</div>
+
+<div class="sub-heading">System / Runtime</div>
+
+<div class="entry">
+  <code class="sig">System.currentTimeMillis() → long | System.nanoTime() → long</code>
+  <code class="snippet"><span class="kw">long</span> start = <span class="ty">System</span>.<span class="fn">nanoTime</span>();
+<span class="fn">doWork</span>();
+<span class="kw">long</span> elapsedMs = (<span class="ty">System</span>.<span class="fn">nanoTime</span>() - start) / <span class="num">1_000_000</span>;
+
+<span class="kw">long</span> epochMs = <span class="ty">System</span>.<span class="fn">currentTimeMillis</span>(); <span class="cm">// wall clock</span></code>
+  <span class="desc">Use <code>nanoTime()</code> for elapsed-time measurements (monotonic, not affected by clock adjustments); use <code>currentTimeMillis()</code> for wall-clock timestamps. Never use <code>currentTimeMillis()</code> for benchmarking.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">System.arraycopy(Object src, int srcPos, Object dest, int destPos, int length)</code>
+  <code class="snippet"><span class="kw">int</span>[] src  = {<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>};
+<span class="kw">int</span>[] dest = <span class="kw">new</span> <span class="kw">int</span>[<span class="num">5</span>];
+<span class="ty">System</span>.<span class="fn">arraycopy</span>(src, <span class="num">1</span>, dest, <span class="num">0</span>, <span class="num">3</span>);
+<span class="cm">// dest = [2, 3, 4, 0, 0]</span></code>
+  <span class="desc">Native method — the fastest way to bulk-copy array elements. Works correctly for overlapping src/dest ranges (same array). For object arrays, copies references (shallow copy); array must be compatible type.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">System.getenv(String name) → String | System.lineSeparator() → String | System.getProperty(String key) → String</code>
+  <code class="snippet"><span class="ty">String</span> home = <span class="ty">System</span>.<span class="fn">getenv</span>(<span class="str">"HOME"</span>);    <span class="cm">// "/home/user"</span>
+<span class="ty">String</span> sep  = <span class="ty">System</span>.<span class="fn">lineSeparator</span>();  <span class="cm">// "\n" on Linux, "\r\n" on Windows</span>
+<span class="ty">String</span> java = <span class="ty">System</span>.<span class="fn">getProperty</span>(<span class="str">"java.version"</span>);</code>
+  <span class="desc"><code>getenv</code> reads OS environment variables; returns null if not set. <code>lineSeparator()</code> is platform-appropriate — use it instead of hardcoding <code>\n</code> for file output. <code>getProperty</code> reads JVM system properties.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">System.exit(int status) | System.gc()</code>
+  <code class="snippet"><span class="ty">System</span>.<span class="fn">gc</span>();         <span class="cm">// hint to JVM — not guaranteed to run</span>
+<span class="ty">System</span>.<span class="fn">exit</span>(<span class="num">0</span>);      <span class="cm">// success; non-zero = error</span>
+<span class="ty">System</span>.<span class="fn">exit</span>(<span class="num">1</span>);      <span class="cm">// conventional error exit code</span></code>
+  <span class="desc"><code>exit()</code> terminates the JVM after running shutdown hooks — avoid calling it inside library code. <code>gc()</code> is a hint only; the JVM may ignore it. In production, let the GC manage memory automatically.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Runtime.getRuntime().availableProcessors() → int | maxMemory() → long | totalMemory() → long | freeMemory() → long</code>
+  <code class="snippet"><span class="ty">Runtime</span> rt = <span class="ty">Runtime</span>.<span class="fn">getRuntime</span>();
+rt.<span class="fn">availableProcessors</span>(); <span class="cm">// logical CPU count</span>
+rt.<span class="fn">maxMemory</span>()  / <span class="num">1024</span> / <span class="num">1024</span>; <span class="cm">// max heap MB (-Xmx)</span>
+rt.<span class="fn">totalMemory</span>()/ <span class="num">1024</span> / <span class="num">1024</span>; <span class="cm">// current heap MB</span>
+rt.<span class="fn">freeMemory</span>() / <span class="num">1024</span> / <span class="num">1024</span>; <span class="cm">// free within current heap</span></code>
+  <span class="desc"><code>availableProcessors()</code> is commonly used to size thread pools (e.g., <code>Executors.newFixedThreadPool</code>). <code>maxMemory()</code> reflects <code>-Xmx</code>; the used memory is approximately <code>totalMemory() - freeMemory()</code>.</span>
+</div>
+
+<div class="sub-heading">Thread</div>
+
+<div class="entry">
+  <code class="sig">Thread.ofVirtual().name(String prefix, long start).start(Runnable) → Thread (Java 21+)</code>
+  <code class="snippet"><span class="kw">var</span> t = <span class="ty">Thread</span>.<span class="fn">ofVirtual</span>()
+    .<span class="fn">name</span>(<span class="str">"worker-"</span>, <span class="num">0</span>)
+    .<span class="fn">start</span>(() -&gt; <span class="fn">handleRequest</span>(req));
+<span class="cm">// virtual threads are cheap — millions can exist simultaneously</span></code>
+  <span class="desc">Creates and starts a named virtual thread; virtual threads are lightweight JVM-managed fibers, not OS threads — ideal for blocking I/O tasks at high concurrency. The name suffix auto-increments per thread created from this builder.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Thread.startVirtualThread(Runnable task) → Thread (Java 21+)</code>
+  <code class="snippet"><span class="ty">Thread</span> t = <span class="ty">Thread</span>.<span class="fn">startVirtualThread</span>(() -&gt; {
+    <span class="ty">String</span> body = httpClient.<span class="fn">send</span>(req).<span class="fn">body</span>();
+    <span class="fn">process</span>(body);
+});</code>
+  <span class="desc">Convenience factory — equivalent to <code>Thread.ofVirtual().start(task)</code>. Use when you need a quick fire-and-forget virtual thread without a custom name or factory configuration.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Thread.sleep(long millis) throws InterruptedException | Thread.sleep(Duration duration) (Java 19+)</code>
+  <code class="snippet"><span class="kw">try</span> {
+    <span class="ty">Thread</span>.<span class="fn">sleep</span>(<span class="num">500</span>);                          <span class="cm">// 500 ms</span>
+    <span class="ty">Thread</span>.<span class="fn">sleep</span>(<span class="ty">Duration</span>.<span class="fn">ofSeconds</span>(<span class="num">2</span>));        <span class="cm">// Java 19+</span>
+} <span class="kw">catch</span> (<span class="ty">InterruptedException</span> e) {
+    <span class="ty">Thread</span>.<span class="fn">currentThread</span>().<span class="fn">interrupt</span>(); <span class="cm">// restore flag</span>
+}</code>
+  <span class="desc">Always restore the interrupted status when catching <code>InterruptedException</code> in non-top-level code — swallowing it silently prevents cooperative cancellation from working up the call stack.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Thread.currentThread() → Thread | Thread.getName() → String | Thread.isVirtual() → boolean (Java 21+)</code>
+  <code class="snippet"><span class="ty">Thread</span> t = <span class="ty">Thread</span>.<span class="fn">currentThread</span>();
+t.<span class="fn">getName</span>();       <span class="cm">// e.g. "main" or "worker-0"</span>
+t.<span class="fn">isVirtual</span>();     <span class="cm">// false for platform threads</span>
+t.<span class="fn">threadId</span>();      <span class="cm">// unique long ID (Java 19+, replaces getId())</span></code>
+  <span class="desc"><code>currentThread()</code> is frequently used to access thread-local context, restore interrupted status, or log thread identity. <code>isVirtual()</code> lets code branch on thread type when mixing virtual and platform threads.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Thread.interrupt() | Thread.isInterrupted() → boolean | Thread.interrupted() → boolean (static)</code>
+  <code class="snippet"><span class="cm">// Requester side:</span>
+workerThread.<span class="fn">interrupt</span>();
+
+<span class="cm">// Worker side:</span>
+<span class="kw">while</span> (!<span class="ty">Thread</span>.<span class="fn">interrupted</span>()) {  <span class="cm">// clears the flag</span>
+    <span class="fn">doWork</span>();
+}
+<span class="cm">// or: while (!thread.isInterrupted()) — does NOT clear flag</span></code>
+  <span class="desc"><code>interrupt()</code> sets the interrupted flag and unblocks blocking calls (sleep/wait/IO) with <code>InterruptedException</code>. <code>Thread.interrupted()</code> (static) checks AND clears the flag; <code>isInterrupted()</code> (instance) only checks.</span>
+</div>
+
+<div class="sub-heading">Wrapper Types</div>
+
+<div class="entry">
+  <code class="sig">Integer.parseInt(String s) → int | Integer.parseInt(String s, int radix) → int | Integer.valueOf(int i) → Integer</code>
+  <code class="snippet"><span class="ty">Integer</span>.<span class="fn">parseInt</span>(<span class="str">"42"</span>);          <span class="cm">// 42</span>
+<span class="ty">Integer</span>.<span class="fn">parseInt</span>(<span class="str">"ff"</span>, <span class="num">16</span>);     <span class="cm">// 255</span>
+<span class="ty">Integer</span>.<span class="fn">parseInt</span>(<span class="str">"1010"</span>, <span class="num">2</span>);    <span class="cm">// 10 (binary)</span>
+<span class="ty">Integer</span>.<span class="fn">valueOf</span>(<span class="num">42</span>);            <span class="cm">// Integer (cached -128..127)</span></code>
+  <span class="desc"><code>parseInt</code> returns a primitive <code>int</code>; <code>valueOf</code> returns an <code>Integer</code> object (uses cache for -128 to 127). Both throw <code>NumberFormatException</code> on invalid input. Use <code>parseInt</code> when a primitive is sufficient.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Integer.toBinaryString(int i) → String | Integer.toHexString(int i) → String | Integer.toOctalString(int i) → String</code>
+  <code class="snippet"><span class="ty">Integer</span>.<span class="fn">toBinaryString</span>(<span class="num">10</span>);   <span class="cm">// "1010"</span>
+<span class="ty">Integer</span>.<span class="fn">toHexString</span>(<span class="num">255</span>);     <span class="cm">// "ff"</span>
+<span class="ty">Integer</span>.<span class="fn">toOctalString</span>(<span class="num">8</span>);     <span class="cm">// "10"</span>
+<span class="cm">// No "0x" prefix — add manually if needed</span></code>
+  <span class="desc">Produces unsigned representations (negative ints appear as large unsigned values in binary/hex). For zero-padded hex, use <code>"%08x".formatted(n)</code> or <code>HexFormat</code> (Java 17+) for byte arrays.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Integer.compare(int x, int y) → int | Integer.MAX_VALUE | Integer.MIN_VALUE</code>
+  <code class="snippet"><span class="ty">Integer</span>.<span class="fn">compare</span>(<span class="num">3</span>, <span class="num">5</span>);     <span class="cm">// negative (3 < 5)</span>
+<span class="ty">Integer</span>.<span class="fn">compare</span>(<span class="num">5</span>, <span class="num">5</span>);     <span class="cm">// 0</span>
+<span class="ty">Integer</span>.MAX_VALUE;          <span class="cm">// 2147483647  (2^31 - 1)</span>
+<span class="ty">Integer</span>.MIN_VALUE;          <span class="cm">// -2147483648 (-2^31)</span>
+list.<span class="fn">sort</span>(<span class="ty">Integer</span>::compare); <span class="cm">// safe comparator</span></code>
+  <span class="desc">Use <code>Integer.compare(x, y)</code> as a comparator instead of <code>x - y</code> — subtraction overflows for extreme values (e.g., <code>MIN_VALUE - 1</code>). <code>Integer.sum</code>, <code>Integer.max</code>, <code>Integer.min</code> are also useful method references.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Double.parseDouble(String s) → double | Double.isNaN(double v) → boolean | Double.isInfinite(double v) → boolean</code>
+  <code class="snippet"><span class="ty">Double</span>.<span class="fn">parseDouble</span>(<span class="str">"3.14"</span>);   <span class="cm">// 3.14</span>
+<span class="kw">double</span> nan = <span class="num">0.0</span> / <span class="num">0.0</span>;
+<span class="ty">Double</span>.<span class="fn">isNaN</span>(nan);             <span class="cm">// true (nan != nan is also true)</span>
+<span class="ty">Double</span>.<span class="fn">isInfinite</span>(<span class="num">1.0</span> / <span class="num">0.0</span>);<span class="cm">// true</span>
+<span class="ty">Double</span>.MAX_VALUE;              <span class="cm">// ~1.8e308</span></code>
+  <span class="desc">Always use <code>Double.isNaN()</code> to check for NaN — <code>x == Double.NaN</code> is always false by IEEE 754 spec. <code>Double.isFinite(v)</code> (Java 8+) is the inverse of <code>isNaN || isInfinite</code>.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Boolean.parseBoolean(String s) → boolean</code>
+  <code class="snippet"><span class="ty">Boolean</span>.<span class="fn">parseBoolean</span>(<span class="str">"true"</span>);   <span class="cm">// true</span>
+<span class="ty">Boolean</span>.<span class="fn">parseBoolean</span>(<span class="str">"TRUE"</span>);   <span class="cm">// true  (case-insensitive)</span>
+<span class="ty">Boolean</span>.<span class="fn">parseBoolean</span>(<span class="str">"yes"</span>);    <span class="cm">// false (only "true" is true)</span>
+<span class="ty">Boolean</span>.<span class="fn">parseBoolean</span>(<span class="kw">null</span>);    <span class="cm">// false (no NPE)</span></code>
+  <span class="desc">Returns <code>true</code> only when the string equals "true" (case-insensitive); everything else — including null, "yes", "1", "on" — returns <code>false</code> without throwing. Safe to use directly with <code>System.getenv</code>.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Autoboxing cache caveat: Integer == comparison</code>
+  <code class="snippet"><span class="ty">Integer</span> a = <span class="num">127</span>, b = <span class="num">127</span>;
+a == b;   <span class="cm">// true  — same cached instance</span>
+
+<span class="ty">Integer</span> c = <span class="num">128</span>, d = <span class="num">128</span>;
+c == d;   <span class="cm">// false — different heap objects</span>
+c.<span class="fn">equals</span>(d); <span class="cm">// true  — always use equals() for value comparison</span></code>
+  <span class="desc">The JVM caches <code>Integer</code> instances for values -128 to 127 (configurable via <code>-XX:AutoBoxCacheMax</code>). Using <code>==</code> on boxed types compares references — always use <code>.equals()</code> or unbox first for value equality.</span>
+</div>
 
 <h2 class="section-heading" id="java-util">java.util</h2>
 <!-- entries coming in Task 5 -->
