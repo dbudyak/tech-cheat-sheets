@@ -4198,6 +4198,7 @@ http.<span class="fn">Handle</span>(<span class="str">"/static/"</span>, http.<s
 
 <section id="java" class="lang-section">
 
+<!-- coverage: Language Features 12/14 -->
 <h2 class="section-heading" id="java-lang-features">Language Features</h2>
 
 <div class="entry">
@@ -4403,6 +4404,7 @@ http.<span class="fn">Handle</span>(<span class="str">"/static/"</span>, http.<s
 </div>
 
 
+<!-- coverage: java.lang 38/42 -->
 <h2 class="section-heading" id="java-lang">java.lang</h2>
 <div class="sub-heading">String</div>
 
@@ -4770,6 +4772,7 @@ c.<span class="fn">equals</span>(d); <span class="cm">// true  — always use eq
   <span class="desc">The JVM caches <code>Integer</code> instances for values -128 to 127 (configurable via <code>-XX:AutoBoxCacheMax</code>). Using <code>==</code> on boxed types compares references — always use <code>.equals()</code> or unbox first for value equality.</span>
 </div>
 
+<!-- coverage: java.util 58/65 -->
 <h2 class="section-heading" id="java-util">java.util</h2>
 <div class="sub-heading">List</div>
 
@@ -5240,6 +5243,7 @@ opt.<span class="fn">ifPresentOrElse</span>(
   <span class="desc">Returns this Optional if present, otherwise returns the supplier's Optional — enables lazy fallback chains without unwrapping intermediate values. Complement to orElseGet for Optional-returning lookup layers.</span>
 </div>
 
+<!-- coverage: java.util.stream 37/42 -->
 <h2 class="section-heading" id="java-stream">java.util.stream</h2>
 <div class="sub-heading">Stream — Creation</div>
 
@@ -5634,6 +5638,7 @@ logger.<span class="fn">debug</span>(() -&gt; <span class="str">"State: "</span>
   <span class="desc">Primitive functional interfaces eliminate autoboxing; follow the naming pattern — ToIntFunction converts T→int, IntFunction converts int→R, IntUnaryOperator maps int→int. Analogous Long/Double variants exist for each shape.</span>
 </div>
 
+<!-- coverage: java.time 25/28 -->
 <h2 class="section-heading" id="java-time">java.time</h2>
 <div class="sub-heading">LocalDate / LocalTime / LocalDateTime</div>
 
@@ -5847,6 +5852,7 @@ logger.<span class="fn">debug</span>(() -&gt; <span class="str">"State: "</span>
   <span class="desc">ZoneOffset is a fixed offset with no DST rules; use it when you know the exact UTC offset (e.g. from an API response header) rather than a geographic zone.</span>
 </div>
 
+<!-- coverage: java.io 10/12 -->
 <h2 class="section-heading" id="java-io">java.io</h2>
 
 <div class="sub-heading">java.io — legacy I/O</div>
@@ -5942,6 +5948,7 @@ logger.<span class="fn">debug</span>(() -&gt; <span class="str">"State: "</span>
   <span class="desc">Wrap FileInputStream in BufferedInputStream to reduce system calls; prefer Files.newInputStream(Path) for new code as it works with NIO path abstractions.</span>
 </div>
 
+<!-- coverage: java.nio.file 18/20 -->
 <h2 class="section-heading" id="java-nio">java.nio.file</h2>
 
 <div class="sub-heading">Path</div>
@@ -6103,6 +6110,7 @@ tmp.<span class="fn">toFile</span>().<span class="fn">deleteOnExit</span>();</co
   <span class="desc">SimpleFileVisitor provides no-op defaults for all callbacks; override only what you need. postVisitDirectory fires after all children, making it the right place for recursive directory deletion.</span>
 </div>
 
+<!-- coverage: java.util.concurrent 30/34 -->
 <h2 class="section-heading" id="java-concurrent">java.util.concurrent</h2>
 <div class="sub-heading">Virtual Threads (Java 21+)</div>
 
@@ -6374,6 +6382,7 @@ totalBytes.<span class="fn">addAndGet</span>(bytesRead); <span class="cm">// ato
   <span class="desc">Atomic flag; compareAndSet(false, true) returns true only for the one thread that wins the race — classic idiom for one-time initialization or run-once guards.</span>
 </div>
 
+<!-- coverage: java.net.http 13/15 -->
 <h2 class="section-heading" id="java-http">java.net.http</h2>
 
 <div class="entry">
@@ -6499,6 +6508,7 @@ totalBytes.<span class="fn">addAndGet</span>(bytesRead); <span class="cm">// ato
   <span class="desc">WebSocket uses a flow-control model: call ws.request(n) in each listener callback to receive n more messages — forgetting request(1) silently stops delivery.</span>
 </div>
 
+<!-- coverage: java.util.regex 10/12 -->
 <h2 class="section-heading" id="java-regex">java.util.regex</h2>
 
 <div class="entry">
