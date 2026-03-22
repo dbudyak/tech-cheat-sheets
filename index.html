@@ -6104,7 +6104,275 @@ tmp.<span class="fn">toFile</span>().<span class="fn">deleteOnExit</span>();</co
 </div>
 
 <h2 class="section-heading" id="java-concurrent">java.util.concurrent</h2>
-<!-- entries coming in Task 9 -->
+<div class="sub-heading">Virtual Threads (Java 21+)</div>
+
+<div class="entry">
+  <code class="sig">Thread.ofVirtual().name(String, long).start(Runnable) → Thread (Java 21+)</code>
+  <code class="snippet"><span class="kw">var</span> t = <span class="ty">Thread</span>.<span class="fn">ofVirtual</span>().<span class="fn">name</span>(<span class="str">"worker-"</span>, <span class="num">0</span>).<span class="fn">start</span>(() -&gt; <span class="fn">handleRequest</span>(req));</code>
+  <span class="desc">Creates and starts a named virtual thread; virtual threads are lightweight JVM-managed fibers — ideal for blocking I/O at high concurrency.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">static Thread Thread.startVirtualThread(Runnable) (Java 21+)</code>
+  <code class="snippet"><span class="ty">Thread</span> t = <span class="ty">Thread</span>.<span class="fn">startVirtualThread</span>(() -&gt; <span class="fn">process</span>(item));</code>
+  <span class="desc">Quickest way to create and immediately start a virtual thread; equivalent to Thread.ofVirtual().start(task) but in one call.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">static ExecutorService Executors.newVirtualThreadPerTaskExecutor() (Java 21+)</code>
+  <code class="snippet"><span class="kw">try</span> (<span class="kw">var</span> exec = <span class="ty">Executors</span>.<span class="fn">newVirtualThreadPerTaskExecutor</span>()) {
+  <span class="kw">for</span> (<span class="kw">var</span> url : urls) exec.<span class="fn">submit</span>(() -&gt; <span class="fn">fetch</span>(url));
+} <span class="cm">// auto-closes: waits for all tasks, then shuts down</span></code>
+  <span class="desc">Creates a new virtual thread per submitted task; ExecutorService is AutoCloseable in Java 19+ so try-with-resources replaces shutdown/awaitTermination.</span>
+</div>
+
+<div class="sub-heading">StructuredTaskScope (preview / Java 21+)</div>
+
+<div class="entry">
+  <code class="sig">StructuredTaskScope.ShutdownOnFailure — fork(Callable), join(), throwIfFailed() (preview / Java 21+)</code>
+  <code class="snippet"><span class="kw">try</span> (<span class="kw">var</span> scope = <span class="kw">new</span> <span class="ty">StructuredTaskScope.ShutdownOnFailure</span>()) {
+  <span class="kw">var</span> user   = scope.<span class="fn">fork</span>(() -&gt; userRepo.<span class="fn">findById</span>(id));
+  <span class="kw">var</span> orders = scope.<span class="fn">fork</span>(() -&gt; orderRepo.<span class="fn">findByUser</span>(id));
+  scope.<span class="fn">join</span>().<span class="fn">throwIfFailed</span>();
+  <span class="kw">return</span> <span class="kw">new</span> <span class="ty">Dashboard</span>(user.<span class="fn">get</span>(), orders.<span class="fn">get</span>());
+}</code>
+  <span class="desc">Structured concurrency: fan out subtasks, wait for all, cancel remaining if any fails — scope lifetime matches the block. Preview API, expected stable in Java 26.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">StructuredTaskScope.ShutdownOnSuccess — fork(Callable), join(), result() (preview / Java 21+)</code>
+  <code class="snippet"><span class="kw">try</span> (<span class="kw">var</span> scope = <span class="kw">new</span> <span class="ty">StructuredTaskScope.ShutdownOnSuccess</span>&lt;<span class="ty">String</span>&gt;()) {
+  scope.<span class="fn">fork</span>(() -&gt; <span class="fn">queryPrimary</span>(key));
+  scope.<span class="fn">fork</span>(() -&gt; <span class="fn">queryReplica</span>(key));
+  scope.<span class="fn">join</span>();
+  <span class="kw">return</span> scope.<span class="fn">result</span>(); <span class="cm">// fastest winner</span>
+}</code>
+  <span class="desc">First-to-succeed pattern: as soon as one subtask completes successfully the scope cancels remaining tasks and result() returns the winning value.</span>
+</div>
+
+<div class="sub-heading">ExecutorService</div>
+
+<div class="entry">
+  <code class="sig">static ExecutorService Executors.newFixedThreadPool(int) / newCachedThreadPool() / newSingleThreadExecutor()</code>
+  <code class="snippet"><span class="ty">ExecutorService</span> fixed  = <span class="ty">Executors</span>.<span class="fn">newFixedThreadPool</span>(<span class="num">8</span>);
+<span class="ty">ExecutorService</span> cached = <span class="ty">Executors</span>.<span class="fn">newCachedThreadPool</span>();
+<span class="ty">ExecutorService</span> single = <span class="ty">Executors</span>.<span class="fn">newSingleThreadExecutor</span>();</code>
+  <span class="desc">Fixed: bounded pool, good for CPU-bound tasks. Cached: creates threads on demand, reuses idle ones — good for short I/O bursts. Single: serializes all tasks.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">static ScheduledExecutorService Executors.newScheduledThreadPool(int)</code>
+  <code class="snippet"><span class="ty">ScheduledExecutorService</span> sched = <span class="ty">Executors</span>.<span class="fn">newScheduledThreadPool</span>(<span class="num">2</span>);
+sched.<span class="fn">scheduleAtFixedRate</span>(() -&gt; <span class="fn">poll</span>(), <span class="num">0</span>, <span class="num">5</span>, <span class="ty">TimeUnit</span>.SECONDS);
+sched.<span class="fn">schedule</span>(() -&gt; <span class="fn">expire</span>(key), <span class="num">30</span>, <span class="ty">TimeUnit</span>.SECONDS);</code>
+  <span class="desc">Schedules tasks with a fixed delay or fixed rate; scheduleAtFixedRate fires regardless of previous run completion, scheduleWithFixedDelay waits for completion first.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Future&lt;T&gt; executor.submit(Callable&lt;T&gt;) / Future&lt;?&gt; executor.submit(Runnable)</code>
+  <code class="snippet"><span class="ty">Future</span>&lt;<span class="ty">String</span>&gt; f = executor.<span class="fn">submit</span>(() -&gt; <span class="fn">loadData</span>());
+<span class="ty">String</span> result = f.<span class="fn">get</span>(<span class="num">5</span>, <span class="ty">TimeUnit</span>.SECONDS); <span class="cm">// blocks up to 5 s</span></code>
+  <span class="desc">Submits a task for async execution; submit(Callable) captures a return value, submit(Runnable) returns Future&lt;?&gt; whose get() returns null on success.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">List&lt;Future&lt;T&gt;&gt; executor.invokeAll(Collection&lt;Callable&lt;T&gt;&gt;) / T executor.invokeAny(Collection&lt;Callable&lt;T&gt;&gt;)</code>
+  <code class="snippet"><span class="ty">List</span>&lt;<span class="ty">Future</span>&lt;<span class="ty">Result</span>&gt;&gt; futures = executor.<span class="fn">invokeAll</span>(tasks); <span class="cm">// all done</span>
+<span class="ty">Result</span> first = executor.<span class="fn">invokeAny</span>(tasks); <span class="cm">// fastest wins</span></code>
+  <span class="desc">invokeAll blocks until every task completes; invokeAny blocks until the first succeeds and cancels the rest — useful for redundant calls to multiple endpoints.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">executor.shutdown() / shutdownNow() / awaitTermination(long, TimeUnit) / Future.get() / cancel(boolean)</code>
+  <code class="snippet">executor.<span class="fn">shutdown</span>(); <span class="cm">// no new tasks; existing finish</span>
+<span class="kw">if</span> (!executor.<span class="fn">awaitTermination</span>(<span class="num">10</span>, <span class="ty">TimeUnit</span>.SECONDS))
+  executor.<span class="fn">shutdownNow</span>(); <span class="cm">// interrupt running tasks</span>
+future.<span class="fn">cancel</span>(<span class="kw">true</span>); <span class="cm">// mayInterruptIfRunning</span></code>
+  <span class="desc">Graceful shutdown pattern: stop accepting tasks, wait for completion, force-interrupt if timeout exceeded; cancel(true) sends interrupt to running thread.</span>
+</div>
+
+<div class="sub-heading">CompletableFuture</div>
+
+<div class="entry">
+  <code class="sig">CompletableFuture.supplyAsync(Supplier, Executor).thenApply(Function).exceptionally(Function&lt;Throwable,T&gt;)</code>
+  <code class="snippet"><span class="kw">var</span> future = <span class="ty">CompletableFuture</span>
+    .<span class="fn">supplyAsync</span>(() -&gt; api.<span class="fn">fetchUser</span>(id), executor)
+    .<span class="fn">thenApply</span>(<span class="ty">User</span>::toDto)
+    .<span class="fn">exceptionally</span>(ex -&gt; <span class="ty">UserDto</span>.<span class="fn">unknown</span>());</code>
+  <span class="desc">Async pipeline: supplyAsync runs on a thread pool, thenApply transforms the result on completion, exceptionally provides a fallback — all non-blocking.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">CompletableFuture.runAsync(Runnable) — fire-and-forget</code>
+  <code class="snippet"><span class="ty">CompletableFuture</span>.<span class="fn">runAsync</span>(() -&gt; audit.<span class="fn">log</span>(event), executor)
+    .<span class="fn">whenComplete</span>((v, ex) -&gt; {
+      <span class="kw">if</span> (ex != <span class="kw">null</span>) log.<span class="fn">error</span>(<span class="str">"audit failed"</span>, ex);
+    });</code>
+  <span class="desc">Runs a Runnable asynchronously with no return value; whenComplete observes completion or failure without altering the result — useful for side-effects like logging.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">CF.thenAccept(Consumer) / thenRun(Runnable) — consume result without chaining</code>
+  <code class="snippet">cf.<span class="fn">thenAccept</span>(data -&gt; cache.<span class="fn">put</span>(key, data))
+  .<span class="fn">thenRun</span>(() -&gt; metrics.<span class="fn">increment</span>(<span class="str">"cache.fill"</span>));</code>
+  <span class="desc">thenAccept receives the result but returns CompletableFuture&lt;Void&gt;; thenRun ignores the result and just runs an action — chain side-effects without transforming data.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">CF.thenCompose(Function&lt;T, CompletableFuture&lt;U&gt;&gt;) — flatMap for async steps</code>
+  <code class="snippet"><span class="ty">CompletableFuture</span>&lt;<span class="ty">Order</span>&gt; result =
+  <span class="ty">CompletableFuture</span>.<span class="fn">supplyAsync</span>(() -&gt; userRepo.<span class="fn">find</span>(id))
+    .<span class="fn">thenCompose</span>(user -&gt; orderRepo.<span class="fn">findByUserAsync</span>(user));</code>
+  <span class="desc">Chains dependent async calls without nesting: the function returns a new CompletableFuture, and thenCompose flattens it — avoids CompletableFuture&lt;CompletableFuture&lt;T&gt;&gt;.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">CF.thenCombine(CompletableFuture&lt;U&gt;, BiFunction&lt;T,U,V&gt;) — combine two independent futures</code>
+  <code class="snippet"><span class="kw">var</span> profile = <span class="ty">CompletableFuture</span>.<span class="fn">supplyAsync</span>(() -&gt; <span class="fn">fetchProfile</span>(id));
+<span class="kw">var</span> prefs   = <span class="ty">CompletableFuture</span>.<span class="fn">supplyAsync</span>(() -&gt; <span class="fn">fetchPrefs</span>(id));
+<span class="kw">var</span> page    = profile.<span class="fn">thenCombine</span>(prefs, (<span class="ty">Profile</span> p, <span class="ty">Prefs</span> r) -&gt; <span class="kw">new</span> <span class="ty">Page</span>(p, r));</code>
+  <span class="desc">Runs two futures in parallel then merges their results with a BiFunction once both complete — the canonical pattern for parallel fan-out then merge.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">CF.handle(BiFunction&lt;T, Throwable, U&gt;) — handle both result and exception</code>
+  <code class="snippet"><span class="ty">CompletableFuture</span>&lt;<span class="ty">String</span>&gt; safe = cf.<span class="fn">handle</span>((result, ex) -&gt; {
+  <span class="kw">if</span> (ex != <span class="kw">null</span>) <span class="kw">return</span> <span class="str">"fallback"</span>;
+  <span class="kw">return</span> result.<span class="fn">toUpperCase</span>();
+});</code>
+  <span class="desc">Like exceptionally but always invoked — receives (result, null) on success or (null, throwable) on failure; can both recover from errors and transform the happy path.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">CompletableFuture.allOf(CF...) / anyOf(CF...) → CompletableFuture&lt;Void&gt;</code>
+  <code class="snippet"><span class="ty">CompletableFuture</span>&lt;<span class="ty">Void</span>&gt; all = <span class="ty">CompletableFuture</span>.<span class="fn">allOf</span>(cf1, cf2, cf3);
+all.<span class="fn">join</span>(); <span class="cm">// blocks until all done</span>
+<span class="ty">Object</span> first = <span class="ty">CompletableFuture</span>.<span class="fn">anyOf</span>(cf1, cf2, cf3).<span class="fn">join</span>();</code>
+  <span class="desc">allOf completes when all futures complete (fails if any fails); anyOf completes with the result of the first to finish — use for barrier synchronization or racing.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">CF.join() / get() / complete(T) / completeExceptionally(Throwable)</code>
+  <code class="snippet"><span class="ty">CompletableFuture</span>&lt;<span class="ty">String</span>&gt; cf = <span class="kw">new</span> <span class="ty">CompletableFuture</span>&lt;&gt;();
+<span class="ty">String</span> val = cf.<span class="fn">join</span>(); <span class="cm">// unchecked, unlike get()</span>
+cf.<span class="fn">complete</span>(<span class="str">"done"</span>);          <span class="cm">// resolve manually</span>
+cf.<span class="fn">completeExceptionally</span>(<span class="kw">new</span> <span class="ty">RuntimeException</span>(<span class="str">"oops"</span>));</code>
+  <span class="desc">join() blocks like get() but throws unchecked CompletionException; complete()/completeExceptionally() let you resolve a CF from outside — useful for bridging callbacks to futures.</span>
+</div>
+
+<div class="sub-heading">Synchronizers</div>
+
+<div class="entry">
+  <code class="sig">CountDownLatch(int count) — await() / countDown() — fan-in pattern</code>
+  <code class="snippet"><span class="kw">var</span> latch = <span class="kw">new</span> <span class="ty">CountDownLatch</span>(<span class="num">3</span>);
+<span class="ty">List</span>.<span class="fn">of</span>(<span class="str">"a"</span>, <span class="str">"b"</span>, <span class="str">"c"</span>).<span class="fn">forEach</span>(s -&gt;
+  executor.<span class="fn">submit</span>(() -&gt; { <span class="fn">process</span>(s); latch.<span class="fn">countDown</span>(); }));
+latch.<span class="fn">await</span>(); <span class="cm">// blocks until count reaches 0</span></code>
+  <span class="desc">One-shot barrier: count reaches zero when all workers call countDown(), then await() unblocks — not reusable; use CyclicBarrier for repeating rendezvous.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">CyclicBarrier(int parties, Runnable barrierAction) — await() — reusable rendezvous</code>
+  <code class="snippet"><span class="kw">var</span> barrier = <span class="kw">new</span> <span class="ty">CyclicBarrier</span>(<span class="num">4</span>, () -&gt; <span class="fn">mergeResults</span>());
+<span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; <span class="num">4</span>; i++) executor.<span class="fn">submit</span>(() -&gt; {
+  <span class="fn">computePartition</span>(); barrier.<span class="fn">await</span>(); <span class="cm">// meet every round</span>
+});</code>
+  <span class="desc">All parties call await(); when the last arrives, the optional barrierAction runs, then all are released — resets automatically for the next round unlike CountDownLatch.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Semaphore(int permits) — acquire() / release() / tryAcquire(long, TimeUnit)</code>
+  <code class="snippet"><span class="kw">var</span> sem = <span class="kw">new</span> <span class="ty">Semaphore</span>(<span class="num">10</span>); <span class="cm">// max 10 concurrent</span>
+sem.<span class="fn">acquire</span>();
+<span class="kw">try</span> { <span class="fn">callExternalApi</span>(); }
+<span class="kw">finally</span> { sem.<span class="fn">release</span>(); }</code>
+  <span class="desc">Limits concurrent access to a resource; tryAcquire(timeout, unit) avoids indefinite blocking — use for rate limiting, connection pool guards, or bounded parallelism.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">ReentrantLock — lock() / unlock() / tryLock() / newCondition()</code>
+  <code class="snippet"><span class="kw">var</span> lock = <span class="kw">new</span> <span class="ty">ReentrantLock</span>();
+lock.<span class="fn">lock</span>();
+<span class="kw">try</span> { <span class="fn">criticalSection</span>(); }
+<span class="kw">finally</span> { lock.<span class="fn">unlock</span>(); }
+<span class="kw">if</span> (lock.<span class="fn">tryLock</span>(<span class="num">100</span>, <span class="ty">TimeUnit</span>.MILLISECONDS)) { <span class="cm">// timed attempt</span></code>
+  <span class="desc">Explicit lock with try/finally discipline; tryLock avoids deadlock by failing fast; newCondition() gives Condition.await()/signal() for producer-consumer coordination.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">ReentrantReadWriteLock — readLock().lock() / writeLock().lock()</code>
+  <code class="snippet"><span class="kw">var</span> rwLock = <span class="kw">new</span> <span class="ty">ReentrantReadWriteLock</span>();
+rwLock.<span class="fn">readLock</span>().<span class="fn">lock</span>();   <span class="cm">// many readers concurrently</span>
+<span class="kw">try</span> { <span class="kw">return</span> cache.<span class="fn">get</span>(key); } <span class="kw">finally</span> { rwLock.<span class="fn">readLock</span>().<span class="fn">unlock</span>(); }
+rwLock.<span class="fn">writeLock</span>().<span class="fn">lock</span>();  <span class="cm">// exclusive</span></code>
+  <span class="desc">Multiple readers run concurrently; a writer gets exclusive access — ideal for read-heavy caches where writes are rare and you want to avoid serializing reads.</span>
+</div>
+
+<div class="sub-heading">Concurrent Collections</div>
+
+<div class="entry">
+  <code class="sig">ConcurrentHashMap — putIfAbsent / computeIfAbsent / merge / forEach(parallelismThreshold, BiConsumer)</code>
+  <code class="snippet"><span class="ty">ConcurrentHashMap</span>&lt;<span class="ty">String</span>, <span class="ty">List</span>&lt;<span class="ty">String</span>&gt;&gt; map = <span class="kw">new</span> <span class="ty">ConcurrentHashMap</span>&lt;&gt;();
+map.<span class="fn">computeIfAbsent</span>(key, k -&gt; <span class="kw">new</span> <span class="ty">ArrayList</span>&lt;&gt;()).<span class="fn">add</span>(val);
+map.<span class="fn">merge</span>(word, <span class="num">1</span>, <span class="ty">Integer</span>::sum); <span class="cm">// word-count pattern</span>
+map.<span class="fn">forEach</span>(<span class="num">1000</span>, (k, v) -&gt; <span class="fn">process</span>(k, v)); <span class="cm">// parallel if &gt;1000 entries</span></code>
+  <span class="desc">Lock-striped hash map safe for concurrent reads and writes; computeIfAbsent is atomic; forEach with parallelismThreshold uses ForkJoinPool for bulk operations.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">CopyOnWriteArrayList — thread-safe iteration while writers modify</code>
+  <code class="snippet"><span class="ty">CopyOnWriteArrayList</span>&lt;<span class="ty">Listener</span>&gt; listeners = <span class="kw">new</span> <span class="ty">CopyOnWriteArrayList</span>&lt;&gt;();
+listeners.<span class="fn">add</span>(l);             <span class="cm">// creates snapshot copy</span>
+<span class="kw">for</span> (<span class="kw">var</span> l : listeners) l.<span class="fn">onEvent</span>(e); <span class="cm">// safe: iterates original</span></code>
+  <span class="desc">Every mutation copies the underlying array; iterators see a stable snapshot and never throw ConcurrentModificationException — best when reads vastly outnumber writes.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">LinkedBlockingQueue(int capacity) — put(E) / take() / offer(E, long, TimeUnit) / poll(long, TimeUnit)</code>
+  <code class="snippet"><span class="ty">BlockingQueue</span>&lt;<span class="ty">Task</span>&gt; queue = <span class="kw">new</span> <span class="ty">LinkedBlockingQueue</span>&lt;&gt;(<span class="num">100</span>);
+queue.<span class="fn">put</span>(task);  <span class="cm">// blocks if full</span>
+<span class="ty">Task</span> t = queue.<span class="fn">take</span>();  <span class="cm">// blocks if empty</span>
+<span class="kw">boolean</span> ok = queue.<span class="fn">offer</span>(task, <span class="num">500</span>, <span class="ty">TimeUnit</span>.MILLISECONDS);</code>
+  <span class="desc">Bounded FIFO blocking queue for producer-consumer pipelines; put/take block indefinitely, offer/poll with timeout return false/null instead of blocking forever.</span>
+</div>
+
+<div class="sub-heading">Atomic Types</div>
+
+<div class="entry">
+  <code class="sig">AtomicInteger — get() / set(int) / getAndIncrement() / incrementAndGet() / getAndAdd(int) / compareAndSet(int, int)</code>
+  <code class="snippet"><span class="kw">var</span> counter = <span class="kw">new</span> <span class="ty">AtomicInteger</span>(<span class="num">0</span>);
+<span class="kw">int</span> next = counter.<span class="fn">incrementAndGet</span>(); <span class="cm">// ++counter, lock-free</span>
+<span class="kw">boolean</span> swapped = counter.<span class="fn">compareAndSet</span>(<span class="num">5</span>, <span class="num">10</span>); <span class="cm">// CAS: 5→10 if current==5</span></code>
+  <span class="desc">Lock-free thread-safe integer; compareAndSet is the building block for non-blocking algorithms — prefer AtomicInteger over synchronized int for counters and flags.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">AtomicLong — incrementAndGet() / addAndGet(long) / compareAndSet(long, long)</code>
+  <code class="snippet"><span class="kw">var</span> totalBytes = <span class="kw">new</span> <span class="ty">AtomicLong</span>(<span class="num">0L</span>);
+totalBytes.<span class="fn">addAndGet</span>(bytesRead); <span class="cm">// atomic +=</span>
+<span class="kw">long</span> snapshot = totalBytes.<span class="fn">get</span>();</code>
+  <span class="desc">Same as AtomicInteger but 64-bit; addAndGet returns the updated value; use LongAdder instead when update contention is very high and you only need the final sum.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">AtomicReference&lt;T&gt; — get() / set(T) / compareAndSet(T, T) / getAndSet(T)</code>
+  <code class="snippet"><span class="kw">var</span> ref = <span class="kw">new</span> <span class="ty">AtomicReference</span>&lt;<span class="ty">Config</span>&gt;(initialConfig);
+<span class="ty">Config</span> old, updated;
+<span class="kw">do</span> {
+  old     = ref.<span class="fn">get</span>();
+  updated = old.<span class="fn">withTimeout</span>(newTimeout);
+} <span class="kw">while</span> (!ref.<span class="fn">compareAndSet</span>(old, updated)); <span class="cm">// CAS loop</span></code>
+  <span class="desc">Lock-free atomic reference swap; the CAS loop retries if another thread raced ahead — use for publishing immutable snapshots like config objects without locking.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">AtomicBoolean — get() / set(boolean) / compareAndSet(boolean, boolean)</code>
+  <code class="snippet"><span class="kw">var</span> initialized = <span class="kw">new</span> <span class="ty">AtomicBoolean</span>(<span class="kw">false</span>);
+<span class="kw">if</span> (initialized.<span class="fn">compareAndSet</span>(<span class="kw">false</span>, <span class="kw">true</span>)) {
+  <span class="fn">init</span>(); <span class="cm">// runs exactly once across threads</span>
+}</code>
+  <span class="desc">Atomic flag; compareAndSet(false, true) returns true only for the one thread that wins the race — classic idiom for one-time initialization or run-once guards.</span>
+</div>
 
 <h2 class="section-heading" id="java-http">java.net.http</h2>
 <!-- entries coming in Task 10 -->
