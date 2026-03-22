@@ -4771,7 +4771,474 @@ c.<span class="fn">equals</span>(d); <span class="cm">// true  — always use eq
 </div>
 
 <h2 class="section-heading" id="java-util">java.util</h2>
-<!-- entries coming in Task 5 -->
+<div class="sub-heading">List</div>
+
+<div class="entry">
+  <code class="sig">static &lt;E&gt; List&lt;E&gt; List.of(E... elements) → unmodifiable List</code>
+  <code class="snippet"><span class="kw">var</span> roles = <span class="ty">List</span>.<span class="fn">of</span>(<span class="str">"admin"</span>, <span class="str">"editor"</span>, <span class="str">"viewer"</span>); <span class="cm">// null-hostile, fixed size</span></code>
+  <span class="desc">Creates an unmodifiable list; throws NullPointerException on null elements and UnsupportedOperationException on mutation — use ArrayList for mutable lists.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">static &lt;E&gt; List&lt;E&gt; List.copyOf(Collection&lt;? extends E&gt; coll) → unmodifiable copy</code>
+  <code class="snippet"><span class="ty">List</span>&lt;<span class="ty">String</span>&gt; snapshot = <span class="ty">List</span>.<span class="fn">copyOf</span>(mutableList); <span class="cm">// safe, immutable view</span></code>
+  <span class="desc">Copies the collection into an unmodifiable list; null elements cause NullPointerException. Useful for defensive copies at API boundaries.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">new ArrayList&lt;&gt;() — mutable list; add / addAll / get / set / remove</code>
+  <code class="snippet"><span class="ty">List</span>&lt;<span class="ty">String</span>&gt; names = <span class="kw">new</span> <span class="ty">ArrayList</span>&lt;&gt;();
+names.<span class="fn">add</span>(<span class="str">"Alice"</span>);
+names.<span class="fn">addAll</span>(<span class="ty">List</span>.<span class="fn">of</span>(<span class="str">"Bob"</span>, <span class="str">"Carol"</span>));
+names.<span class="fn">set</span>(<span class="num">0</span>, <span class="str">"Alicia"</span>);
+names.<span class="fn">remove</span>(<span class="num">1</span>); <span class="cm">// removes "Bob"</span></code>
+  <span class="desc">ArrayList is the go-to mutable list; backed by an array with amortized O(1) add at end. remove(int) removes by index, remove(Object) removes by value.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">void List.sort(Comparator&lt;? super E&gt; c) — in-place sort</code>
+  <code class="snippet">names.<span class="fn">sort</span>(<span class="ty">Comparator</span>.<span class="fn">naturalOrder</span>());
+names.<span class="fn">sort</span>(<span class="ty">Comparator</span>.<span class="fn">comparing</span>(<span class="ty">String</span>::length).<span class="fn">reversed</span>()); <span class="cm">// longest first</span></code>
+  <span class="desc">Sorts the list in-place using a TimSort; pass null to use natural ordering (elements must be Comparable). More readable than Collections.sort for method-chained comparators.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">List&lt;E&gt; list.subList(int fromIndex, int toIndex) — view</code>
+  <code class="snippet"><span class="ty">List</span>&lt;<span class="ty">String</span>&gt; page = names.<span class="fn">subList</span>(<span class="num">0</span>, <span class="num">10</span>); <span class="cm">// first 10 elements</span>
+page.<span class="fn">clear</span>(); <span class="cm">// removes first 10 from backing list</span></code>
+  <span class="desc">Returns a live view backed by the original list — mutations to the subList (clear, set, etc.) reflect in the backing list. Useful for pagination and bulk removal.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">boolean list.contains(Object o) / int indexOf(Object o) / int size() / boolean isEmpty()</code>
+  <code class="snippet"><span class="kw">if</span> (!names.<span class="fn">isEmpty</span>() &amp;&amp; names.<span class="fn">contains</span>(<span class="str">"Alice"</span>)) {
+    <span class="kw">int</span> pos = names.<span class="fn">indexOf</span>(<span class="str">"Alice"</span>); <span class="cm">// first occurrence, -1 if absent</span>
+    <span class="ty">System</span>.out.<span class="fn">println</span>(names.<span class="fn">size</span>() + <span class="str">" elements, Alice at "</span> + pos);
+}</code>
+  <span class="desc">Linear-time O(n) operations — use a HashSet for O(1) membership tests when the list is large.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Stream&lt;E&gt; list.stream() / Iterator&lt;E&gt; list.iterator()</code>
+  <code class="snippet">names.<span class="fn">stream</span>()
+     .<span class="fn">filter</span>(s -&gt; s.<span class="fn">startsWith</span>(<span class="str">"A"</span>))
+     .<span class="fn">forEach</span>(<span class="ty">System</span>.out::println);
+
+<span class="ty">Iterator</span>&lt;<span class="ty">String</span>&gt; it = names.<span class="fn">iterator</span>();
+<span class="kw">while</span> (it.<span class="fn">hasNext</span>()) { <span class="kw">if</span> (it.<span class="fn">next</span>().<span class="fn">isBlank</span>()) it.<span class="fn">remove</span>(); }</code>
+  <span class="desc">stream() feeds the Stream API; iterator() is the safe way to remove elements during iteration (ConcurrentModificationException if you mutate via the list directly).</span>
+</div>
+
+<div class="sub-heading">Set</div>
+
+<div class="entry">
+  <code class="sig">static &lt;E&gt; Set&lt;E&gt; Set.of(E... elements) — unmodifiable, no nulls, no duplicates</code>
+  <code class="snippet"><span class="kw">var</span> perms = <span class="ty">Set</span>.<span class="fn">of</span>(<span class="str">"READ"</span>, <span class="str">"WRITE"</span>, <span class="str">"EXEC"</span>); <span class="cm">// iteration order not guaranteed</span></code>
+  <span class="desc">Creates an unmodifiable set; duplicate elements or null cause exceptions at construction time. Iteration order is deliberately randomised per JVM invocation to discourage order dependence.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">new HashSet&lt;&gt;(Collection&lt;? extends E&gt;) — mutable, O(1) ops, no order</code>
+  <code class="snippet"><span class="ty">Set</span>&lt;<span class="ty">String</span>&gt; unique = <span class="kw">new</span> <span class="ty">HashSet</span>&lt;&gt;(rawList); <span class="cm">// deduplicate in one line</span>
+unique.<span class="fn">add</span>(<span class="str">"extra"</span>);
+unique.<span class="fn">remove</span>(<span class="str">"READ"</span>);
+<span class="kw">boolean</span> has = unique.<span class="fn">contains</span>(<span class="str">"WRITE"</span>);</code>
+  <span class="desc">HashSet gives O(1) average for add/remove/contains. Passing a collection to the constructor is the idiom for de-duplication — far faster than iterating manually.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">new TreeSet&lt;&gt;(Comparator&lt;? super E&gt;) — sorted, NavigableSet</code>
+  <code class="snippet"><span class="ty">NavigableSet</span>&lt;<span class="ty">String</span>&gt; sorted = <span class="kw">new</span> <span class="ty">TreeSet</span>&lt;&gt;(<span class="ty">String</span>.CASE_INSENSITIVE_ORDER);
+sorted.<span class="fn">add</span>(<span class="str">"banana"</span>); sorted.<span class="fn">add</span>(<span class="str">"Apple"</span>); sorted.<span class="fn">add</span>(<span class="str">"cherry"</span>);
+<span class="ty">String</span> first = sorted.<span class="fn">first</span>(); <span class="cm">// "Apple" (case-insensitive)</span></code>
+  <span class="desc">TreeSet maintains elements in comparator (or natural) order with O(log n) ops. Also exposes floor/ceiling/headSet/tailSet for range queries.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">new LinkedHashSet&lt;&gt;() — insertion-ordered, no duplicates</code>
+  <code class="snippet"><span class="ty">Set</span>&lt;<span class="ty">String</span>&gt; ordered = <span class="kw">new</span> <span class="ty">LinkedHashSet</span>&lt;&gt;();
+ordered.<span class="fn">add</span>(<span class="str">"first"</span>); ordered.<span class="fn">add</span>(<span class="str">"second"</span>); ordered.<span class="fn">add</span>(<span class="str">"first"</span>);
+<span class="cm">// iteration: "first", "second" — duplicate silently ignored</span></code>
+  <span class="desc">Combines HashSet O(1) ops with predictable insertion-order iteration — useful when output order matters (e.g. preserving user-supplied tag order with deduplication).</span>
+</div>
+
+<div class="entry">
+  <code class="sig">static &lt;E&gt; Set&lt;E&gt; Set.copyOf(Collection&lt;? extends E&gt; coll) — unmodifiable copy</code>
+  <code class="snippet"><span class="ty">Set</span>&lt;<span class="ty">String</span>&gt; snap = <span class="ty">Set</span>.<span class="fn">copyOf</span>(mutableSet); <span class="cm">// null elements → NPE</span></code>
+  <span class="desc">Produces an unmodifiable set from any collection; duplicates are collapsed. Complement to List.copyOf for defensive copies of set-valued fields.</span>
+</div>
+
+<div class="sub-heading">Map</div>
+
+<div class="entry">
+  <code class="sig">static &lt;K,V&gt; Map&lt;K,V&gt; Map.of(K k1, V v1, ...) — unmodifiable, up to 10 pairs</code>
+  <code class="snippet"><span class="kw">var</span> codes = <span class="ty">Map</span>.<span class="fn">of</span>(<span class="str">"OK"</span>, <span class="num">200</span>, <span class="str">"NOT_FOUND"</span>, <span class="num">404</span>, <span class="str">"ERROR"</span>, <span class="num">500</span>);
+<span class="cm">// no nulls, no duplicate keys, iteration order not guaranteed</span></code>
+  <span class="desc">Compact literal for small maps; limited to 10 pairs by overloaded methods — use Map.ofEntries for larger maps. Null keys/values or duplicate keys throw at construction time.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Map.entry(K, V) + Map.ofEntries(Map.Entry...) — unmodifiable, unlimited pairs</code>
+  <code class="snippet"><span class="kw">var</span> map = <span class="ty">Map</span>.<span class="fn">ofEntries</span>(
+    <span class="ty">Map</span>.<span class="fn">entry</span>(<span class="str">"alpha"</span>, <span class="num">1</span>),
+    <span class="ty">Map</span>.<span class="fn">entry</span>(<span class="str">"beta"</span>,  <span class="num">2</span>),
+    <span class="ty">Map</span>.<span class="fn">entry</span>(<span class="str">"gamma"</span>, <span class="num">3</span>)
+);</code>
+  <span class="desc">Use when you need more than 10 pairs in an unmodifiable map. Map.entry() is the null-hostile factory; import static for cleaner syntax.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">new HashMap&lt;&gt;() — get / put / remove / containsKey / size</code>
+  <code class="snippet"><span class="ty">Map</span>&lt;<span class="ty">String</span>, <span class="ty">Integer</span>&gt; scores = <span class="kw">new</span> <span class="ty">HashMap</span>&lt;&gt;();
+scores.<span class="fn">put</span>(<span class="str">"Alice"</span>, <span class="num">42</span>);
+<span class="kw">int</span> s = scores.<span class="fn">getOrDefault</span>(<span class="str">"Bob"</span>, <span class="num">0</span>);
+scores.<span class="fn">remove</span>(<span class="str">"Alice"</span>);
+<span class="kw">boolean</span> has = scores.<span class="fn">containsKey</span>(<span class="str">"Carol"</span>);</code>
+  <span class="desc">HashMap is the workhorse: O(1) average for all ops. get() returns null for missing keys — prefer getOrDefault to avoid null checks.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">new LinkedHashMap&lt;&gt;() — insertion-order map</code>
+  <code class="snippet"><span class="ty">Map</span>&lt;<span class="ty">String</span>, <span class="ty">Integer</span>&gt; lru = <span class="kw">new</span> <span class="ty">LinkedHashMap</span>&lt;&gt;(<span class="num">16</span>, <span class="num">0.75f</span>, <span class="kw">true</span>);
+<span class="cm">// accessOrder=true → eviction hook for simple LRU caches</span></code>
+  <span class="desc">Preserves insertion order (or access order when constructed with accessOrder=true). Override removeEldestEntry to build a bounded LRU cache with minimal code.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">new TreeMap&lt;&gt;() — sorted by key, NavigableMap</code>
+  <code class="snippet"><span class="ty">NavigableMap</span>&lt;<span class="ty">String</span>, <span class="ty">Integer</span>&gt; tm = <span class="kw">new</span> <span class="ty">TreeMap</span>&lt;&gt;();
+tm.<span class="fn">put</span>(<span class="str">"b"</span>, <span class="num">2</span>); tm.<span class="fn">put</span>(<span class="str">"a"</span>, <span class="num">1</span>); tm.<span class="fn">put</span>(<span class="str">"c"</span>, <span class="num">3</span>);
+<span class="ty">Map</span>&lt;<span class="ty">String</span>, <span class="ty">Integer</span>&gt; sub = tm.<span class="fn">subMap</span>(<span class="str">"a"</span>, <span class="str">"c"</span>); <span class="cm">// ["a".."b"]</span></code>
+  <span class="desc">O(log n) ops; keys iterated in natural order. Exposes firstKey/lastKey/floorKey/ceilingKey/headMap/tailMap — invaluable for range queries on ordered data.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">V map.getOrDefault(Object key, V defaultValue) — safe get</code>
+  <code class="snippet"><span class="kw">int</span> count = wordCount.<span class="fn">getOrDefault</span>(word, <span class="num">0</span>); <span class="cm">// never returns null</span></code>
+  <span class="desc">Returns the mapped value or defaultValue if the key is absent — eliminates null checks and is clearer than a ternary with containsKey.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">V map.putIfAbsent(K key, V value) — conditional put</code>
+  <code class="snippet">cache.<span class="fn">putIfAbsent</span>(key, <span class="fn">expensiveCompute</span>(key));
+<span class="cm">// returns existing value if present, null if newly inserted</span></code>
+  <span class="desc">Atomically inserts only when the key is absent. Note: the value expression is always evaluated — use computeIfAbsent when value construction is expensive.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">V map.computeIfAbsent(K key, Function&lt;K,V&gt; mappingFn) — lazy populate</code>
+  <code class="snippet"><span class="ty">Map</span>&lt;<span class="ty">String</span>, <span class="ty">List</span>&lt;<span class="ty">String</span>&gt;&gt; groups = <span class="kw">new</span> <span class="ty">HashMap</span>&lt;&gt;();
+groups.<span class="fn">computeIfAbsent</span>(key, k -&gt; <span class="kw">new</span> <span class="ty">ArrayList</span>&lt;&gt;()).<span class="fn">add</span>(value);
+<span class="cm">// one-liner to group into lists — creates bucket only when needed</span></code>
+  <span class="desc">Invokes mappingFn only when the key is absent and stores its result; returns the (existing or newly computed) value. The idiomatic way to build map-of-lists.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">V Map.merge(K key, V value, BiFunction&lt;V,V,V&gt; remappingFn)</code>
+  <code class="snippet">wordCount.<span class="fn">merge</span>(word, <span class="num">1</span>, <span class="ty">Integer</span>::sum);
+<span class="cm">// if absent: put 1; if present: add 1 — the idiomatic frequency counter</span></code>
+  <span class="desc">If the key is absent, stores value; otherwise applies the remapping function to the old and new values — cleaner than getOrDefault + put for accumulators.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">map.forEach((k,v) -&gt; ...) / entrySet() / keySet() / values()</code>
+  <code class="snippet">scores.<span class="fn">forEach</span>((name, score) -&gt; <span class="ty">System</span>.out.<span class="fn">println</span>(name + <span class="str">": "</span> + score));
+
+<span class="kw">for</span> (<span class="ty">Map</span>.<span class="ty">Entry</span>&lt;<span class="ty">String</span>, <span class="ty">Integer</span>&gt; e : scores.<span class="fn">entrySet</span>())
+    process(e.<span class="fn">getKey</span>(), e.<span class="fn">getValue</span>());</code>
+  <span class="desc">forEach is the concise iteration form; entrySet() exposes both key and value without double-lookups; keySet()/values() when you need only one side.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">static &lt;K,V&gt; Map&lt;K,V&gt; Map.copyOf(Map&lt;? extends K, ? extends V&gt; map) — unmodifiable copy</code>
+  <code class="snippet"><span class="ty">Map</span>&lt;<span class="ty">String</span>, <span class="ty">Integer</span>&gt; snap = <span class="ty">Map</span>.<span class="fn">copyOf</span>(mutableMap); <span class="cm">// null keys/values → NPE</span></code>
+  <span class="desc">Produces an unmodifiable snapshot; any nulls or subsequent mutations to the source map do not affect the copy.</span>
+</div>
+
+<div class="sub-heading">SequencedCollection (Java 21+)</div>
+
+<div class="entry">
+  <code class="sig">E list.getFirst() / E list.getLast() — replaces get(0) / get(size-1)</code>
+  <code class="snippet"><span class="ty">String</span> head = names.<span class="fn">getFirst</span>(); <span class="cm">// NoSuchElementException if empty</span>
+<span class="ty">String</span> tail = names.<span class="fn">getLast</span>();</code>
+  <span class="desc">Introduced in Java 21 via SequencedCollection; cleaner than get(0) and eliminates the error-prone get(size()-1) idiom. Also available on Deque and LinkedHashSet/LinkedHashMap views.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">list.addFirst(E) / addLast(E) / removeFirst() / removeLast()</code>
+  <code class="snippet"><span class="ty">LinkedList</span>&lt;<span class="ty">String</span>&gt; deq = <span class="kw">new</span> <span class="ty">LinkedList</span>&lt;&gt;(<span class="ty">List</span>.<span class="fn">of</span>(<span class="str">"b"</span>, <span class="str">"c"</span>));
+deq.<span class="fn">addFirst</span>(<span class="str">"a"</span>);    <span class="cm">// [a, b, c]</span>
+deq.<span class="fn">removeLast</span>();     <span class="cm">// [a, b]</span></code>
+  <span class="desc">SequencedCollection mutations; on ArrayList these are O(n) head operations — prefer ArrayDeque when you need efficient both-ends access.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">SequencedCollection&lt;E&gt; list.reversed() — reversed view (Java 21+)</code>
+  <code class="snippet"><span class="kw">for</span> (<span class="ty">String</span> s : names.<span class="fn">reversed</span>()) <span class="ty">System</span>.out.<span class="fn">println</span>(s);
+<span class="cm">// also: names.reversed().stream().map(...)</span></code>
+  <span class="desc">Returns a live reversed view — no copy made. Mutations via the view reflect in the original. Works on List, Deque, LinkedHashSet, and LinkedHashMap's sequenced views.</span>
+</div>
+
+<div class="sub-heading">Queue / Deque</div>
+
+<div class="entry">
+  <code class="sig">new ArrayDeque&lt;&gt;() as stack — push / pop / peek</code>
+  <code class="snippet"><span class="ty">Deque</span>&lt;<span class="ty">String</span>&gt; stack = <span class="kw">new</span> <span class="ty">ArrayDeque</span>&lt;&gt;();
+stack.<span class="fn">push</span>(<span class="str">"a"</span>); stack.<span class="fn">push</span>(<span class="str">"b"</span>);
+<span class="ty">String</span> top = stack.<span class="fn">peek</span>();  <span class="cm">// "b", no remove</span>
+<span class="ty">String</span> popped = stack.<span class="fn">pop</span>(); <span class="cm">// "b", throws if empty</span></code>
+  <span class="desc">ArrayDeque is faster than Stack (no synchronization) and Deque is preferred over Stack by the Java docs. push/pop operate on the head (LIFO).</span>
+</div>
+
+<div class="entry">
+  <code class="sig">new ArrayDeque&lt;&gt;() as queue — offer / poll / peek / isEmpty</code>
+  <code class="snippet"><span class="ty">Queue</span>&lt;<span class="ty">String</span>&gt; q = <span class="kw">new</span> <span class="ty">ArrayDeque</span>&lt;&gt;();
+q.<span class="fn">offer</span>(<span class="str">"first"</span>); q.<span class="fn">offer</span>(<span class="str">"second"</span>);
+<span class="ty">String</span> head = q.<span class="fn">poll</span>(); <span class="cm">// "first", returns null if empty (vs remove() throws)</span>
+<span class="kw">while</span> (!q.<span class="fn">isEmpty</span>()) process(q.<span class="fn">poll</span>());</code>
+  <span class="desc">offer/poll are the null-returning queue methods (safe); add/remove throw on failure. ArrayDeque outperforms LinkedList for queue workloads.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">new PriorityQueue&lt;&gt;(Comparator&lt;? super E&gt;) — offer / poll / peek</code>
+  <code class="snippet"><span class="ty">PriorityQueue</span>&lt;<span class="ty">Integer</span>&gt; minHeap = <span class="kw">new</span> <span class="ty">PriorityQueue</span>&lt;&gt;();
+<span class="ty">PriorityQueue</span>&lt;<span class="ty">Integer</span>&gt; maxHeap = <span class="kw">new</span> <span class="ty">PriorityQueue</span>&lt;&gt;(<span class="ty">Comparator</span>.<span class="fn">reverseOrder</span>());
+minHeap.<span class="fn">offer</span>(<span class="num">5</span>); minHeap.<span class="fn">offer</span>(<span class="num">1</span>); minHeap.<span class="fn">offer</span>(<span class="num">3</span>);
+<span class="kw">int</span> smallest = minHeap.<span class="fn">poll</span>(); <span class="cm">// 1 — O(log n)</span></code>
+  <span class="desc">Min-heap by default; poll() always removes the smallest (by natural order or comparator). O(log n) offer/poll, O(1) peek. Does not support O(1) contains; iterator order is not sorted.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">BlockingQueue — LinkedBlockingQueue, ArrayBlockingQueue (see java.util.concurrent)</code>
+  <code class="snippet"><span class="ty">BlockingQueue</span>&lt;<span class="ty">Task</span>&gt; bq = <span class="kw">new</span> <span class="ty">LinkedBlockingQueue</span>&lt;&gt;(<span class="num">1000</span>);
+producer: bq.<span class="fn">put</span>(task);   <span class="cm">// blocks when full</span>
+consumer: <span class="ty">Task</span> t = bq.<span class="fn">take</span>(); <span class="cm">// blocks when empty</span></code>
+  <span class="desc">Thread-safe bounded queue for producer-consumer patterns; put/take block, offer/poll accept a timeout. Prefer over hand-rolled wait/notify. Lives in java.util.concurrent.</span>
+</div>
+
+<div class="sub-heading">Collections utilities</div>
+
+<div class="entry">
+  <code class="sig">Collections.sort(List&lt;T&gt;) / Collections.sort(List&lt;T&gt;, Comparator&lt;T&gt;)</code>
+  <code class="snippet"><span class="ty">Collections</span>.<span class="fn">sort</span>(words); <span class="cm">// natural order, must implement Comparable</span>
+<span class="ty">Collections</span>.<span class="fn">sort</span>(words, <span class="ty">String</span>.CASE_INSENSITIVE_ORDER);</code>
+  <span class="desc">Stable TimSort; modifies the list in place. Prefer list.sort(comparator) for a more fluent style — both delegate to the same algorithm.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Collections.shuffle(List&lt;?&gt;) / Collections.reverse(List&lt;?&gt;)</code>
+  <code class="snippet"><span class="ty">Collections</span>.<span class="fn">shuffle</span>(deck);                       <span class="cm">// random order</span>
+<span class="ty">Collections</span>.<span class="fn">shuffle</span>(deck, <span class="kw">new</span> <span class="ty">Random</span>(<span class="num">42L</span>));        <span class="cm">// seeded</span>
+<span class="ty">Collections</span>.<span class="fn">reverse</span>(list);                        <span class="cm">// in-place reversal</span></code>
+  <span class="desc">shuffle uses a default ThreadLocalRandom; pass a seeded Random for reproducible results (testing). reverse is O(n) in-place — useful before iterating in reverse order once.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Collections.unmodifiableList(List) / unmodifiableMap(Map) / unmodifiableSet(Set)</code>
+  <code class="snippet"><span class="ty">List</span>&lt;<span class="ty">String</span>&gt; safe = <span class="ty">Collections</span>.<span class="fn">unmodifiableList</span>(mutableList);
+<span class="cm">// safe throws UnsupportedOperationException on mutation</span>
+<span class="cm">// mutations to mutableList ARE visible through safe — it's a live view</span></code>
+  <span class="desc">Returns a live unmodifiable view — not a copy. Prefer List.copyOf for a true defensive copy that cannot be mutated through the original reference.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Collections.synchronizedList(List&lt;T&gt;) — thread-safe wrapper</code>
+  <code class="snippet"><span class="ty">List</span>&lt;<span class="ty">String</span>&gt; synced = <span class="ty">Collections</span>.<span class="fn">synchronizedList</span>(<span class="kw">new</span> <span class="ty">ArrayList</span>&lt;&gt;());
+<span class="kw">synchronized</span> (synced) { <span class="cm">// must lock externally when iterating</span>
+    <span class="kw">for</span> (<span class="ty">String</span> s : synced) process(s);
+}</code>
+  <span class="desc">Each individual method is synchronized, but compound operations (iterate + remove) require external locking. Consider CopyOnWriteArrayList for read-heavy concurrent access instead.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Collections.frequency(Collection&lt;?&gt;, Object) / disjoint(Collection&lt;?&gt;, Collection&lt;?&gt;)</code>
+  <code class="snippet"><span class="kw">int</span> count = <span class="ty">Collections</span>.<span class="fn">frequency</span>(words, <span class="str">"hello"</span>); <span class="cm">// O(n)</span>
+<span class="kw">boolean</span> noCommon = <span class="ty">Collections</span>.<span class="fn">disjoint</span>(setA, setB); <span class="cm">// true if no shared elements</span></code>
+  <span class="desc">frequency counts occurrences via equals; disjoint is O(n) but optimised when one argument is a Set (O(1) contains). Both accept any Collection type.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Collections.min(Collection, Comparator) / max / nCopies(int, T) / singletonList(T)</code>
+  <code class="snippet"><span class="ty">String</span> shortest = <span class="ty">Collections</span>.<span class="fn">min</span>(words, <span class="ty">Comparator</span>.<span class="fn">comparing</span>(<span class="ty">String</span>::length));
+<span class="ty">List</span>&lt;<span class="ty">Integer</span>&gt; zeros = <span class="ty">Collections</span>.<span class="fn">nCopies</span>(<span class="num">10</span>, <span class="num">0</span>);      <span class="cm">// immutable, size 10</span>
+<span class="ty">List</span>&lt;<span class="ty">String</span>&gt; one  = <span class="ty">Collections</span>.<span class="fn">singletonList</span>(<span class="str">"only"</span>); <span class="cm">// immutable, size 1</span></code>
+  <span class="desc">min/max are linear scans; nCopies is memory-efficient (stores one element + count); singletonList is a lightweight immutable single-element list — prefer List.of("only") in modern code.</span>
+</div>
+
+<div class="sub-heading">Arrays utilities</div>
+
+<div class="entry">
+  <code class="sig">Arrays.sort(int[]) / Arrays.sort(T[], Comparator&lt;T&gt;)</code>
+  <code class="snippet"><span class="kw">int</span>[] nums = {<span class="num">5</span>, <span class="num">2</span>, <span class="num">8</span>, <span class="num">1</span>};
+<span class="ty">Arrays</span>.<span class="fn">sort</span>(nums);                                    <span class="cm">// [1, 2, 5, 8]</span>
+<span class="ty">String</span>[] words = {<span class="str">"banana"</span>, <span class="str">"apple"</span>, <span class="str">"cherry"</span>};
+<span class="ty">Arrays</span>.<span class="fn">sort</span>(words, <span class="ty">Comparator</span>.<span class="fn">reverseOrder</span>());        <span class="cm">// [cherry, banana, apple]</span></code>
+  <span class="desc">Primitives use dual-pivot quicksort O(n log n); object arrays use stable TimSort. To sort primitives in reverse order, box to Integer[] or use a stream.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">int Arrays.binarySearch(int[] a, int key) — requires sorted input</code>
+  <code class="snippet"><span class="ty">Arrays</span>.<span class="fn">sort</span>(nums);
+<span class="kw">int</span> idx = <span class="ty">Arrays</span>.<span class="fn">binarySearch</span>(nums, <span class="num">5</span>); <span class="cm">// ≥0 if found, negative if absent</span>
+<span class="kw">int</span> insertionPoint = ~<span class="ty">Arrays</span>.<span class="fn">binarySearch</span>(nums, <span class="num">6</span>); <span class="cm">// bitwise NOT of negative result</span></code>
+  <span class="desc">O(log n); array must be sorted first. A negative return value encodes the insertion point as -(insertionPoint)-1 — bitwise NOT (~) decodes it.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">T[] Arrays.copyOf(T[] original, int newLength) / copyOfRange(T[], int, int)</code>
+  <code class="snippet"><span class="kw">int</span>[] doubled = <span class="ty">Arrays</span>.<span class="fn">copyOf</span>(nums, nums.length * <span class="num">2</span>); <span class="cm">// pads with 0s</span>
+<span class="kw">int</span>[] slice  = <span class="ty">Arrays</span>.<span class="fn">copyOfRange</span>(nums, <span class="num">1</span>, <span class="num">4</span>);         <span class="cm">// [1..3] exclusive end</span></code>
+  <span class="desc">copyOf truncates or pads with zeros/nulls; copyOfRange supports out-of-bounds toIndex (pads). Both return a new array — the original is unaffected.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">void Arrays.fill(int[] a, int val) / fill(T[], int, int, T)</code>
+  <code class="snippet"><span class="kw">int</span>[] board = <span class="kw">new</span> <span class="kw">int</span>[<span class="num">9</span>];
+<span class="ty">Arrays</span>.<span class="fn">fill</span>(board, -<span class="num">1</span>);                    <span class="cm">// [-1,-1,-1,-1,-1,-1,-1,-1,-1]</span>
+<span class="ty">Arrays</span>.<span class="fn">fill</span>(board, <span class="num">3</span>, <span class="num">6</span>, <span class="num">0</span>);               <span class="cm">// indices 3-5 → 0</span></code>
+  <span class="desc">Assigns a single value to every element (or a range). Faster and clearer than a loop for initialization. Does not deep-fill — each cell of an Object[] still holds the same reference.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">List&lt;T&gt; Arrays.asList(T... a) — fixed-size list backed by the array</code>
+  <code class="snippet"><span class="ty">List</span>&lt;<span class="ty">String</span>&gt; fixed = <span class="ty">Arrays</span>.<span class="fn">asList</span>(<span class="str">"x"</span>, <span class="str">"y"</span>, <span class="str">"z"</span>);
+fixed.<span class="fn">set</span>(<span class="num">0</span>, <span class="str">"X"</span>); <span class="cm">// OK — mutates backing array</span>
+fixed.<span class="fn">add</span>(<span class="str">"w"</span>);   <span class="cm">// UnsupportedOperationException — fixed size</span></code>
+  <span class="desc">The returned list allows set/sort but not structural changes (add/remove). Wrap in new ArrayList<>(Arrays.asList(...)) for a fully mutable copy. Prefer List.of for truly immutable literals.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Stream&lt;T&gt; Arrays.stream(T[]) / stream(int[])</code>
+  <code class="snippet"><span class="kw">int</span> sum = <span class="ty">Arrays</span>.<span class="fn">stream</span>(nums).<span class="fn">sum</span>();
+<span class="ty">String</span>[] upper = <span class="ty">Arrays</span>.<span class="fn">stream</span>(words)
+    .<span class="fn">map</span>(<span class="ty">String</span>::toUpperCase)
+    .<span class="fn">toArray</span>(<span class="ty">String</span>[]::new);</code>
+  <span class="desc">Bridges arrays into the Stream API; int[]/long[]/double[] produce IntStream/LongStream/DoubleStream with sum/average/min/max. More expressive than index-based loops for transformations.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">boolean Arrays.equals(int[], int[]) / deepEquals(Object[], Object[]) / toString / deepToString</code>
+  <code class="snippet"><span class="kw">boolean</span> same = <span class="ty">Arrays</span>.<span class="fn">equals</span>(a, b);         <span class="cm">// element-wise, 1D only</span>
+<span class="kw">boolean</span> deep = <span class="ty">Arrays</span>.<span class="fn">deepEquals</span>(matrix1, matrix2); <span class="cm">// nested arrays</span>
+<span class="ty">System</span>.out.<span class="fn">println</span>(<span class="ty">Arrays</span>.<span class="fn">toString</span>(nums));      <span class="cm">// "[1, 2, 5, 8]"</span>
+<span class="ty">System</span>.out.<span class="fn">println</span>(<span class="ty">Arrays</span>.<span class="fn">deepToString</span>(grid));  <span class="cm">// "[[1, 2], [3, 4]]"</span></code>
+  <span class="desc">== on arrays compares references; Arrays.equals does element-wise comparison. deepEquals recurses into nested arrays. toString/deepToString are essential for debugging arrays (avoid the default Object@hex output).</span>
+</div>
+
+<div class="sub-heading">Objects utilities</div>
+
+<div class="entry">
+  <code class="sig">T Objects.requireNonNull(T obj, String message) — null guard</code>
+  <code class="snippet"><span class="kw">public</span> <span class="ty">UserService</span>(<span class="ty">UserRepository</span> repo) {
+    <span class="kw">this</span>.repo = <span class="ty">Objects</span>.<span class="fn">requireNonNull</span>(repo, <span class="str">"repo must not be null"</span>);
+}</code>
+  <span class="desc">Throws NullPointerException with the given message if obj is null; otherwise returns obj. The canonical null-guard idiom for constructors and method preambles — fail fast at the boundary.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">T Objects.requireNonNullElse(T obj, T defaultObj) — null coalesce</code>
+  <code class="snippet"><span class="ty">String</span> label = <span class="ty">Objects</span>.<span class="fn">requireNonNullElse</span>(config.<span class="fn">label</span>(), <span class="str">"default"</span>);
+<span class="cm">// defaultObj itself must not be null</span></code>
+  <span class="desc">Returns obj if non-null, defaultObj otherwise; both arguments must be non-null (unlike getOrDefault which has no such constraint). Cleaner than a ternary null-check.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">boolean Objects.isNull(Object obj) / nonNull(Object obj)</code>
+  <code class="snippet">list.<span class="fn">stream</span>().<span class="fn">filter</span>(<span class="ty">Objects</span>::nonNull).<span class="fn">toList</span>(); <span class="cm">// drop nulls</span>
+list.<span class="fn">stream</span>().<span class="fn">filter</span>(<span class="ty">Objects</span>::isNull).<span class="fn">count</span>();   <span class="cm">// count nulls</span></code>
+  <span class="desc">Primarily useful as method references in streams; isNull/nonNull are equivalent to == null / != null but compose cleanly with filter/removeIf.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">String Objects.toString(Object o, String nullDefault) — null-safe toString</code>
+  <code class="snippet"><span class="ty">String</span> s = <span class="ty">Objects</span>.<span class="fn">toString</span>(maybeNull, <span class="str">"N/A"</span>); <span class="cm">// never null</span></code>
+  <span class="desc">Returns o.toString() if o is non-null, otherwise nullDefault. Avoids NullPointerException in logging/display code without an explicit null check.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">boolean Objects.equals(Object a, Object b) — null-safe equality</code>
+  <code class="snippet"><span class="ty">Objects</span>.<span class="fn">equals</span>(a, b); <span class="cm">// true if both null, false if one null, a.equals(b) otherwise</span></code>
+  <span class="desc">The standard null-safe equals — eliminates the pattern a != null &amp;&amp; a.equals(b). Use in equals() overrides to handle null fields without extra guards.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">int Objects.hash(Object... values) — multi-field hashCode</code>
+  <code class="snippet">@<span class="ty">Override</span> <span class="kw">public</span> <span class="kw">int</span> <span class="fn">hashCode</span>() {
+    <span class="kw">return</span> <span class="ty">Objects</span>.<span class="fn">hash</span>(firstName, lastName, email);
+}</code>
+  <span class="desc">Combines multiple fields into a hash code via Arrays.hashCode; slightly slower than hand-rolled due to varargs array creation — use for clarity, not hot-path code.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">int Objects.checkIndex(int index, int length) — bounds check (Java 9+)</code>
+  <code class="snippet"><span class="ty">Objects</span>.<span class="fn">checkIndex</span>(i, array.length); <span class="cm">// throws IndexOutOfBoundsException if i &lt; 0 || i ≥ length</span></code>
+  <span class="desc">Validates that index is within [0, length) and returns the index on success — useful in custom data structures to enforce bounds with a standard exception message.</span>
+</div>
+
+<div class="sub-heading">Optional</div>
+
+<div class="entry">
+  <code class="sig">Optional.of(T) / Optional.ofNullable(T) / Optional.empty()</code>
+  <code class="snippet"><span class="ty">Optional</span>&lt;<span class="ty">String</span>&gt; a = <span class="ty">Optional</span>.<span class="fn">of</span>(<span class="str">"hello"</span>);       <span class="cm">// NPE if null</span>
+<span class="ty">Optional</span>&lt;<span class="ty">String</span>&gt; b = <span class="ty">Optional</span>.<span class="fn">ofNullable</span>(maybeNull); <span class="cm">// safe</span>
+<span class="ty">Optional</span>&lt;<span class="ty">String</span>&gt; c = <span class="ty">Optional</span>.<span class="fn">empty</span>();             <span class="cm">// no value</span></code>
+  <span class="desc">Optional is a value type for method return values — not a field type or parameter type. of() is for known non-null values; ofNullable bridges nullable APIs into Optional chains.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">boolean optional.isPresent() / isEmpty() (Java 11+)</code>
+  <code class="snippet"><span class="kw">if</span> (opt.<span class="fn">isPresent</span>()) doSomething(opt.<span class="fn">get</span>());
+<span class="kw">if</span> (opt.<span class="fn">isEmpty</span>())   handleMissing(); <span class="cm">// Java 11+, cleaner than !isPresent()</span></code>
+  <span class="desc">isEmpty() was added in Java 11 to avoid the double-negation of !isPresent(). Prefer ifPresent(consumer) or map/orElse over isPresent()+get() to stay functional.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">T optional.get() — unsafe; use sparingly</code>
+  <code class="snippet"><span class="ty">String</span> val = opt.<span class="fn">get</span>(); <span class="cm">// NoSuchElementException if empty — only call after isPresent()</span></code>
+  <span class="desc">Throws NoSuchElementException when empty. Treat get() as a code smell — if you find yourself calling isPresent() then get(), refactor to orElse/orElseGet/ifPresent.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">T optional.orElse(T) / orElseGet(Supplier&lt;T&gt;) / orElseThrow(Supplier&lt;Throwable&gt;)</code>
+  <code class="snippet"><span class="ty">String</span> s1 = opt.<span class="fn">orElse</span>(<span class="str">"default"</span>);                         <span class="cm">// always evaluates default</span>
+<span class="ty">String</span> s2 = opt.<span class="fn">orElseGet</span>(() -&gt; <span class="fn">computeDefault</span>());          <span class="cm">// lazy</span>
+<span class="ty">String</span> s3 = opt.<span class="fn">orElseThrow</span>(() -&gt; <span class="kw">new</span> <span class="ty">IllegalStateException</span>(<span class="str">"missing"</span>));</code>
+  <span class="desc">orElse evaluates its argument eagerly — use orElseGet when the default is expensive to construct. orElseThrow is the preferred way to propagate a domain error when absence is invalid.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Optional&lt;T&gt; Optional.ofNullable(T) / .map(Function) / .orElse(T) / .orElseGet(Supplier)</code>
+  <code class="snippet"><span class="kw">var</span> city = <span class="ty">Optional</span>.<span class="fn">ofNullable</span>(user.<span class="fn">address</span>())
+    .<span class="fn">map</span>(<span class="ty">Address</span>::city)
+    .<span class="fn">orElse</span>(<span class="str">"Unknown"</span>);</code>
+  <span class="desc">ofNullable wraps a potentially-null value; chain map/flatMap for transformations, orElse/orElseGet for extraction with a default — avoids null checks in pipelines.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">void optional.ifPresent(Consumer&lt;T&gt;) / ifPresentOrElse(Consumer&lt;T&gt;, Runnable) (Java 9+)</code>
+  <code class="snippet">opt.<span class="fn">ifPresent</span>(val -&gt; <span class="ty">System</span>.out.<span class="fn">println</span>(val));
+opt.<span class="fn">ifPresentOrElse</span>(
+    val -&gt; <span class="fn">save</span>(val),
+    ()  -&gt; <span class="ty">System</span>.out.<span class="fn">println</span>(<span class="str">"nothing to save"</span>)
+);</code>
+  <span class="desc">ifPresent runs the consumer only when a value exists; ifPresentOrElse (Java 9) handles both branches — cleaner than if/else around isPresent() for side-effect-only paths.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Stream&lt;T&gt; optional.stream() — 0 or 1 element stream (Java 9+)</code>
+  <code class="snippet"><span class="ty">List</span>&lt;<span class="ty">String</span>&gt; values = optionals.<span class="fn">stream</span>()
+    .<span class="fn">flatMap</span>(<span class="ty">Optional</span>::stream) <span class="cm">// flatten Optional&lt;T&gt; into present values</span>
+    .<span class="fn">toList</span>();</code>
+  <span class="desc">Produces a single-element stream if present, empty stream otherwise. The key use case is flatMap(Optional::stream) to filter-and-unwrap a stream of Optionals in one step.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Optional&lt;T&gt; optional.or(Supplier&lt;Optional&lt;T&gt;&gt;) — fallback optional (Java 9+)</code>
+  <code class="snippet"><span class="ty">Optional</span>&lt;<span class="ty">User</span>&gt; user = <span class="fn">findInCache</span>(id)
+    .<span class="fn">or</span>(() -&gt; <span class="fn">findInDatabase</span>(id))
+    .<span class="fn">or</span>(() -&gt; <span class="fn">findInRemote</span>(id));</code>
+  <span class="desc">Returns this Optional if present, otherwise returns the supplier's Optional — enables lazy fallback chains without unwrapping intermediate values. Complement to orElseGet for Optional-returning lookup layers.</span>
+</div>
 
 <h2 class="section-heading" id="java-stream">java.util.stream</h2>
 <!-- entries coming in Task 6 -->
