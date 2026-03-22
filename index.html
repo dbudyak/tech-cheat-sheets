@@ -5635,13 +5635,473 @@ logger.<span class="fn">debug</span>(() -&gt; <span class="str">"State: "</span>
 </div>
 
 <h2 class="section-heading" id="java-time">java.time</h2>
-<!-- entries coming in Task 7 -->
+<div class="sub-heading">LocalDate / LocalTime / LocalDateTime</div>
+
+<div class="entry">
+  <code class="sig">static LocalDate LocalDate.now() / of(int year, int month, int dayOfMonth) / of(int year, Month, int day)</code>
+  <code class="snippet"><span class="kw">var</span> today    = <span class="ty">LocalDate</span>.<span class="fn">now</span>();
+<span class="kw">var</span> xmas2025 = <span class="ty">LocalDate</span>.<span class="fn">of</span>(<span class="num">2025</span>, <span class="num">12</span>, <span class="num">25</span>);
+<span class="kw">var</span> piDay    = <span class="ty">LocalDate</span>.<span class="fn">of</span>(<span class="num">2025</span>, <span class="ty">Month</span>.MARCH, <span class="num">14</span>);</code>
+  <span class="desc">Factory methods to create a date without time or timezone; of() validates the fields eagerly and throws DateTimeException for invalid combinations like Feb 30.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">static LocalDate LocalDate.parse(CharSequence text) / parse(CharSequence, DateTimeFormatter)</code>
+  <code class="snippet"><span class="kw">var</span> dob = <span class="ty">LocalDate</span>.<span class="fn">parse</span>(req.<span class="fn">getParameter</span>(<span class="str">"dob"</span>), <span class="ty">DateTimeFormatter</span>.<span class="fn">ofPattern</span>(<span class="str">"dd/MM/yyyy"</span>));
+<span class="kw">var</span> age = <span class="ty">Period</span>.<span class="fn">between</span>(dob, <span class="ty">LocalDate</span>.<span class="fn">now</span>()).<span class="fn">getYears</span>();</code>
+  <span class="desc">Parses a date string with an explicit formatter; always specify the formatter for user-supplied input to handle locale differences.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">LocalDate plusDays(long) / plusMonths(long) / plusYears(long) / minusDays(long) / minusMonths(long)</code>
+  <code class="snippet"><span class="kw">var</span> due      = <span class="ty">LocalDate</span>.<span class="fn">now</span>().<span class="fn">plusDays</span>(<span class="num">30</span>);
+<span class="kw">var</span> lastMonth = <span class="ty">LocalDate</span>.<span class="fn">now</span>().<span class="fn">minusMonths</span>(<span class="num">1</span>).<span class="fn">withDayOfMonth</span>(<span class="num">1</span>);</code>
+  <span class="desc">All arithmetic returns a new immutable instance; chain calls freely — LocalDate is thread-safe and value-based.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">boolean isBefore(LocalDate) / isAfter(LocalDate) / isEqual(LocalDate)</code>
+  <code class="snippet"><span class="kw">if</span> (deadline.<span class="fn">isBefore</span>(<span class="ty">LocalDate</span>.<span class="fn">now</span>())) {
+  <span class="fn">sendOverdueNotice</span>(task);
+}</code>
+  <span class="desc">Prefer isBefore/isAfter over compareTo for readable date comparisons; isEqual is equivalent to equals() for LocalDate.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">DayOfWeek getDayOfWeek() / int getDayOfMonth() / Month getMonth() / int getYear() / int lengthOfMonth()</code>
+  <code class="snippet"><span class="kw">var</span> d = <span class="ty">LocalDate</span>.<span class="fn">now</span>();
+<span class="ty">String</span> label = d.<span class="fn">getDayOfWeek</span>().<span class="fn">getDisplayName</span>(<span class="ty">TextStyle</span>.FULL, <span class="ty">Locale</span>.US)
+               + <span class="str">", "</span> + d.<span class="fn">getMonth</span>() + <span class="str">" "</span> + d.<span class="fn">getDayOfMonth</span>(); <span class="cm">// "Sunday, MARCH 22"</span></code>
+  <span class="desc">Field accessors; getDayOfWeek() returns a DayOfWeek enum so you can switch on it; lengthOfMonth() accounts for leap years automatically.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">LocalDate withDayOfMonth(int) / withMonth(int) / withYear(int)</code>
+  <code class="snippet"><span class="kw">var</span> firstOfMonth = <span class="ty">LocalDate</span>.<span class="fn">now</span>().<span class="fn">withDayOfMonth</span>(<span class="num">1</span>);
+<span class="kw">var</span> lastOfMonth  = firstOfMonth.<span class="fn">withDayOfMonth</span>(firstOfMonth.<span class="fn">lengthOfMonth</span>());</code>
+  <span class="desc">Returns a copy with the specified field changed; useful for computing month boundaries without manual calendar arithmetic.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">LocalDateTime atStartOfDay() / ZonedDateTime atStartOfDay(ZoneId zone)</code>
+  <code class="snippet"><span class="kw">var</span> startUTC = <span class="ty">LocalDate</span>.<span class="fn">now</span>().<span class="fn">atStartOfDay</span>(<span class="ty">ZoneId</span>.<span class="fn">of</span>(<span class="str">"UTC"</span>));
+<span class="kw">var</span> epochMs  = startUTC.<span class="fn">toInstant</span>().<span class="fn">toEpochMilli</span>();</code>
+  <span class="desc">Converts a date to a timezone-aware start-of-day; use the ZoneId overload when building UTC timestamps for database queries.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">static LocalTime LocalTime.now() / of(int hour, int minute) / of(int hour, int minute, int second) / parse(CharSequence)</code>
+  <code class="snippet"><span class="kw">var</span> now      = <span class="ty">LocalTime</span>.<span class="fn">now</span>();
+<span class="kw">var</span> noon     = <span class="ty">LocalTime</span>.<span class="fn">of</span>(<span class="num">12</span>, <span class="num">0</span>);
+<span class="kw">var</span> cutoff   = <span class="ty">LocalTime</span>.<span class="fn">parse</span>(<span class="str">"17:30"</span>);
+<span class="kw">boolean</span> late = now.<span class="fn">isAfter</span>(cutoff);</code>
+  <span class="desc">LocalTime has no date or timezone; use it for recurring daily rules like business hours or cron-style schedules.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">LocalTime plusHours(long) / plusMinutes(long) / isBefore(LocalTime) / isAfter(LocalTime)</code>
+  <code class="snippet"><span class="kw">var</span> sessionEnd = <span class="ty">LocalTime</span>.<span class="fn">now</span>().<span class="fn">plusMinutes</span>(<span class="num">45</span>);
+<span class="kw">if</span> (sessionEnd.<span class="fn">isAfter</span>(<span class="ty">LocalTime</span>.<span class="fn">of</span>(<span class="num">22</span>, <span class="num">0</span>))) {
+  <span class="fn">warnLateMeeting</span>();
+}</code>
+  <span class="desc">Time arithmetic wraps midnight silently — plusHours(3) on 23:00 returns 02:00; if crossing midnight matters, use LocalDateTime instead.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">static LocalDateTime LocalDateTime.now() / of(LocalDate, LocalTime) / atZone(ZoneId) → ZonedDateTime</code>
+  <code class="snippet"><span class="kw">var</span> meeting = <span class="ty">LocalDateTime</span>.<span class="fn">of</span>(<span class="ty">LocalDate</span>.<span class="fn">of</span>(<span class="num">2025</span>, <span class="num">9</span>, <span class="num">15</span>), <span class="ty">LocalTime</span>.<span class="fn">of</span>(<span class="num">14</span>, <span class="num">30</span>));
+<span class="kw">var</span> zoned   = meeting.<span class="fn">atZone</span>(<span class="ty">ZoneId</span>.<span class="fn">of</span>(<span class="str">"America/New_York"</span>));
+<span class="kw">var</span> utc     = zoned.<span class="fn">withZoneSameInstant</span>(<span class="ty">ZoneId</span>.<span class="fn">of</span>(<span class="str">"UTC"</span>));</code>
+  <span class="desc">LocalDateTime has no timezone — it's just a date-time wall clock value; attach a ZoneId via atZone() before doing any cross-timezone math.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">LocalDate LocalDateTime.toLocalDate() / LocalTime toLocalTime() / static LocalDateTime parse(CharSequence, DateTimeFormatter)</code>
+  <code class="snippet"><span class="kw">var</span> fmt = <span class="ty">DateTimeFormatter</span>.<span class="fn">ofPattern</span>(<span class="str">"yyyy-MM-dd HH:mm"</span>);
+<span class="kw">var</span> ldt = <span class="ty">LocalDateTime</span>.<span class="fn">parse</span>(<span class="str">"2025-09-15 14:30"</span>, fmt);
+<span class="kw">var</span> date = ldt.<span class="fn">toLocalDate</span>(); <span class="cm">// 2025-09-15</span></code>
+  <span class="desc">Decompose a LocalDateTime into its date or time parts; parse() with a formatter handles non-ISO formats like database DATETIME strings.</span>
+</div>
+
+<div class="sub-heading">ZonedDateTime / Instant</div>
+
+<div class="entry">
+  <code class="sig">static ZonedDateTime ZonedDateTime.now() / now(ZoneId) / of(LocalDateTime, ZoneId)</code>
+  <code class="snippet"><span class="kw">var</span> berlin = <span class="ty">ZonedDateTime</span>.<span class="fn">now</span>(<span class="ty">ZoneId</span>.<span class="fn">of</span>(<span class="str">"Europe/Berlin"</span>));
+<span class="kw">var</span> tokyo  = <span class="ty">ZonedDateTime</span>.<span class="fn">now</span>(<span class="ty">ZoneId</span>.<span class="fn">of</span>(<span class="str">"Asia/Tokyo"</span>));
+<span class="kw">boolean</span> same = berlin.<span class="fn">toInstant</span>().<span class="fn">equals</span>(tokyo.<span class="fn">toInstant</span>()); <span class="cm">// true if captured simultaneously</span></code>
+  <span class="desc">Always pass an explicit ZoneId to now() in server code — the default ZoneId.systemDefault() may differ between dev and prod environments.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">ZonedDateTime withZoneSameInstant(ZoneId zone) — convert the same moment to another timezone</code>
+  <code class="snippet"><span class="kw">var</span> ny      = <span class="ty">ZonedDateTime</span>.<span class="fn">now</span>(<span class="ty">ZoneId</span>.<span class="fn">of</span>(<span class="str">"America/New_York"</span>));
+<span class="kw">var</span> london  = ny.<span class="fn">withZoneSameInstant</span>(<span class="ty">ZoneId</span>.<span class="fn">of</span>(<span class="str">"Europe/London"</span>));
+<span class="kw">var</span> display = london.<span class="fn">format</span>(<span class="ty">DateTimeFormatter</span>.ISO_OFFSET_DATE_TIME);</code>
+  <span class="desc">withZoneSameInstant preserves the underlying Instant (same point in time); withZoneSameLocal keeps the clock value but shifts the timezone, changing the instant.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Instant ZonedDateTime.toInstant() / LocalDateTime toLocalDateTime()</code>
+  <code class="snippet"><span class="kw">var</span> zdt     = <span class="ty">ZonedDateTime</span>.<span class="fn">now</span>(<span class="ty">ZoneId</span>.<span class="fn">of</span>(<span class="str">"UTC"</span>));
+<span class="kw">var</span> instant = zdt.<span class="fn">toInstant</span>();                <span class="cm">// store in DB as epoch</span>
+<span class="kw">var</span> back    = instant.<span class="fn">atZone</span>(<span class="ty">ZoneId</span>.<span class="fn">of</span>(<span class="str">"UTC"</span>)).<span class="fn">toLocalDateTime</span>();</code>
+  <span class="desc">Convert to Instant for storage or comparison, back to ZonedDateTime for display; round-trip is lossless when the same ZoneId is used.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">static Instant Instant.now() / ofEpochMilli(long) / ofEpochSecond(long) / toEpochMilli() → long</code>
+  <code class="snippet"><span class="kw">var</span> start   = <span class="ty">Instant</span>.<span class="fn">now</span>();
+<span class="fn">doWork</span>();
+<span class="kw">var</span> elapsed = <span class="ty">Duration</span>.<span class="fn">between</span>(start, <span class="ty">Instant</span>.<span class="fn">now</span>()).<span class="fn">toMillis</span>();</code>
+  <span class="desc">Instant represents a point on the UTC timeline; use for timestamps in databases and APIs — never LocalDateTime for wall-clock comparisons across timezones.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Instant plus(Duration) / minus(Duration) / isBefore(Instant) / isAfter(Instant)</code>
+  <code class="snippet"><span class="kw">var</span> expiry = <span class="ty">Instant</span>.<span class="fn">now</span>().<span class="fn">plus</span>(<span class="ty">Duration</span>.<span class="fn">ofHours</span>(<span class="num">24</span>));
+<span class="kw">if</span> (<span class="ty">Instant</span>.<span class="fn">now</span>().<span class="fn">isAfter</span>(expiry)) {
+  <span class="fn">revokeToken</span>(token);
+}</code>
+  <span class="desc">Duration-based arithmetic on Instant is the correct way to express "24 hours from now" independent of daylight saving time changes.</span>
+</div>
+
+<div class="sub-heading">Duration / Period</div>
+
+<div class="entry">
+  <code class="sig">static Duration Duration.between(Temporal start, Temporal end) / of(long amount, ChronoUnit)</code>
+  <code class="snippet"><span class="kw">var</span> d1 = <span class="ty">Duration</span>.<span class="fn">between</span>(startInstant, endInstant);
+<span class="kw">var</span> d2 = <span class="ty">Duration</span>.<span class="fn">of</span>(<span class="num">5</span>, <span class="ty">ChronoUnit</span>.MINUTES);
+<span class="kw">var</span> d3 = <span class="ty">Duration</span>.<span class="fn">ofSeconds</span>(<span class="num">90</span>); <span class="cm">// 1m 30s</span></code>
+  <span class="desc">Duration models a time-based amount (seconds + nanos); use it for elapsed time and timeouts — not calendar months, which vary in length.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">long toMillis() / toSeconds() / toMinutes() / toHours() / boolean isNegative() / Duration abs()</code>
+  <code class="snippet"><span class="kw">var</span> lag = <span class="ty">Duration</span>.<span class="fn">between</span>(expected, actual);
+<span class="kw">if</span> (lag.<span class="fn">abs</span>().<span class="fn">toMillis</span>() &gt; <span class="num">500</span>) {
+  log.<span class="fn">warn</span>(<span class="str">"Clock skew {} ms"</span>, lag.<span class="fn">toMillis</span>());
+}</code>
+  <span class="desc">toXxx() methods truncate — toMinutes() on a 90-second duration returns 1, not 1.5; use abs() before threshold comparisons when sign is uncertain.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Duration plus(Duration) / minus(Duration) / multipliedBy(long) / dividedBy(long)</code>
+  <code class="snippet"><span class="kw">var</span> timeout = <span class="ty">Duration</span>.<span class="fn">ofSeconds</span>(<span class="num">30</span>).<span class="fn">multipliedBy</span>(<span class="num">3</span>); <span class="cm">// 90 s</span>
+<span class="kw">var</span> budget  = totalBudget.<span class="fn">dividedBy</span>(<span class="num">4</span>);                   <span class="cm">// quarter of total</span></code>
+  <span class="desc">Duration arithmetic is immutable; multipliedBy and dividedBy operate on the total nanosecond value, so precision is preserved.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">static Period Period.between(LocalDate startInclusive, LocalDate endExclusive) / of(int years, int months, int days)</code>
+  <code class="snippet"><span class="kw">var</span> dob    = <span class="ty">LocalDate</span>.<span class="fn">of</span>(<span class="num">1990</span>, <span class="num">6</span>, <span class="num">15</span>);
+<span class="kw">var</span> p      = <span class="ty">Period</span>.<span class="fn">between</span>(dob, <span class="ty">LocalDate</span>.<span class="fn">now</span>());
+<span class="ty">String</span> age = p.<span class="fn">getYears</span>() + <span class="str">"y "</span> + p.<span class="fn">getMonths</span>() + <span class="str">"m "</span> + p.<span class="fn">getDays</span>() + <span class="str">"d"</span>;</code>
+  <span class="desc">Period is calendar-based (years/months/days) — unlike Duration, it handles variable month lengths and leap years; use it for age and anniversary calculations.</span>
+</div>
+
+<div class="sub-heading">DateTimeFormatter</div>
+
+<div class="entry">
+  <code class="sig">static DateTimeFormatter DateTimeFormatter.ofPattern(String) / ofPattern(String, Locale)</code>
+  <code class="snippet"><span class="kw">var</span> fmt = <span class="ty">DateTimeFormatter</span>.<span class="fn">ofPattern</span>(<span class="str">"dd MMM yyyy"</span>, <span class="ty">Locale</span>.ENGLISH);
+<span class="ty">String</span> s = <span class="ty">LocalDate</span>.<span class="fn">now</span>().<span class="fn">format</span>(fmt); <span class="cm">// "22 Mar 2026"</span>
+<span class="kw">var</span> d     = <span class="ty">LocalDate</span>.<span class="fn">parse</span>(<span class="str">"22 Mar 2026"</span>, fmt);</code>
+  <span class="desc">Always pass a Locale to ofPattern when the pattern contains month/day names (MMM, EEEE) — without it the JVM default locale is used, causing locale-dependent failures.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">DateTimeFormatter ISO_LOCAL_DATE / ISO_LOCAL_DATE_TIME / ISO_INSTANT / ISO_OFFSET_DATE_TIME (constants)</code>
+  <code class="snippet"><span class="cm">// ISO_INSTANT → "2026-03-22T14:30:00Z"  (always UTC, ideal for APIs)</span>
+<span class="ty">String</span> ts = <span class="ty">Instant</span>.<span class="fn">now</span>().<span class="fn">toString</span>(); <span class="cm">// calls ISO_INSTANT implicitly</span>
+<span class="cm">// ISO_OFFSET_DATE_TIME → "2026-03-22T14:30:00+01:00"</span>
+<span class="ty">String</span> s  = <span class="ty">ZonedDateTime</span>.<span class="fn">now</span>().<span class="fn">format</span>(<span class="ty">DateTimeFormatter</span>.ISO_OFFSET_DATE_TIME);</code>
+  <span class="desc">Prefer built-in ISO formatters for inter-system data exchange; ISO_INSTANT is the safest choice for JSON timestamps as it is unambiguous and parseable by all languages.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">String formatter.format(TemporalAccessor) / TemporalAccessor formatter.parse(CharSequence)</code>
+  <code class="snippet"><span class="kw">var</span> fmt  = <span class="ty">DateTimeFormatter</span>.<span class="fn">ofPattern</span>(<span class="str">"yyyyMMdd"</span>).<span class="fn">withZone</span>(<span class="ty">ZoneOffset</span>.UTC);
+<span class="ty">String</span> s = fmt.<span class="fn">format</span>(<span class="ty">Instant</span>.<span class="fn">now</span>());          <span class="cm">// "20260322"</span>
+<span class="kw">var</span> inst  = <span class="ty">Instant</span>.<span class="fn">from</span>(fmt.<span class="fn">parse</span>(<span class="str">"20260322"</span>));</code>
+  <span class="desc">withZone() is required when formatting an Instant because Instant has no timezone; withLocale() overrides the locale for display names.</span>
+</div>
+
+<div class="sub-heading">ZoneId / ZoneOffset</div>
+
+<div class="entry">
+  <code class="sig">static ZoneId ZoneId.of(String zoneId) / ZoneId.systemDefault() / ZoneId.getAvailableZoneIds()</code>
+  <code class="snippet"><span class="kw">var</span> tz      = <span class="ty">ZoneId</span>.<span class="fn">of</span>(<span class="str">"America/Los_Angeles"</span>);
+<span class="kw">var</span> sysZone = <span class="ty">ZoneId</span>.<span class="fn">systemDefault</span>();
+<span class="cm">// List all IANA zones:</span>
+<span class="ty">ZoneId</span>.<span class="fn">getAvailableZoneIds</span>().<span class="fn">stream</span>().<span class="fn">sorted</span>().<span class="fn">forEach</span>(<span class="ty">System</span>.out::println);</code>
+  <span class="desc">Always use IANA zone IDs like "Europe/Berlin" — never three-letter abbreviations like "EST" which are ambiguous and may map to different offsets on different JVM versions.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">ZoneOffset ZoneOffset.UTC / ZoneOffset.of(String offsetId) / ZoneOffset.ofHours(int)</code>
+  <code class="snippet"><span class="kw">var</span> utc  = <span class="ty">ZoneOffset</span>.UTC;                     <span class="cm">// +00:00</span>
+<span class="kw">var</span> ist  = <span class="ty">ZoneOffset</span>.<span class="fn">of</span>(<span class="str">"+05:30"</span>);             <span class="cm">// India Standard Time</span>
+<span class="kw">var</span> odt  = <span class="ty">OffsetDateTime</span>.<span class="fn">now</span>(ist);
+<span class="ty">String</span> s = odt.<span class="fn">format</span>(<span class="ty">DateTimeFormatter</span>.ISO_OFFSET_DATE_TIME);</code>
+  <span class="desc">ZoneOffset is a fixed offset with no DST rules; use it when you know the exact UTC offset (e.g. from an API response header) rather than a geographic zone.</span>
+</div>
 
 <h2 class="section-heading" id="java-io">java.io</h2>
-<!-- entries coming in Task 8 -->
+
+<div class="sub-heading">java.io — legacy I/O</div>
+
+<div class="entry">
+  <code class="sig">int InputStream.read() / byte[] readAllBytes() (Java 9+) / long transferTo(OutputStream) (Java 9+)</code>
+  <code class="snippet"><span class="kw">try</span> (<span class="kw">var</span> in = <span class="ty">MyClass</span>.class.<span class="fn">getResourceAsStream</span>(<span class="str">"/data.bin"</span>)) {
+  <span class="kw">byte</span>[] bytes = in.<span class="fn">readAllBytes</span>();      <span class="cm">// Java 9+, loads fully into memory</span>
+}</code>
+  <span class="desc">readAllBytes() is convenient for small classpath resources; avoid it for large files — use transferTo() or NIO Files.copy() to stream without buffering the whole file.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">InputStream.transferTo(OutputStream out) → long (Java 9+)</code>
+  <code class="snippet"><span class="kw">try</span> (<span class="kw">var</span> in  = <span class="kw">new</span> <span class="ty">FileInputStream</span>(src);
+       <span class="kw">var</span> out = <span class="kw">new</span> <span class="ty">FileOutputStream</span>(dst)) {
+  <span class="kw">var</span> bytes = in.<span class="fn">transferTo</span>(out); <span class="cm">// returns byte count</span>
+}</code>
+  <span class="desc">Copies all bytes from this stream to out; prefer Files.copy() for file paths, but transferTo is useful when you already hold stream references.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">void OutputStream.write(byte[]) / write(byte[], int off, int len) / flush() / close()</code>
+  <code class="snippet"><span class="kw">try</span> (<span class="kw">var</span> out = <span class="kw">new</span> <span class="ty">FileOutputStream</span>(<span class="str">"report.bin"</span>, <span class="kw">true</span>)) { <span class="cm">// append=true</span>
+  out.<span class="fn">write</span>(payload);
+  out.<span class="fn">flush</span>();
+}</code>
+  <span class="desc">Always use try-with-resources so close() is called even on exception; the boolean append flag in FileOutputStream(File, boolean) prevents overwriting existing content.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">InputStreamReader(InputStream in, Charset cs) / OutputStreamWriter(OutputStream out, Charset cs)</code>
+  <code class="snippet"><span class="kw">try</span> (<span class="kw">var</span> rdr = <span class="kw">new</span> <span class="ty">InputStreamReader</span>(socket.<span class="fn">getInputStream</span>(), <span class="ty">StandardCharsets</span>.UTF_8);
+       <span class="kw">var</span> buf = <span class="kw">new</span> <span class="ty">BufferedReader</span>(rdr)) {
+  <span class="ty">String</span> line = buf.<span class="fn">readLine</span>();
+}</code>
+  <span class="desc">Always specify the charset explicitly — the single-arg constructor uses the platform default which differs between Windows and Linux; StandardCharsets.UTF_8 is a constant, not a string lookup.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">BufferedReader(Reader) — readLine() → String / Stream&lt;String&gt; lines() / try-with-resources</code>
+  <code class="snippet"><span class="kw">try</span> (<span class="kw">var</span> br = <span class="kw">new</span> <span class="ty">BufferedReader</span>(<span class="kw">new</span> <span class="ty">FileReader</span>(<span class="str">"log.txt"</span>, <span class="ty">StandardCharsets</span>.UTF_8))) {
+  br.<span class="fn">lines</span>()
+    .<span class="fn">filter</span>(l -&gt; l.<span class="fn">contains</span>(<span class="str">"ERROR"</span>))
+    .<span class="fn">forEach</span>(<span class="ty">System</span>.out::println);
+}</code>
+  <span class="desc">lines() returns a lazy Stream backed by readLine(); the stream is closed when the BufferedReader is closed, so always wrap in try-with-resources.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">BufferedWriter(Writer) / PrintWriter(Writer, boolean autoFlush) — println / printf / flush</code>
+  <code class="snippet"><span class="kw">try</span> (<span class="kw">var</span> pw = <span class="kw">new</span> <span class="ty">PrintWriter</span>(<span class="kw">new</span> <span class="ty">BufferedWriter</span>(<span class="kw">new</span> <span class="ty">FileWriter</span>(<span class="str">"out.txt"</span>, <span class="ty">StandardCharsets</span>.UTF_8)), <span class="kw">false</span>)) {
+  pw.<span class="fn">printf</span>(<span class="str">"%-10s %5.2f%n"</span>, name, price);
+  pw.<span class="fn">flush</span>();
+}</code>
+  <span class="desc">PrintWriter adds printf/println on top of any Writer; set autoFlush=false for file writes and call flush() explicitly to avoid flushing on every println.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">StringWriter — in-memory write / toString() / StringReader(String) — wrap String as Reader</code>
+  <code class="snippet"><span class="kw">var</span> sw = <span class="kw">new</span> <span class="ty">StringWriter</span>();
+<span class="kw">new</span> <span class="ty">PrintWriter</span>(sw).<span class="fn">printf</span>(<span class="str">"Hello %s"</span>, name);
+<span class="ty">String</span> result = sw.<span class="fn">toString</span>();
+
+<span class="kw">var</span> sr = <span class="kw">new</span> <span class="ty">StringReader</span>(result);   <span class="cm">// back to Reader</span></code>
+  <span class="desc">StringWriter is useful for capturing output from APIs that write to a Writer (e.g. XML serializers, template engines) without touching the filesystem.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">ByteArrayOutputStream — write(byte[]) / toByteArray() → byte[] / toString(Charset)</code>
+  <code class="snippet"><span class="kw">var</span> baos = <span class="kw">new</span> <span class="ty">ByteArrayOutputStream</span>();
+<span class="fn">gzip</span>(inputStream, baos);                       <span class="cm">// write compressed bytes</span>
+<span class="kw">byte</span>[] compressed = baos.<span class="fn">toByteArray</span>();
+<span class="ty">String</span> debug      = baos.<span class="fn">toString</span>(<span class="ty">StandardCharsets</span>.UTF_8);</code>
+  <span class="desc">ByteArrayOutputStream buffers all written bytes in an auto-growing internal array; toByteArray() returns a copy, so subsequent writes don't affect it.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">DataOutputStream — writeInt(int) / writeLong(long) / writeUTF(String) / DataInputStream — readInt() / readUTF()</code>
+  <code class="snippet"><span class="kw">try</span> (<span class="kw">var</span> dos = <span class="kw">new</span> <span class="ty">DataOutputStream</span>(<span class="kw">new</span> <span class="ty">BufferedOutputStream</span>(<span class="kw">new</span> <span class="ty">FileOutputStream</span>(<span class="str">"data.bin"</span>)))) {
+  dos.<span class="fn">writeInt</span>(<span class="num">42</span>);
+  dos.<span class="fn">writeUTF</span>(<span class="str">"hello"</span>);   <span class="cm">// 2-byte length prefix + UTF-8 bytes</span>
+}</code>
+  <span class="desc">DataOutputStream/DataInputStream are matched pairs for portable binary formats; writeUTF uses a modified UTF-8 encoding, not standard UTF-8, so don't mix with other parsers.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">FileInputStream(File) / FileInputStream(String) — basic byte-level file reading with try-with-resources</code>
+  <code class="snippet"><span class="kw">try</span> (<span class="kw">var</span> fis = <span class="kw">new</span> <span class="ty">FileInputStream</span>(<span class="str">"image.png"</span>);
+       <span class="kw">var</span> buf = <span class="kw">new</span> <span class="ty">BufferedInputStream</span>(fis)) {
+  <span class="kw">byte</span>[] header = buf.<span class="fn">readNBytes</span>(<span class="num">8</span>); <span class="cm">// read exactly 8 bytes (Java 11+)</span>
+}</code>
+  <span class="desc">Wrap FileInputStream in BufferedInputStream to reduce system calls; prefer Files.newInputStream(Path) for new code as it works with NIO path abstractions.</span>
+</div>
 
 <h2 class="section-heading" id="java-nio">java.nio.file</h2>
-<!-- entries coming in Task 8 -->
+
+<div class="sub-heading">Path</div>
+
+<div class="entry">
+  <code class="sig">static Path Path.of(String first, String... more) / Paths.get(String first, String... more)</code>
+  <code class="snippet"><span class="kw">var</span> config  = <span class="ty">Path</span>.<span class="fn">of</span>(<span class="str">"config"</span>, <span class="str">"app.properties"</span>);   <span class="cm">// config/app.properties</span>
+<span class="kw">var</span> abs     = <span class="ty">Path</span>.<span class="fn">of</span>(<span class="str">"/etc/hosts"</span>);
+<span class="kw">var</span> fromUri = <span class="ty">Path</span>.<span class="fn">of</span>(<span class="ty">URI</span>.<span class="fn">create</span>(<span class="str">"file:///tmp/data.json"</span>));</code>
+  <span class="desc">Path.of() (Java 11+) is the preferred factory; Paths.get() is the older equivalent — both return the same implementation. The varargs overload assembles path segments with the OS separator.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Path resolve(String) / Path resolve(Path) / Path resolveSibling(String)</code>
+  <code class="snippet"><span class="kw">var</span> base    = <span class="ty">Path</span>.<span class="fn">of</span>(<span class="str">"uploads"</span>);
+<span class="kw">var</span> file    = base.<span class="fn">resolve</span>(<span class="str">"2026/report.pdf"</span>);      <span class="cm">// uploads/2026/report.pdf</span>
+<span class="kw">var</span> sibling = file.<span class="fn">resolveSibling</span>(<span class="str">"report.txt"</span>);   <span class="cm">// uploads/2026/report.txt</span></code>
+  <span class="desc">resolve() appends a relative path to this path; if the argument is absolute it replaces this path entirely, so validate untrusted input to prevent path-traversal attacks.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Path relativize(Path) / Path normalize() / Path toAbsolutePath() / Path toRealPath()</code>
+  <code class="snippet"><span class="kw">var</span> base = <span class="ty">Path</span>.<span class="fn">of</span>(<span class="str">"/app"</span>);
+<span class="kw">var</span> full = <span class="ty">Path</span>.<span class="fn">of</span>(<span class="str">"/app/data/../logs/app.log"</span>);
+<span class="kw">var</span> rel  = base.<span class="fn">relativize</span>(full.<span class="fn">normalize</span>());  <span class="cm">// logs/app.log</span></code>
+  <span class="desc">normalize() collapses ".." and "." segments; relativize() computes the relative path between two paths — both paths must be absolute or both relative, otherwise it throws.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Path getParent() / Path getFileName() / Path getRoot() / int getNameCount() / Path getName(int index)</code>
+  <code class="snippet"><span class="kw">var</span> p = <span class="ty">Path</span>.<span class="fn">of</span>(<span class="str">"/var/log/app/server.log"</span>);
+<span class="ty">String</span> name   = p.<span class="fn">getFileName</span>().<span class="fn">toString</span>(); <span class="cm">// "server.log"</span>
+<span class="ty">Path</span>   parent = p.<span class="fn">getParent</span>();              <span class="cm">// /var/log/app</span>
+<span class="kw">int</span>    count  = p.<span class="fn">getNameCount</span>();           <span class="cm">// 4</span></code>
+  <span class="desc">getFileName() returns the last element as a Path (not a String), and getParent() returns null for root paths; check for null before chaining.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">File toFile() / Path toString() / boolean startsWith(Path) / boolean endsWith(Path)</code>
+  <code class="snippet"><span class="kw">var</span> p    = <span class="ty">Path</span>.<span class="fn">of</span>(<span class="str">"uploads/img/photo.jpg"</span>);
+<span class="kw">boolean</span> safe = !p.<span class="fn">toAbsolutePath</span>().<span class="fn">startsWith</span>(<span class="ty">Path</span>.<span class="fn">of</span>(<span class="str">"/uploads"</span>).<span class="fn">toAbsolutePath</span>());
+<span class="ty">File</span>    f    = p.<span class="fn">toFile</span>();                   <span class="cm">// legacy interop</span></code>
+  <span class="desc">startsWith/endsWith compare path elements, not string prefixes — "/foo/bar".startsWith("/foo/b") is false; use them for safe path-traversal validation.</span>
+</div>
+
+<div class="sub-heading">Files</div>
+
+<div class="entry">
+  <code class="sig">static String Files.readString(Path path) / readString(Path, Charset) (Java 11+)</code>
+  <code class="snippet"><span class="kw">var</span> config = <span class="ty">Files</span>.<span class="fn">readString</span>(<span class="ty">Path</span>.<span class="fn">of</span>(<span class="str">"config/app.properties"</span>));
+<span class="kw">var</span> latin  = <span class="ty">Files</span>.<span class="fn">readString</span>(<span class="ty">Path</span>.<span class="fn">of</span>(<span class="str">"legacy.txt"</span>), <span class="ty">StandardCharsets</span>.ISO_8859_1);</code>
+  <span class="desc">Reads an entire file as a UTF-8 string in one call; use for config files and small assets, not streaming multi-GB files.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">static Path Files.writeString(Path, CharSequence, OpenOption...) (Java 11+)</code>
+  <code class="snippet"><span class="ty">Files</span>.<span class="fn">writeString</span>(<span class="ty">Path</span>.<span class="fn">of</span>(<span class="str">"output.json"</span>), json);
+<span class="ty">Files</span>.<span class="fn">writeString</span>(<span class="ty">Path</span>.<span class="fn">of</span>(<span class="str">"log.txt"</span>), entry + <span class="str">"\n"</span>, <span class="ty">StandardOpenOption</span>.APPEND, <span class="ty">StandardOpenOption</span>.CREATE);</code>
+  <span class="desc">Atomic single-call write; defaults to CREATE, TRUNCATE_EXISTING, WRITE — pass StandardOpenOption.APPEND to append without overwriting.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">static byte[] Files.readAllBytes(Path) / static Path Files.write(Path, byte[], OpenOption...)</code>
+  <code class="snippet"><span class="kw">byte</span>[] img = <span class="ty">Files</span>.<span class="fn">readAllBytes</span>(<span class="ty">Path</span>.<span class="fn">of</span>(<span class="str">"avatar.png"</span>));
+<span class="ty">Files</span>.<span class="fn">write</span>(<span class="ty">Path</span>.<span class="fn">of</span>(<span class="str">"copy.png"</span>), img);</code>
+  <span class="desc">Use for binary data or when you need the raw byte array; readAllBytes() buffers the whole file so it's inappropriate for files larger than available heap.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">static Path Files.copy(Path source, Path target, CopyOption...) / Files.move(Path, Path, CopyOption...)</code>
+  <code class="snippet"><span class="ty">Files</span>.<span class="fn">copy</span>(src, dst, <span class="ty">StandardCopyOption</span>.REPLACE_EXISTING);
+<span class="ty">Files</span>.<span class="fn">move</span>(tmp, dst, <span class="ty">StandardCopyOption</span>.REPLACE_EXISTING, <span class="ty">StandardCopyOption</span>.ATOMIC_MOVE);</code>
+  <span class="desc">Without REPLACE_EXISTING, copy/move throw if the target exists; ATOMIC_MOVE is OS-dependent — it works on most POSIX systems but may fall back to a non-atomic copy on Windows.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">static boolean Files.delete(Path) / deleteIfExists(Path) → boolean</code>
+  <code class="snippet"><span class="ty">Files</span>.<span class="fn">delete</span>(tmp);                        <span class="cm">// throws NoSuchFileException if missing</span>
+<span class="kw">boolean</span> deleted = <span class="ty">Files</span>.<span class="fn">deleteIfExists</span>(tmp); <span class="cm">// returns false if not found</span></code>
+  <span class="desc">delete() throws on missing file; deleteIfExists() is idempotent and safe for cleanup code; neither deletes non-empty directories — use walkFileTree for recursive delete.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">static boolean Files.exists(Path) / isDirectory(Path) / isRegularFile(Path) / long size(Path)</code>
+  <code class="snippet"><span class="kw">if</span> (<span class="ty">Files</span>.<span class="fn">isRegularFile</span>(p) &amp;&amp; <span class="ty">Files</span>.<span class="fn">size</span>(p) &lt; <span class="num">10_000_000</span>) {
+  process(<span class="ty">Files</span>.<span class="fn">readAllBytes</span>(p));
+}</code>
+  <span class="desc">These checks are not atomic with subsequent operations — TOCTOU race is possible; use them for diagnostic logging rather than security-critical access control.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">static Path Files.createDirectories(Path) / createTempFile(String prefix, String suffix)</code>
+  <code class="snippet"><span class="ty">Files</span>.<span class="fn">createDirectories</span>(<span class="ty">Path</span>.<span class="fn">of</span>(<span class="str">"out/reports/2026"</span>));   <span class="cm">// mkdir -p equivalent</span>
+<span class="kw">var</span> tmp = <span class="ty">Files</span>.<span class="fn">createTempFile</span>(<span class="str">"upload-"</span>, <span class="str">".tmp"</span>);         <span class="cm">// OS temp dir</span>
+tmp.<span class="fn">toFile</span>().<span class="fn">deleteOnExit</span>();</code>
+  <span class="desc">createDirectories() is idempotent — it succeeds even if the directory already exists; createTempFile generates a unique name, but you must delete it yourself unless deleteOnExit() is called.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">static Stream&lt;Path&gt; Files.list(Path dir) — immediate children only (not recursive)</code>
+  <code class="snippet"><span class="kw">try</span> (<span class="kw">var</span> stream = <span class="ty">Files</span>.<span class="fn">list</span>(<span class="ty">Path</span>.<span class="fn">of</span>(<span class="str">"uploads"</span>))) {
+  stream.<span class="fn">filter</span>(<span class="ty">Files</span>::isRegularFile)
+        .<span class="fn">map</span>(<span class="ty">Path</span>::getFileName)
+        .<span class="fn">forEach</span>(<span class="ty">System</span>.out::println);
+}</code>
+  <span class="desc">Returns a lazy stream backed by an open directory handle — always close it (try-with-resources); order is filesystem-defined, not alphabetical.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">static Stream&lt;Path&gt; Files.walk(Path start, FileVisitOption...) (Java 8+) — recursive depth-first</code>
+  <code class="snippet"><span class="kw">try</span> (<span class="kw">var</span> stream = <span class="ty">Files</span>.<span class="fn">walk</span>(<span class="ty">Path</span>.<span class="fn">of</span>(<span class="str">"src"</span>))) {
+  stream.<span class="fn">filter</span>(p -&gt; p.<span class="fn">toString</span>().<span class="fn">endsWith</span>(<span class="str">".java"</span>))
+        .<span class="fn">forEach</span>(<span class="ty">System</span>.out::println);
+}</code>
+  <span class="desc">Lazy depth-first walk returning Stream&lt;Path&gt;; must be closed (try-with-resources) to release directory handle.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">static Stream&lt;String&gt; Files.lines(Path) / lines(Path, Charset) — lazy line reading</code>
+  <code class="snippet"><span class="kw">try</span> (<span class="kw">var</span> lines = <span class="ty">Files</span>.<span class="fn">lines</span>(<span class="ty">Path</span>.<span class="fn">of</span>(<span class="str">"access.log"</span>))) {
+  <span class="kw">long</span> errors = lines.<span class="fn">filter</span>(l -&gt; l.<span class="fn">contains</span>(<span class="str">"ERROR"</span>)).<span class="fn">count</span>();
+}</code>
+  <span class="desc">Lines are read lazily — suitable for large files that don't fit in memory; close the stream to release the file handle, or use Files.readAllLines() when you want a List and the file is small.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">static BufferedReader Files.newBufferedReader(Path) / BufferedWriter newBufferedWriter(Path, OpenOption...)</code>
+  <code class="snippet"><span class="kw">try</span> (<span class="kw">var</span> r = <span class="ty">Files</span>.<span class="fn">newBufferedReader</span>(<span class="ty">Path</span>.<span class="fn">of</span>(<span class="str">"input.csv"</span>));
+       <span class="kw">var</span> w = <span class="ty">Files</span>.<span class="fn">newBufferedWriter</span>(<span class="ty">Path</span>.<span class="fn">of</span>(<span class="str">"output.csv"</span>))) {
+  <span class="ty">String</span> line;
+  <span class="kw">while</span> ((line = r.<span class="fn">readLine</span>()) != <span class="kw">null</span>) {
+    w.<span class="fn">write</span>(<span class="fn">transform</span>(line)); w.<span class="fn">newLine</span>();
+  }
+}</code>
+  <span class="desc">NIO-backed buffered I/O with explicit charset defaulting to UTF-8; prefer over new FileReader/FileWriter which use the platform default charset.</span>
+</div>
+
+<div class="sub-heading">StandardOpenOption / FileVisitor</div>
+
+<div class="entry">
+  <code class="sig">StandardOpenOption: CREATE / CREATE_NEW / APPEND / TRUNCATE_EXISTING / READ / WRITE / SYNC / DSYNC</code>
+  <code class="snippet"><span class="ty">Files</span>.<span class="fn">writeString</span>(log, entry, <span class="ty">StandardOpenOption</span>.CREATE, <span class="ty">StandardOpenOption</span>.APPEND);
+<span class="kw">try</span> (<span class="kw">var</span> ch = <span class="ty">FileChannel</span>.<span class="fn">open</span>(p, <span class="ty">StandardOpenOption</span>.READ, <span class="ty">StandardOpenOption</span>.WRITE)) { ... }</code>
+  <span class="desc">CREATE opens or creates; CREATE_NEW fails if file exists; APPEND seeks to end before each write; SYNC flushes both data and metadata to storage on every write (use DSYNC for data-only).</span>
+</div>
+
+<div class="entry">
+  <code class="sig">static Path Files.walkFileTree(Path, FileVisitor&lt;Path&gt;) with SimpleFileVisitor&lt;Path&gt;</code>
+  <code class="snippet"><span class="ty">Files</span>.<span class="fn">walkFileTree</span>(<span class="ty">Path</span>.<span class="fn">of</span>(<span class="str">"build"</span>), <span class="kw">new</span> <span class="ty">SimpleFileVisitor</span>&lt;<span class="ty">Path</span>&gt;() {
+  <span class="kw">public</span> <span class="ty">FileVisitResult</span> <span class="fn">visitFile</span>(<span class="ty">Path</span> f, <span class="ty">BasicFileAttributes</span> a) <span class="kw">throws</span> <span class="ty">IOException</span> {
+    <span class="ty">Files</span>.<span class="fn">delete</span>(f);
+    <span class="kw">return</span> <span class="ty">FileVisitResult</span>.CONTINUE;
+  }
+  <span class="kw">public</span> <span class="ty">FileVisitResult</span> <span class="fn">postVisitDirectory</span>(<span class="ty">Path</span> d, <span class="ty">IOException</span> e) <span class="kw">throws</span> <span class="ty">IOException</span> {
+    <span class="ty">Files</span>.<span class="fn">delete</span>(d);
+    <span class="kw">return</span> <span class="ty">FileVisitResult</span>.CONTINUE;
+  }
+});</code>
+  <span class="desc">SimpleFileVisitor provides no-op defaults for all callbacks; override only what you need. postVisitDirectory fires after all children, making it the right place for recursive directory deletion.</span>
+</div>
 
 <h2 class="section-heading" id="java-concurrent">java.util.concurrent</h2>
 <!-- entries coming in Task 9 -->
