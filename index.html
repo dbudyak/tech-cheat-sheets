@@ -6375,10 +6375,221 @@ totalBytes.<span class="fn">addAndGet</span>(bytesRead); <span class="cm">// ato
 </div>
 
 <h2 class="section-heading" id="java-http">java.net.http</h2>
-<!-- entries coming in Task 10 -->
+
+<div class="entry">
+  <code class="sig">HttpClient.newHttpClient() → HttpClient (Java 11+)</code>
+  <code class="snippet"><span class="kw">var</span> client = <span class="ty">HttpClient</span>.<span class="fn">newHttpClient</span>();
+<span class="cm">// default: HTTP/2 preferred, no timeout, no redirect following</span></code>
+  <span class="desc">Convenience factory for a default client; thread-safe and suitable for reuse across all requests in an application — create once, share globally.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">HttpClient.newBuilder().connectTimeout(Duration).followRedirects(Redirect).build() (Java 11+)</code>
+  <code class="snippet"><span class="kw">var</span> client = <span class="ty">HttpClient</span>.<span class="fn">newBuilder</span>()
+    .<span class="fn">connectTimeout</span>(<span class="ty">Duration</span>.<span class="fn">ofSeconds</span>(<span class="num">10</span>))
+    .<span class="fn">followRedirects</span>(<span class="ty">HttpClient.Redirect</span>.NORMAL)
+    .<span class="fn">build</span>();</code>
+  <span class="desc">The HttpClient is thread-safe and should be reused across requests; NORMAL follows redirects except from HTTPS to HTTP.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">HttpClient.Redirect.NORMAL / ALWAYS / NEVER</code>
+  <code class="snippet"><span class="ty">HttpClient.Redirect</span>.NORMAL  <span class="cm">// follows except HTTPS→HTTP downgrades</span>
+<span class="ty">HttpClient.Redirect</span>.ALWAYS  <span class="cm">// follows all redirects including HTTPS→HTTP</span>
+<span class="ty">HttpClient.Redirect</span>.NEVER   <span class="cm">// default — no automatic redirect following</span></code>
+  <span class="desc">Redirect policy passed to newBuilder().followRedirects(); NORMAL is the safe default for most applications — ALWAYS only if you trust all endpoints.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">HttpRequest.newBuilder(URI).GET().timeout(Duration).header(String, String).build()</code>
+  <code class="snippet"><span class="kw">var</span> req = <span class="ty">HttpRequest</span>.<span class="fn">newBuilder</span>(<span class="ty">URI</span>.<span class="fn">create</span>(<span class="str">"https://api.example.com/data"</span>))
+    .<span class="fn">GET</span>()
+    .<span class="fn">header</span>(<span class="str">"Accept"</span>, <span class="str">"application/json"</span>)
+    .<span class="fn">header</span>(<span class="str">"Authorization"</span>, <span class="str">"Bearer "</span> + token)
+    .<span class="fn">timeout</span>(<span class="ty">Duration</span>.<span class="fn">ofSeconds</span>(<span class="num">30</span>))
+    .<span class="fn">build</span>();</code>
+  <span class="desc">HttpRequest is immutable once built; per-request timeout overrides client-level connect timeout — set both to bound worst-case latency.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">HttpRequest.newBuilder(URI).POST(BodyPublisher).header(String, String).timeout(Duration).build()</code>
+  <code class="snippet"><span class="kw">var</span> req = <span class="ty">HttpRequest</span>.<span class="fn">newBuilder</span>(<span class="ty">URI</span>.<span class="fn">create</span>(endpoint))
+    .<span class="fn">POST</span>(<span class="ty">HttpRequest.BodyPublishers</span>.<span class="fn">ofString</span>(json))
+    .<span class="fn">header</span>(<span class="str">"Content-Type"</span>, <span class="str">"application/json"</span>)
+    .<span class="fn">header</span>(<span class="str">"Authorization"</span>, <span class="str">"Bearer "</span> + token)
+    .<span class="fn">timeout</span>(<span class="ty">Duration</span>.<span class="fn">ofSeconds</span>(<span class="num">30</span>))
+    .<span class="fn">build</span>();</code>
+  <span class="desc">Builds an immutable request; set timeout per-request so long-running endpoints don't block the shared client.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">HttpRequest.BodyPublishers.ofString(String) / ofFile(Path) / ofByteArray(byte[]) / noBody()</code>
+  <code class="snippet"><span class="ty">HttpRequest.BodyPublishers</span>.<span class="fn">ofString</span>(json)           <span class="cm">// UTF-8 string body</span>
+<span class="ty">HttpRequest.BodyPublishers</span>.<span class="fn">ofFile</span>(<span class="ty">Path</span>.<span class="fn">of</span>(<span class="str">"upload.bin"</span>)) <span class="cm">// stream file</span>
+<span class="ty">HttpRequest.BodyPublishers</span>.<span class="fn">ofByteArray</span>(bytes)         <span class="cm">// raw bytes</span>
+<span class="ty">HttpRequest.BodyPublishers</span>.<span class="fn">noBody</span>()                   <span class="cm">// DELETE / GET</span></code>
+  <span class="desc">BodyPublishers are the source-side complement to BodyHandlers; noBody() is required for methods like DELETE that send no payload.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">HttpRequest.newBuilder(URI).PUT(BodyPublisher).build() / .DELETE().build()</code>
+  <code class="snippet"><span class="kw">var</span> put = <span class="ty">HttpRequest</span>.<span class="fn">newBuilder</span>(<span class="ty">URI</span>.<span class="fn">create</span>(url))
+    .<span class="fn">PUT</span>(<span class="ty">HttpRequest.BodyPublishers</span>.<span class="fn">ofString</span>(json))
+    .<span class="fn">header</span>(<span class="str">"Content-Type"</span>, <span class="str">"application/json"</span>).<span class="fn">build</span>();
+<span class="kw">var</span> del = <span class="ty">HttpRequest</span>.<span class="fn">newBuilder</span>(<span class="ty">URI</span>.<span class="fn">create</span>(url))
+    .<span class="fn">DELETE</span>().<span class="fn">build</span>();</code>
+  <span class="desc">PUT replaces the resource; DELETE removes it — both use the same builder pattern as GET/POST with the method call swapped.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">HttpClient.send(HttpRequest, BodyHandler&lt;T&gt;) → HttpResponse&lt;T&gt; (synchronous)</code>
+  <code class="snippet"><span class="ty">HttpResponse</span>&lt;<span class="ty">String</span>&gt; resp = client.<span class="fn">send</span>(req, <span class="ty">HttpResponse.BodyHandlers</span>.<span class="fn">ofString</span>());
+<span class="kw">if</span> (resp.<span class="fn">statusCode</span>() == <span class="num">200</span>) {
+    <span class="fn">process</span>(resp.<span class="fn">body</span>());
+}</code>
+  <span class="desc">Blocking call — throws IOException and InterruptedException; suitable for scripts or when the calling thread is already async (e.g., virtual thread).</span>
+</div>
+
+<div class="entry">
+  <code class="sig">HttpClient.sendAsync(HttpRequest, BodyHandler&lt;T&gt;) → CompletableFuture&lt;HttpResponse&lt;T&gt;&gt;</code>
+  <code class="snippet">client.<span class="fn">sendAsync</span>(req, <span class="ty">HttpResponse.BodyHandlers</span>.<span class="fn">ofString</span>())
+    .<span class="fn">thenApply</span>(<span class="ty">HttpResponse</span>::body)
+    .<span class="fn">thenAccept</span>(json -&gt; <span class="fn">process</span>(json))
+    .<span class="fn">exceptionally</span>(ex -&gt; { log.<span class="fn">error</span>(<span class="str">"fetch failed"</span>, ex); <span class="kw">return</span> <span class="kw">null</span>; });</code>
+  <span class="desc">Non-blocking HTTP; returns a CompletableFuture — compose with thenApply/exceptionally for the full async pipeline without blocking threads.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">HttpResponse.statusCode() / body() / headers() / uri()</code>
+  <code class="snippet"><span class="kw">int</span> status = resp.<span class="fn">statusCode</span>();   <span class="cm">// e.g. 200, 404, 500</span>
+<span class="ty">String</span> body = resp.<span class="fn">body</span>();        <span class="cm">// decoded per BodyHandler</span>
+<span class="ty">String</span> ct = resp.<span class="fn">headers</span>().<span class="fn">firstValue</span>(<span class="str">"content-type"</span>).<span class="fn">orElse</span>(<span class="str">""</span>);
+<span class="ty">URI</span> finalUri = resp.<span class="fn">uri</span>();        <span class="cm">// may differ from request URI after redirects</span></code>
+  <span class="desc">uri() returns the final URI after redirects — always check statusCode() before consuming body(); 2xx means success, not correctness.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">HttpResponse.BodyHandlers.ofString() / ofFile(Path) / ofByteArray() / ofInputStream() / discarding()</code>
+  <code class="snippet"><span class="ty">HttpResponse.BodyHandlers</span>.<span class="fn">ofString</span>()             <span class="cm">// decode as UTF-8 String</span>
+<span class="ty">HttpResponse.BodyHandlers</span>.<span class="fn">ofFile</span>(<span class="ty">Path</span>.<span class="fn">of</span>(<span class="str">"out.bin"</span>)) <span class="cm">// write directly to file</span>
+<span class="ty">HttpResponse.BodyHandlers</span>.<span class="fn">ofByteArray</span>()           <span class="cm">// raw byte[]</span>
+<span class="ty">HttpResponse.BodyHandlers</span>.<span class="fn">ofInputStream</span>()         <span class="cm">// stream large responses</span>
+<span class="ty">HttpResponse.BodyHandlers</span>.<span class="fn">discarding</span>()            <span class="cm">// fire-and-forget</span></code>
+  <span class="desc">Choose the handler to match consumption: ofInputStream() for large payloads to avoid buffering the entire body; discarding() when only status code matters.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">HttpResponse.headers().firstValue(String) / allValues(String) / map()</code>
+  <code class="snippet"><span class="ty">HttpHeaders</span> headers = resp.<span class="fn">headers</span>();
+<span class="ty">String</span> type = headers.<span class="fn">firstValue</span>(<span class="str">"content-type"</span>).<span class="fn">orElse</span>(<span class="str">""</span>);
+<span class="ty">List</span>&lt;<span class="ty">String</span>&gt; cookies = headers.<span class="fn">allValues</span>(<span class="str">"set-cookie"</span>);
+<span class="ty">Map</span>&lt;<span class="ty">String</span>, <span class="ty">List</span>&lt;<span class="ty">String</span>&gt;&gt; all = headers.<span class="fn">map</span>();</code>
+  <span class="desc">Header names are case-insensitive per HTTP spec; allValues handles multi-value headers like Set-Cookie that appear multiple times.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">HttpClient.newWebSocketBuilder().buildAsync(URI, WebSocket.Listener) → CompletableFuture&lt;WebSocket&gt;</code>
+  <code class="snippet">client.<span class="fn">newWebSocketBuilder</span>()
+    .<span class="fn">buildAsync</span>(<span class="ty">URI</span>.<span class="fn">create</span>(<span class="str">"wss://echo.example.com"</span>), <span class="kw">new</span> <span class="ty">WebSocket.Listener</span>() {
+        <span class="kw">public</span> <span class="ty">CompletionStage</span>&lt;?&gt; <span class="fn">onText</span>(<span class="ty">WebSocket</span> ws, <span class="ty">CharSequence</span> data, <span class="kw">boolean</span> last) {
+            <span class="fn">handle</span>(data); ws.<span class="fn">request</span>(<span class="num">1</span>); <span class="kw">return</span> <span class="kw">null</span>;
+        }
+    })
+    .<span class="fn">thenAccept</span>(ws -&gt; ws.<span class="fn">sendText</span>(<span class="str">"hello"</span>, <span class="kw">true</span>));</code>
+  <span class="desc">WebSocket uses a flow-control model: call ws.request(n) in each listener callback to receive n more messages — forgetting request(1) silently stops delivery.</span>
+</div>
 
 <h2 class="section-heading" id="java-regex">java.util.regex</h2>
-<!-- entries coming in Task 11 -->
+
+<div class="entry">
+  <code class="sig">static Pattern Pattern.compile(String regex) / compile(String regex, int flags)</code>
+  <code class="snippet"><span class="kw">private static final</span> <span class="ty">Pattern</span> EMAIL =
+    <span class="ty">Pattern</span>.<span class="fn">compile</span>(<span class="str">"^[\\w.+-]+@[\\w-]+\\.[\\w.]+$"</span>, <span class="ty">Pattern</span>.CASE_INSENSITIVE);
+<span class="cm">// compile once at class load; Matcher is created per use via EMAIL.matcher(input)</span></code>
+  <span class="desc">Pattern is thread-safe; Matcher is not — create a new Matcher per thread/request with pattern.matcher(input). Compile once, match many.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Pattern flags: CASE_INSENSITIVE / MULTILINE / DOTALL / UNICODE_CASE</code>
+  <code class="snippet"><span class="ty">Pattern</span>.<span class="fn">compile</span>(regex, <span class="ty">Pattern</span>.CASE_INSENSITIVE | <span class="ty">Pattern</span>.UNICODE_CASE);
+<span class="ty">Pattern</span>.<span class="fn">compile</span>(regex, <span class="ty">Pattern</span>.MULTILINE);  <span class="cm">// ^ and $ match line boundaries</span>
+<span class="ty">Pattern</span>.<span class="fn">compile</span>(regex, <span class="ty">Pattern</span>.DOTALL);     <span class="cm">// . matches \n too</span>
+<span class="cm">// or inline: (?i) (?m) (?s) inside the regex string</span></code>
+  <span class="desc">MULTILINE makes ^ and $ match line boundaries instead of string start/end; DOTALL makes . match newlines — combine flags with bitwise OR.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">static boolean Pattern.matches(String regex, CharSequence input)</code>
+  <code class="snippet"><span class="kw">boolean</span> ok = <span class="ty">Pattern</span>.<span class="fn">matches</span>(<span class="str">"\\d{4}-\\d{2}-\\d{2}"</span>, input);
+<span class="cm">// equivalent to Pattern.compile(regex).matcher(input).matches()</span>
+<span class="cm">// recompiles every call — use only for one-shot checks</span></code>
+  <span class="desc">Convenience one-liner for full-string match; recompiles the pattern on each call — cache a Pattern.compile() result if called in a loop or hot path.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">static String Pattern.quote(String s)</code>
+  <code class="snippet"><span class="ty">String</span> escaped = <span class="ty">Pattern</span>.<span class="fn">quote</span>(userInput); <span class="cm">// wraps in \Q...\E</span>
+<span class="ty">Pattern</span> p = <span class="ty">Pattern</span>.<span class="fn">compile</span>(escaped + <span class="str">"\\s+"</span>);
+<span class="cm">// safe: userInput may contain . * + ? ( ) [ ] { } ^ $ | \</span></code>
+  <span class="desc">Essential when embedding user-supplied strings in a regex — prevents regex injection by wrapping the literal in \Q...\E so all metacharacters are treated as literals.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Pattern.matcher(CharSequence) → Matcher</code>
+  <code class="snippet"><span class="ty">Matcher</span> m = EMAIL.<span class="fn">matcher</span>(input);   <span class="cm">// create per call — not thread-safe</span>
+<span class="kw">boolean</span> valid = m.<span class="fn">matches</span>();          <span class="cm">// full-string match</span>
+<span class="kw">boolean</span> found = m.<span class="fn">find</span>();            <span class="cm">// scan for next occurrence</span>
+<span class="kw">boolean</span> prefix = m.<span class="fn">lookingAt</span>();      <span class="cm">// match at start only</span></code>
+  <span class="desc">matches() requires the pattern to span the entire input; find() scans forward and can be called repeatedly in a loop to iterate all matches.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Matcher.find() → boolean / group(String name) → String / replaceAll(Function&lt;MatchResult,String&gt;) (Java 9+)</code>
+  <code class="snippet"><span class="kw">var</span> m = <span class="ty">Pattern</span>.<span class="fn">compile</span>(<span class="str">"(?&lt;year&gt;\\d{4})-(?&lt;month&gt;\\d{2})-(?&lt;day&gt;\\d{2})"</span>).<span class="fn">matcher</span>(text);
+<span class="kw">while</span> (m.<span class="fn">find</span>()) { <span class="fn">process</span>(m.<span class="fn">group</span>(<span class="str">"year"</span>), m.<span class="fn">group</span>(<span class="str">"month"</span>), m.<span class="fn">group</span>(<span class="str">"day"</span>)); }</code>
+  <span class="desc">find() scans for the next match (unlike matches() which requires full-string); named groups make extraction self-documenting.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Matcher.group() / group(int n) / groupCount() / start() / end()</code>
+  <code class="snippet"><span class="ty">Matcher</span> m = <span class="ty">Pattern</span>.<span class="fn">compile</span>(<span class="str">"(\\d+)-(\\w+)"</span>).<span class="fn">matcher</span>(<span class="str">"42-hello"</span>);
+<span class="kw">if</span> (m.<span class="fn">matches</span>()) {
+    m.<span class="fn">group</span>();    <span class="cm">// "42-hello" — full match (group 0)</span>
+    m.<span class="fn">group</span>(<span class="num">1</span>);   <span class="cm">// "42"</span>
+    m.<span class="fn">group</span>(<span class="num">2</span>);   <span class="cm">// "hello"</span>
+    m.<span class="fn">start</span>(<span class="num">1</span>); m.<span class="fn">end</span>(<span class="num">1</span>); <span class="cm">// span of group 1 in input</span>
+}</code>
+  <span class="desc">Group 0 is always the full match; numbered groups are 1-based and counted by opening parenthesis left to right; groupCount() returns number of capturing groups.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Matcher.replaceAll(String replacement) / replaceFirst(String) / replaceAll(Function&lt;MatchResult,String&gt;) (Java 9+)</code>
+  <code class="snippet"><span class="ty">String</span> masked = <span class="ty">Pattern</span>.<span class="fn">compile</span>(<span class="str">"\\d{4}"</span>).<span class="fn">matcher</span>(text).<span class="fn">replaceAll</span>(<span class="str">"****"</span>);
+<span class="cm">// Java 9+: functional replacement with access to each MatchResult</span>
+<span class="ty">String</span> upper = <span class="ty">Pattern</span>.<span class="fn">compile</span>(<span class="str">"\\b\\w"</span>).<span class="fn">matcher</span>(text)
+    .<span class="fn">replaceAll</span>(mr -&gt; mr.<span class="fn">group</span>().<span class="fn">toUpperCase</span>());</code>
+  <span class="desc">The Function overload (Java 9+) enables dynamic replacements without constructing a replacement string — use it for title-casing, redaction, or transformations.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Matcher.reset(CharSequence newInput) → Matcher</code>
+  <code class="snippet"><span class="ty">Matcher</span> m = pattern.<span class="fn">matcher</span>(<span class="str">""</span>);       <span class="cm">// allocate once</span>
+<span class="kw">for</span> (<span class="ty">String</span> line : lines) {
+    <span class="kw">if</span> (m.<span class="fn">reset</span>(line).<span class="fn">find</span>()) {          <span class="cm">// reuse, avoid allocation</span>
+        <span class="fn">handle</span>(m.<span class="fn">group</span>());
+    }
+}</code>
+  <span class="desc">reset() avoids creating a new Matcher object per iteration — significant in tight loops; returns the Matcher itself so it can be chained with find() or matches().</span>
+</div>
+
+<div class="entry">
+  <code class="sig">String.matches(String regex) / replaceAll(String regex, String) / split(String regex, int limit)</code>
+  <code class="snippet"><span class="str">"hello123"</span>.<span class="fn">matches</span>(<span class="str">"[a-z]+\\d+"</span>)         <span class="cm">// true — full match, recompiles</span>
+<span class="str">"foo bar  baz"</span>.<span class="fn">replaceAll</span>(<span class="str">"\\s+"</span>, <span class="str">"-"</span>)  <span class="cm">// "foo-bar-baz"</span>
+<span class="str">"a,b,,c"</span>.<span class="fn">split</span>(<span class="str">","</span>)                    <span class="cm">// ["a","b","","c"] — trailing empty dropped</span>
+<span class="str">"a,b,,c"</span>.<span class="fn">split</span>(<span class="str">","</span>, -<span class="num">1</span>)               <span class="cm">// keeps all trailing empty strings</span></code>
+  <span class="desc">String convenience methods recompile the regex every call — extract to a static Pattern field for any hot path; split(-1) preserves trailing empty tokens.</span>
+</div>
 
 </section>
 </main>
