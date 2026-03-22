@@ -2382,7 +2382,7 @@ m := logRe.<span class="fn">FindStringSubmatch</span>(line)
 <div class="entry">
   <code class="sig">func slices.Equal[S ~[]E, E comparable](s1, s2 S) bool</code>
   <code class="snippet">slices.<span class="fn">Equal</span>(got, want) <span class="cm">// in table-driven tests</span></code>
-  <span class="desc">Reports whether two slices are equal element-by-element; both nil and empty slices compare equal to themselves but not each other.</span>
+  <span class="desc">Reports whether two slices are equal element-by-element; nil and empty slices are considered equal to each other.</span>
 </div>
 
 <div class="entry">
@@ -2476,9 +2476,9 @@ m := logRe.<span class="fn">FindStringSubmatch</span>(line)
 </div>
 
 <div class="entry">
-  <code class="sig">func slices.Collect[E any](seq iter.Seq[E]) []E</code>
+  <code class="sig">func slices.Collect[E any](seq iter.Seq[E]) []E (Go 1.23)</code>
   <code class="snippet">ids := slices.<span class="fn">Collect</span>(maps.<span class="fn">Keys</span>(userMap))</code>
-  <span class="desc">Collects all values from an iterator into a new slice; complements range-over-func iterators added in Go 1.23.</span>
+  <span class="desc">Collects all values from an iterator into a new slice (Go 1.23+); the standard way to materialise a range-over-func iterator.</span>
 </div>
 
 <div class="entry">
@@ -2535,7 +2535,7 @@ m := logRe.<span class="fn">FindStringSubmatch</span>(line)
 <div class="entry">
   <code class="sig">func maps.Values[Map ~map[K]V, K comparable, V any](m Map) iter.Seq[V]</code>
   <code class="snippet"><span class="kw">for</span> cfg := <span class="kw">range</span> maps.<span class="fn">Values</span>(featureFlags) { cfg.<span class="fn">Validate</span>() }</code>
-  <span class="desc">Returns an iterator over the map's values; order is undefined, same as ranging over the map directly.</span>
+  <span class="desc">Returns an iterator over the map's values (Go 1.23+); order is undefined, same as ranging over the map directly.</span>
 </div>
 
 <div class="entry">
@@ -2559,19 +2559,19 @@ m := logRe.<span class="fn">FindStringSubmatch</span>(line)
 <div class="entry">
   <code class="sig">func maps.Collect[K comparable, V any](seq iter.Seq2[K, V]) map[K]V</code>
   <code class="snippet">lookup := maps.<span class="fn">Collect</span>(slices.<span class="fn">All</span>(rows))</code>
-  <span class="desc">Collects a key-value iterator into a new map; pairs with maps.All or slices.All to build index maps.</span>
+  <span class="desc">Collects a key-value iterator into a new map (Go 1.23+); pairs with maps.All or slices.All to build index maps.</span>
 </div>
 
 <div class="entry">
   <code class="sig">func maps.Insert[Map ~map[K]V, K comparable, V any](m Map, seq iter.Seq2[K, V])</code>
   <code class="snippet">maps.<span class="fn">Insert</span>(index, slices.<span class="fn">All</span>(newItems))</code>
-  <span class="desc">Inserts all key-value pairs from seq into m, overwriting duplicates; the mutable counterpart of maps.Collect.</span>
+  <span class="desc">Inserts all key-value pairs from seq into m, overwriting duplicates (Go 1.23+); the mutable counterpart of maps.Collect.</span>
 </div>
 
 <div class="entry">
   <code class="sig">func maps.All[Map ~map[K]V, K comparable, V any](m Map) iter.Seq2[K, V]</code>
   <code class="snippet"><span class="kw">for</span> k, v := <span class="kw">range</span> maps.<span class="fn">All</span>(settings) { <span class="fn">applyOverride</span>(k, v) }</code>
-  <span class="desc">Returns an iterator over all key-value pairs; useful for passing a map to iterator-accepting functions.</span>
+  <span class="desc">Returns an iterator over all key-value pairs (Go 1.23+); useful for passing a map to iterator-accepting functions.</span>
 </div>
 
 <div class="entry">
@@ -2987,7 +2987,7 @@ m := logRe.<span class="fn">FindStringSubmatch</span>(line)
 </div>
 
 <div class="entry">
-  <code class="sig">type exec.ExitError struct { *os.ProcessState }</code>
+  <code class="sig">type exec.ExitError struct { *os.ProcessState; Stderr []byte }</code>
   <code class="snippet"><span class="kw">var</span> exitErr *<span class="ty">exec.ExitError</span>; <span class="kw">if</span> errors.<span class="fn">As</span>(err, &amp;exitErr) { log.<span class="fn">Printf</span>(<span class="str">"exit %d: %s"</span>, exitErr.<span class="fn">ExitCode</span>(), exitErr.Stderr) }</code>
   <span class="desc">Returned by Run/Output/Wait when the command exits non-zero; ExitCode() gives the status, Stderr field has captured stderr when using Output().</span>
 </div>
@@ -3492,7 +3492,7 @@ http.<span class="fn">Handle</span>(<span class="str">"/static/"</span>, http.<s
 <div class="sub-heading">math/rand/v2</div>
 
 <div class="entry">
-  <code class="sig">func rand.IntN(n int) int — rand.Float64() float64 — rand.N[T constraints.Integer](n T) T (Go 1.22)</code>
+  <code class="sig">func rand.IntN(n int) int — rand.Float64() float64 — rand.N[T intType](n T) T (Go 1.22)</code>
   <code class="snippet">i := rand.<span class="fn">IntN</span>(<span class="num">100</span>) <span class="cm">// [0,100)</span>; f := rand.<span class="fn">Float64</span>() <span class="cm">// [0.0,1.0)</span>; d := rand.<span class="fn">N</span>(time.<span class="ty">Second</span>) <span class="cm">// random duration</span></code>
   <span class="desc">Package-level functions use a global PCG source; math/rand/v2 is not seeded with 1 at startup — safe for random output without manual seeding.</span>
 </div>
