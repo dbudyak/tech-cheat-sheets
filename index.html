@@ -5241,7 +5241,398 @@ opt.<span class="fn">ifPresentOrElse</span>(
 </div>
 
 <h2 class="section-heading" id="java-stream">java.util.stream</h2>
-<!-- entries coming in Task 6 -->
+<div class="sub-heading">Stream — Creation</div>
+
+<div class="entry">
+  <code class="sig">Collection.stream() / Collection.parallelStream() → Stream&lt;E&gt;</code>
+  <code class="snippet"><span class="ty">List</span>&lt;<span class="ty">String</span>&gt; names = <span class="ty">List</span>.<span class="fn">of</span>(<span class="str">"Alice"</span>, <span class="str">"Bob"</span>, <span class="str">"Carol"</span>);
+<span class="kw">long</span> count = names.<span class="fn">stream</span>().<span class="fn">filter</span>(n -&gt; n.<span class="fn">startsWith</span>(<span class="str">"A"</span>)).<span class="fn">count</span>();
+<span class="kw">long</span> parCount = names.<span class="fn">parallelStream</span>().<span class="fn">filter</span>(n -&gt; n.<span class="fn">startsWith</span>(<span class="str">"A"</span>)).<span class="fn">count</span>();</code>
+  <span class="desc">Every Collection exposes stream() for sequential processing and parallelStream() for fork-join parallel processing; prefer parallelStream() only for CPU-bound work on large data sets.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Stream.of(T... values) / Stream.generate(Supplier&lt;T&gt;) / Stream.iterate(T seed, UnaryOperator&lt;T&gt; f)</code>
+  <code class="snippet"><span class="ty">Stream</span>.<span class="fn">of</span>(<span class="str">"a"</span>, <span class="str">"b"</span>, <span class="str">"c"</span>).<span class="fn">forEach</span>(<span class="ty">System</span>.out::println);
+
+<span class="ty">Stream</span>&lt;<span class="ty">Double</span>&gt; randoms = <span class="ty">Stream</span>.<span class="fn">generate</span>(<span class="ty">Math</span>::random).<span class="fn">limit</span>(<span class="num">5</span>);
+
+<span class="ty">Stream</span>&lt;<span class="ty">Integer</span>&gt; powers = <span class="ty">Stream</span>.<span class="fn">iterate</span>(<span class="num">1</span>, n -&gt; n * <span class="num">2</span>).<span class="fn">limit</span>(<span class="num">10</span>); <span class="cm">// 1,2,4,8,…</span>
+<span class="cm">// Java 9+ iterate with hasNext predicate:</span>
+<span class="ty">Stream</span>&lt;<span class="ty">Integer</span>&gt; upTo100 = <span class="ty">Stream</span>.<span class="fn">iterate</span>(<span class="num">1</span>, n -&gt; n &lt;= <span class="num">100</span>, n -&gt; n * <span class="num">2</span>);</code>
+  <span class="desc">Stream.of creates a finite stream from varargs; generate produces an infinite lazy stream from a Supplier; iterate produces an infinite (or bounded with Java 9 predicate form) sequential stream.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Arrays.stream(T[] array) / Arrays.stream(T[], int fromIndex, int toIndex) → Stream&lt;T&gt;</code>
+  <code class="snippet"><span class="ty">String</span>[] arr = {<span class="str">"x"</span>, <span class="str">"y"</span>, <span class="str">"z"</span>};
+<span class="ty">Stream</span>&lt;<span class="ty">String</span>&gt; s = <span class="ty">Arrays</span>.<span class="fn">stream</span>(arr);
+<span class="ty">IntStream</span> ints = <span class="ty">Arrays</span>.<span class="fn">stream</span>(<span class="kw">new</span> <span class="kw">int</span>[]{<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>}); <span class="cm">// returns IntStream for primitives</span>
+<span class="ty">Stream</span>&lt;<span class="ty">String</span>&gt; slice = <span class="ty">Arrays</span>.<span class="fn">stream</span>(arr, <span class="num">0</span>, <span class="num">2</span>); <span class="cm">// "x", "y"</span></code>
+  <span class="desc">Bridges arrays to the Stream API; automatically returns a primitive stream (IntStream, LongStream, DoubleStream) for primitive array types, avoiding boxing overhead.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Stream.empty() → Stream&lt;T&gt; / Stream.concat(Stream&lt;A&gt;, Stream&lt;B&gt;) → Stream&lt;T&gt;</code>
+  <code class="snippet"><span class="ty">Stream</span>&lt;<span class="ty">String</span>&gt; none = <span class="ty">Stream</span>.<span class="fn">empty</span>(); <span class="cm">// useful as a null-safe return value</span>
+
+<span class="ty">Stream</span>&lt;<span class="ty">String</span>&gt; merged = <span class="ty">Stream</span>.<span class="fn">concat</span>(
+    list1.<span class="fn">stream</span>(),
+    list2.<span class="fn">stream</span>()
+); <span class="cm">// lazy; does not copy elements</span></code>
+  <span class="desc">Stream.empty() is useful as a safe no-op return instead of null; Stream.concat lazily concatenates two streams without materialising either — prefer it over flatMap for exactly two sources.</span>
+</div>
+
+<div class="sub-heading">Stream — Intermediate Operations</div>
+
+<div class="entry">
+  <code class="sig">filter(Predicate&lt;T&gt; predicate) → Stream&lt;T&gt;</code>
+  <code class="snippet"><span class="kw">var</span> seniors = employees.<span class="fn">stream</span>()
+    .<span class="fn">filter</span>(e -&gt; e.<span class="fn">yearsOfService</span>() &gt;= <span class="num">10</span> &amp;&amp; e.<span class="fn">isFullTime</span>())
+    .<span class="fn">toList</span>();</code>
+  <span class="desc">Keeps only elements matching the predicate; lazy — the predicate is not evaluated until a terminal operation pulls elements. Chain multiple filters or compose predicates with Predicate.and().</span>
+</div>
+
+<div class="entry">
+  <code class="sig">map(Function&lt;T,R&gt;) → Stream&lt;R&gt; / mapToInt(ToIntFunction) → IntStream / mapToLong / mapToDouble</code>
+  <code class="snippet"><span class="ty">List</span>&lt;<span class="ty">String</span>&gt; upper = names.<span class="fn">stream</span>()
+    .<span class="fn">map</span>(<span class="ty">String</span>::toUpperCase)
+    .<span class="fn">toList</span>();
+
+<span class="kw">int</span> totalAge = users.<span class="fn">stream</span>()
+    .<span class="fn">mapToInt</span>(<span class="ty">User</span>::age)
+    .<span class="fn">sum</span>(); <span class="cm">// no boxing — stays as IntStream</span></code>
+  <span class="desc">map transforms each element; mapToInt/mapToLong/mapToDouble produce primitive streams, eliminating boxing and unlocking numeric aggregates like sum(), average(), min(), max().</span>
+</div>
+
+<div class="entry">
+  <code class="sig">flatMap(Function&lt;T, Stream&lt;R&gt;&gt;) → Stream&lt;R&gt; — flatten one level of nesting</code>
+  <code class="snippet"><span class="ty">List</span>&lt;<span class="ty">List</span>&lt;<span class="ty">String</span>&gt;&gt; nested = <span class="ty">List</span>.<span class="fn">of</span>(<span class="ty">List</span>.<span class="fn">of</span>(<span class="str">"a"</span>, <span class="str">"b"</span>), <span class="ty">List</span>.<span class="fn">of</span>(<span class="str">"c"</span>));
+<span class="ty">List</span>&lt;<span class="ty">String</span>&gt; flat = nested.<span class="fn">stream</span>()
+    .<span class="fn">flatMap</span>(<span class="ty">Collection</span>::stream)
+    .<span class="fn">toList</span>(); <span class="cm">// ["a", "b", "c"]</span>
+
+<span class="cm">// splitting sentences into words:</span>
+<span class="ty">List</span>&lt;<span class="ty">String</span>&gt; words = sentences.<span class="fn">stream</span>()
+    .<span class="fn">flatMap</span>(s -&gt; <span class="ty">Arrays</span>.<span class="fn">stream</span>(s.<span class="fn">split</span>(<span class="str">"\\s+"</span>)))
+    .<span class="fn">toList</span>();</code>
+  <span class="desc">Maps each element to a stream and merges the resulting streams into one; the standard way to flatten nested collections or expand one element into many.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">distinct() → Stream&lt;T&gt; / sorted() → Stream&lt;T&gt; / sorted(Comparator&lt;T&gt;) → Stream&lt;T&gt;</code>
+  <code class="snippet"><span class="ty">List</span>&lt;<span class="ty">Integer</span>&gt; unique = nums.<span class="fn">stream</span>().<span class="fn">distinct</span>().<span class="fn">toList</span>(); <span class="cm">// uses equals/hashCode</span>
+
+<span class="ty">List</span>&lt;<span class="ty">String</span>&gt; alpha = names.<span class="fn">stream</span>().<span class="fn">sorted</span>().<span class="fn">toList</span>(); <span class="cm">// natural order</span>
+
+<span class="ty">List</span>&lt;<span class="ty">Employee</span>&gt; bySalaryDesc = employees.<span class="fn">stream</span>()
+    .<span class="fn">sorted</span>(<span class="ty">Comparator</span>.<span class="fn">comparingDouble</span>(<span class="ty">Employee</span>::salary).<span class="fn">reversed</span>())
+    .<span class="fn">toList</span>();</code>
+  <span class="desc">distinct() deduplicates via equals/hashCode; sorted() requires elements to be Comparable or a Comparator to be supplied. Both are stateful operations that may buffer the entire stream.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">peek(Consumer&lt;T&gt; action) → Stream&lt;T&gt; — inspect elements without consuming the stream</code>
+  <code class="snippet"><span class="kw">var</span> result = orders.<span class="fn">stream</span>()
+    .<span class="fn">filter</span>(<span class="ty">Order</span>::isPending)
+    .<span class="fn">peek</span>(o -&gt; <span class="ty">System</span>.out.<span class="fn">println</span>(<span class="str">"Processing: "</span> + o.<span class="fn">id</span>())) <span class="cm">// debug</span>
+    .<span class="fn">map</span>(<span class="ty">Order</span>::process)
+    .<span class="fn">toList</span>();</code>
+  <span class="desc">peek is intended for debugging — it applies a Consumer to each element as it flows through the pipeline without changing the element. Do not use it for side effects in production logic.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">limit(long maxSize) → Stream&lt;T&gt; / skip(long n) → Stream&lt;T&gt;</code>
+  <code class="snippet"><span class="ty">List</span>&lt;<span class="ty">Product</span>&gt; topFive = products.<span class="fn">stream</span>()
+    .<span class="fn">sorted</span>(<span class="ty">Comparator</span>.<span class="fn">comparingInt</span>(<span class="ty">Product</span>::rating).<span class="fn">reversed</span>())
+    .<span class="fn">limit</span>(<span class="num">5</span>)
+    .<span class="fn">toList</span>();
+
+<span class="ty">List</span>&lt;<span class="ty">Product</span>&gt; page2 = products.<span class="fn">stream</span>().<span class="fn">skip</span>(<span class="num">20</span>).<span class="fn">limit</span>(<span class="num">10</span>).<span class="fn">toList</span>(); <span class="cm">// offset pagination</span></code>
+  <span class="desc">limit short-circuits the stream after maxSize elements; skip discards the first n elements. Together they implement offset-based pagination, though cursor-based is preferred for large datasets.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">takeWhile(Predicate) → Stream&lt;T&gt; (Java 9+) / dropWhile(Predicate) → Stream&lt;T&gt; (Java 9+)</code>
+  <code class="snippet"><span class="cm">// takeWhile: stop as soon as predicate is false</span>
+<span class="ty">List</span>&lt;<span class="ty">Integer</span>&gt; head = <span class="ty">Stream</span>.<span class="fn">of</span>(<span class="num">1</span>, <span class="num">3</span>, <span class="num">5</span>, <span class="num">6</span>, <span class="num">7</span>).<span class="fn">takeWhile</span>(n -&gt; n % <span class="num">2</span> != <span class="num">0</span>).<span class="fn">toList</span>(); <span class="cm">// [1,3,5]</span>
+
+<span class="cm">// dropWhile: skip until predicate is false, then pass everything</span>
+<span class="ty">List</span>&lt;<span class="ty">Integer</span>&gt; tail = <span class="ty">Stream</span>.<span class="fn">of</span>(<span class="num">1</span>, <span class="num">3</span>, <span class="num">5</span>, <span class="num">6</span>, <span class="num">7</span>).<span class="fn">dropWhile</span>(n -&gt; n % <span class="num">2</span> != <span class="num">0</span>).<span class="fn">toList</span>(); <span class="cm">// [6,7]</span></code>
+  <span class="desc">Both operate on ordered streams based on element position, not arbitrary filtering. takeWhile is the streaming analogue of breaking out of a sorted loop early; dropWhile skips an ordered prefix.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">mapMulti(BiConsumer&lt;T, Consumer&lt;R&gt;&gt;) → Stream&lt;R&gt; (Java 16+) — selective expansion</code>
+  <code class="snippet"><span class="cm">// More efficient than flatMap when output is 0–few elements per input</span>
+<span class="ty">List</span>&lt;<span class="ty">String</span>&gt; result = items.<span class="fn">stream</span>()
+    .&lt;<span class="ty">String</span>&gt;<span class="fn">mapMulti</span>((item, downstream) -&gt; {
+        <span class="kw">if</span> (item.<span class="fn">isEnabled</span>()) {
+            downstream.<span class="fn">accept</span>(item.<span class="fn">name</span>());
+            downstream.<span class="fn">accept</span>(item.<span class="fn">alias</span>());
+        }
+    })
+    .<span class="fn">toList</span>();</code>
+  <span class="desc">mapMulti avoids creating an intermediate Stream per element (unlike flatMap), making it more efficient when each element expands into zero to a handful of outputs. Push results directly to the downstream Consumer.</span>
+</div>
+
+<div class="sub-heading">Stream — Terminal Operations</div>
+
+<div class="entry">
+  <code class="sig">collect(Collector&lt;T,A,R&gt; collector) → R — general mutable reduction</code>
+  <code class="snippet"><span class="ty">List</span>&lt;<span class="ty">String</span>&gt; list   = stream.<span class="fn">collect</span>(<span class="ty">Collectors</span>.<span class="fn">toList</span>());
+<span class="ty">Set</span>&lt;<span class="ty">String</span>&gt;  set    = stream.<span class="fn">collect</span>(<span class="ty">Collectors</span>.<span class="fn">toSet</span>());
+<span class="ty">String</span>      joined = stream.<span class="fn">collect</span>(<span class="ty">Collectors</span>.<span class="fn">joining</span>(<span class="str">", "</span>, <span class="str">"["</span>, <span class="str">"]"</span>));
+<span class="ty">Map</span>&lt;<span class="ty">String</span>,<span class="ty">User</span>&gt; byId = users.<span class="fn">stream</span>()
+    .<span class="fn">collect</span>(<span class="ty">Collectors</span>.<span class="fn">toMap</span>(<span class="ty">User</span>::id, u -&gt; u));</code>
+  <span class="desc">The universal terminal operation for accumulating stream elements into a container; delegates the accumulation strategy to a Collector — use factory methods in Collectors for common cases.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">forEach(Consumer&lt;T&gt;) / forEachOrdered(Consumer&lt;T&gt;) — consume all elements</code>
+  <code class="snippet">names.<span class="fn">stream</span>().<span class="fn">forEach</span>(<span class="ty">System</span>.out::println); <span class="cm">// order undefined on parallel streams</span>
+names.<span class="fn">parallelStream</span>().<span class="fn">forEachOrdered</span>(<span class="ty">System</span>.out::println); <span class="cm">// encounter order preserved</span></code>
+  <span class="desc">forEach is unordered on parallel streams for better throughput; forEachOrdered preserves encounter order at the cost of reduced parallelism. Prefer collect over forEach for building collections.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">count() → long / findFirst() → Optional&lt;T&gt; / findAny() → Optional&lt;T&gt;</code>
+  <code class="snippet"><span class="kw">long</span> active = users.<span class="fn">stream</span>().<span class="fn">filter</span>(<span class="ty">User</span>::isActive).<span class="fn">count</span>();
+
+<span class="ty">Optional</span>&lt;<span class="ty">User</span>&gt; first = users.<span class="fn">stream</span>().<span class="fn">filter</span>(<span class="ty">User</span>::isAdmin).<span class="fn">findFirst</span>();
+<span class="ty">Optional</span>&lt;<span class="ty">User</span>&gt; any   = users.<span class="fn">parallelStream</span>().<span class="fn">filter</span>(<span class="ty">User</span>::isAdmin).<span class="fn">findAny</span>(); <span class="cm">// faster</span></code>
+  <span class="desc">count() is a terminal reduction returning the element count; findFirst() respects encounter order; findAny() may return any matching element and is optimised for parallel streams to return without coordination.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">anyMatch(Predicate) / allMatch(Predicate) / noneMatch(Predicate) → boolean — short-circuit checks</code>
+  <code class="snippet"><span class="kw">boolean</span> hasAdmin   = users.<span class="fn">stream</span>().<span class="fn">anyMatch</span>(<span class="ty">User</span>::isAdmin);
+<span class="kw">boolean</span> allActive  = users.<span class="fn">stream</span>().<span class="fn">allMatch</span>(<span class="ty">User</span>::isActive);
+<span class="kw">boolean</span> noBanned   = users.<span class="fn">stream</span>().<span class="fn">noneMatch</span>(<span class="ty">User</span>::isBanned);</code>
+  <span class="desc">All three short-circuit — they stop processing as soon as the result is determined. anyMatch returns true on first match; allMatch returns false on first non-match; noneMatch returns false on first match.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">reduce(T identity, BinaryOperator&lt;T&gt;) → T / reduce(BinaryOperator&lt;T&gt;) → Optional&lt;T&gt;</code>
+  <code class="snippet"><span class="kw">int</span> sum = <span class="ty">Stream</span>.<span class="fn">of</span>(<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>).<span class="fn">reduce</span>(<span class="num">0</span>, <span class="ty">Integer</span>::sum); <span class="cm">// 6</span>
+
+<span class="ty">Optional</span>&lt;<span class="ty">String</span>&gt; longest = words.<span class="fn">stream</span>()
+    .<span class="fn">reduce</span>((a, b) -&gt; a.<span class="fn">length</span>() &gt;= b.<span class="fn">length</span>() ? a : b);</code>
+  <span class="desc">reduce folds elements using an associative combiner; the identity form always returns a value, making it safe without Optional. Prefer mapToInt().sum() over reduce for numeric sums to avoid boxing.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">toList() → unmodifiable List&lt;T&gt; (Java 16+)</code>
+  <code class="snippet"><span class="kw">var</span> activeIds = users.<span class="fn">stream</span>()
+    .<span class="fn">filter</span>(<span class="ty">User</span>::isActive)
+    .<span class="fn">map</span>(<span class="ty">User</span>::id)
+    .<span class="fn">toList</span>(); <span class="cm">// shorter than .collect(Collectors.toUnmodifiableList())</span></code>
+  <span class="desc">Terminal shorthand returning an unmodifiable List; preferred over Collectors.toList() since Java 16. Throws UnsupportedOperationException on mutation attempts, making intent explicit.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">min(Comparator&lt;T&gt;) → Optional&lt;T&gt; / max(Comparator&lt;T&gt;) → Optional&lt;T&gt;</code>
+  <code class="snippet"><span class="ty">Optional</span>&lt;<span class="ty">Employee</span>&gt; lowest  = employees.<span class="fn">stream</span>().<span class="fn">min</span>(<span class="ty">Comparator</span>.<span class="fn">comparingDouble</span>(<span class="ty">Employee</span>::salary));
+<span class="ty">Optional</span>&lt;<span class="ty">Employee</span>&gt; highest = employees.<span class="fn">stream</span>().<span class="fn">max</span>(<span class="ty">Comparator</span>.<span class="fn">comparingDouble</span>(<span class="ty">Employee</span>::salary));</code>
+  <span class="desc">Convenience terminals that wrap reduce under the hood; return Optional.empty() for empty streams. Equivalent to sorted(comparator).findFirst() but without materialising a sorted stream.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">toArray() → Object[] / toArray(IntFunction&lt;T[]&gt; generator) → T[]</code>
+  <code class="snippet"><span class="ty">Object</span>[]   raw    = stream.<span class="fn">toArray</span>();
+<span class="ty">String</span>[]   typed  = names.<span class="fn">stream</span>().<span class="fn">toArray</span>(<span class="ty">String</span>[]::new); <span class="cm">// type-safe</span>
+<span class="ty">Employee</span>[] sorted = employees.<span class="fn">stream</span>()
+    .<span class="fn">sorted</span>(<span class="ty">Comparator</span>.<span class="fn">comparing</span>(<span class="ty">Employee</span>::name))
+    .<span class="fn">toArray</span>(<span class="ty">Employee</span>[]::new);</code>
+  <span class="desc">toArray() without arguments returns an untyped Object[]; pass a constructor reference (Type[]::new) to get a typed array. Useful when an API requires an array rather than a List.</span>
+</div>
+
+<div class="sub-heading">IntStream / LongStream</div>
+
+<div class="entry">
+  <code class="sig">IntStream.range(int start, int end) / IntStream.rangeClosed(int start, int end) → IntStream</code>
+  <code class="snippet"><span class="cm">// range: [start, end)  — end exclusive</span>
+<span class="ty">IntStream</span>.<span class="fn">range</span>(<span class="num">0</span>, <span class="num">5</span>).<span class="fn">forEach</span>(<span class="ty">System</span>.out::println); <span class="cm">// 0 1 2 3 4</span>
+
+<span class="cm">// rangeClosed: [start, end]  — end inclusive</span>
+<span class="kw">int</span> sumTo10 = <span class="ty">IntStream</span>.<span class="fn">rangeClosed</span>(<span class="num">1</span>, <span class="num">10</span>).<span class="fn">sum</span>(); <span class="cm">// 55</span>
+
+<span class="cm">// index-based loop replacement:</span>
+<span class="ty">IntStream</span>.<span class="fn">range</span>(<span class="num">0</span>, list.<span class="fn">size</span>()).<span class="fn">forEach</span>(i -&gt; <span class="fn">process</span>(i, list.<span class="fn">get</span>(i)));</code>
+  <span class="desc">Replaces index-based for-loops with a functional style; range excludes the end, rangeClosed includes it (matching mathematical interval notation). Analogous methods exist on LongStream.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">IntStream.sum() → int / average() → OptionalDouble / min() → OptionalInt / max() → OptionalInt / summaryStatistics() → IntSummaryStatistics</code>
+  <code class="snippet"><span class="kw">int</span>            total = employees.<span class="fn">stream</span>().<span class="fn">mapToInt</span>(<span class="ty">Employee</span>::salary).<span class="fn">sum</span>();
+<span class="ty">OptionalDouble</span> avg   = employees.<span class="fn">stream</span>().<span class="fn">mapToInt</span>(<span class="ty">Employee</span>::salary).<span class="fn">average</span>();
+<span class="ty">IntSummaryStatistics</span> stats = employees.<span class="fn">stream</span>()
+    .<span class="fn">mapToInt</span>(<span class="ty">Employee</span>::salary)
+    .<span class="fn">summaryStatistics</span>(); <span class="cm">// count, sum, min, max, average in one pass</span></code>
+  <span class="desc">Primitive streams provide numeric aggregates without boxing; summaryStatistics() computes all five statistics in a single pass — use it when you need more than one aggregate to avoid multiple stream traversals.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">IntStream.boxed() → Stream&lt;Integer&gt; / IntStream.mapToObj(IntFunction&lt;R&gt;) → Stream&lt;R&gt;</code>
+  <code class="snippet"><span class="ty">List</span>&lt;<span class="ty">Integer</span>&gt; boxed = <span class="ty">IntStream</span>.<span class="fn">range</span>(<span class="num">1</span>, <span class="num">6</span>).<span class="fn">boxed</span>().<span class="fn">toList</span>(); <span class="cm">// [1,2,3,4,5]</span>
+
+<span class="ty">List</span>&lt;<span class="ty">String</span>&gt; labels = <span class="ty">IntStream</span>.<span class="fn">range</span>(<span class="num">1</span>, <span class="num">4</span>)
+    .<span class="fn">mapToObj</span>(i -&gt; <span class="str">"Item-"</span> + i)
+    .<span class="fn">toList</span>(); <span class="cm">// ["Item-1", "Item-2", "Item-3"]</span></code>
+  <span class="desc">boxed() is shorthand for mapToObj(Integer::valueOf); use mapToObj when you need to produce a non-wrapper type from each int, such as building strings or domain objects indexed by position.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">LongStream.range(long start, long end) / LongStream.rangeClosed(long start, long end)</code>
+  <code class="snippet"><span class="kw">long</span> billionSum = <span class="ty">LongStream</span>.<span class="fn">rangeClosed</span>(<span class="num">1L</span>, <span class="num">1_000_000L</span>).<span class="fn">sum</span>(); <span class="cm">// overflow-safe</span>
+
+<span class="cm">// Parallel reduction over large range:</span>
+<span class="kw">long</span> count = <span class="ty">LongStream</span>.<span class="fn">range</span>(<span class="num">0L</span>, <span class="num">1_000_000_000L</span>)
+    .<span class="fn">parallel</span>()
+    .<span class="fn">filter</span>(n -&gt; n % <span class="num">2</span> == <span class="num">0</span>)
+    .<span class="fn">count</span>();</code>
+  <span class="desc">LongStream handles ranges too large for int arithmetic without overflow; parallel() on a LongStream splits the range across available CPU cores using the fork-join pool.</span>
+</div>
+
+<div class="sub-heading">Collectors</div>
+
+<div class="entry">
+  <code class="sig">Collectors.toList() / toUnmodifiableList() / toSet() / toUnmodifiableSet()</code>
+  <code class="snippet"><span class="ty">List</span>&lt;<span class="ty">String</span>&gt; mutable   = stream.<span class="fn">collect</span>(<span class="ty">Collectors</span>.<span class="fn">toList</span>());          <span class="cm">// mutable ArrayList</span>
+<span class="ty">List</span>&lt;<span class="ty">String</span>&gt; immutable = stream.<span class="fn">collect</span>(<span class="ty">Collectors</span>.<span class="fn">toUnmodifiableList</span>()); <span class="cm">// unmodifiable</span>
+<span class="cm">// Prefer stream.toList() (Java 16+) over toUnmodifiableList() for brevity</span>
+<span class="ty">Set</span>&lt;<span class="ty">String</span>&gt;  unique    = stream.<span class="fn">collect</span>(<span class="ty">Collectors</span>.<span class="fn">toSet</span>());             <span class="cm">// HashSet, order undefined</span></code>
+  <span class="desc">toList() returns a mutable ArrayList; toUnmodifiableList() returns a snapshot that rejects mutations. Prefer the Java 16 stream.toList() terminal for unmodifiable results. toSet() deduplicates via equals/hashCode.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Collectors.toMap(keyMapper, valueMapper) / toMap(keyMapper, valueMapper, mergeFunction) / toUnmodifiableMap</code>
+  <code class="snippet"><span class="ty">Map</span>&lt;<span class="ty">String</span>, <span class="ty">User</span>&gt; byId = users.<span class="fn">stream</span>()
+    .<span class="fn">collect</span>(<span class="ty">Collectors</span>.<span class="fn">toMap</span>(<span class="ty">User</span>::id, u -&gt; u)); <span class="cm">// throws on duplicate key</span>
+
+<span class="ty">Map</span>&lt;<span class="ty">String</span>, <span class="ty">Long</span>&gt; wordCount = words.<span class="fn">stream</span>()
+    .<span class="fn">collect</span>(<span class="ty">Collectors</span>.<span class="fn">toMap</span>(w -&gt; w, w -&gt; <span class="num">1L</span>, <span class="ty">Long</span>::sum)); <span class="cm">// merge on duplicate</span></code>
+  <span class="desc">Two-arg toMap throws IllegalStateException on duplicate keys — always supply a merge function when duplicates are possible. The merge function receives (existing, incoming) and returns the resolved value.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Collectors.groupingBy(Function classifier) / groupingBy(Function, Collector downstream)</code>
+  <code class="snippet"><span class="ty">Map</span>&lt;<span class="ty">Department</span>, <span class="ty">List</span>&lt;<span class="ty">Employee</span>&gt;&gt; byDept = employees.<span class="fn">stream</span>()
+    .<span class="fn">collect</span>(<span class="ty">Collectors</span>.<span class="fn">groupingBy</span>(<span class="ty">Employee</span>::department));
+<span class="ty">Map</span>&lt;<span class="ty">Department</span>, <span class="ty">Long</span>&gt; counts = employees.<span class="fn">stream</span>()
+    .<span class="fn">collect</span>(<span class="ty">Collectors</span>.<span class="fn">groupingBy</span>(<span class="ty">Employee</span>::department, <span class="ty">Collectors</span>.<span class="fn">counting</span>()));</code>
+  <span class="desc">Groups elements by a classifier into Map&lt;K,List&lt;V&gt;&gt;; the downstream collector transforms grouped values — counting, averaging, joining, toList, etc.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Collectors.partitioningBy(Predicate&lt;T&gt;) → Map&lt;Boolean, List&lt;T&gt;&gt;</code>
+  <code class="snippet"><span class="ty">Map</span>&lt;<span class="ty">Boolean</span>, <span class="ty">List</span>&lt;<span class="ty">User</span>&gt;&gt; parts = users.<span class="fn">stream</span>()
+    .<span class="fn">collect</span>(<span class="ty">Collectors</span>.<span class="fn">partitioningBy</span>(<span class="ty">User</span>::isActive));
+<span class="ty">List</span>&lt;<span class="ty">User</span>&gt; active   = parts.<span class="fn">get</span>(<span class="kw">true</span>);
+<span class="ty">List</span>&lt;<span class="ty">User</span>&gt; inactive = parts.<span class="fn">get</span>(<span class="kw">false</span>);</code>
+  <span class="desc">Specialised groupingBy that always produces a two-entry map keyed on true/false; more readable than a generic groupingBy with a boolean classifier and always has both keys present.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Collectors.joining(CharSequence delimiter, CharSequence prefix, CharSequence suffix) → String</code>
+  <code class="snippet"><span class="ty">String</span> csv  = names.<span class="fn">stream</span>().<span class="fn">collect</span>(<span class="ty">Collectors</span>.<span class="fn">joining</span>(<span class="str">", "</span>));
+<span class="ty">String</span> json = names.<span class="fn">stream</span>().<span class="fn">collect</span>(<span class="ty">Collectors</span>.<span class="fn">joining</span>(<span class="str">"\", \""</span>, <span class="str">"[\""</span>, <span class="str">"\"]"</span>));
+<span class="ty">String</span> sql  = ids.<span class="fn">stream</span>().<span class="fn">map</span>(<span class="ty">Object</span>::toString)
+    .<span class="fn">collect</span>(<span class="ty">Collectors</span>.<span class="fn">joining</span>(<span class="str">", "</span>, <span class="str">"("</span>, <span class="str">")"</span>)); <span class="cm">// (1, 2, 3) for IN clause</span></code>
+  <span class="desc">Concatenates stream elements (must be CharSequence) with a delimiter and optional wrapping prefix/suffix; more efficient than repeated string concatenation in a loop.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Collectors.counting() → Collector&lt;T,?,Long&gt; / summarizingInt(ToIntFunction) → IntSummaryStatistics</code>
+  <code class="snippet"><span class="ty">Map</span>&lt;<span class="ty">String</span>, <span class="ty">Long</span>&gt; freq = words.<span class="fn">stream</span>()
+    .<span class="fn">collect</span>(<span class="ty">Collectors</span>.<span class="fn">groupingBy</span>(w -&gt; w, <span class="ty">Collectors</span>.<span class="fn">counting</span>()));
+
+<span class="ty">IntSummaryStatistics</span> stats = orders.<span class="fn">stream</span>()
+    .<span class="fn">collect</span>(<span class="ty">Collectors</span>.<span class="fn">summarizingInt</span>(<span class="ty">Order</span>::quantity));
+<span class="cm">// stats.getSum(), .getAverage(), .getMin(), .getMax(), .getCount()</span></code>
+  <span class="desc">counting() is the canonical downstream collector for frequency maps; summarizingInt/Long/Double computes all five statistics in one collect pass — useful when you need count + sum + average together.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Collectors.teeing(Collector c1, Collector c2, BiFunction merger) → Collector (Java 12+)</code>
+  <code class="snippet"><span class="cm">// Compute min and max in a single stream pass</span>
+<span class="kw">var</span> minMax = numbers.<span class="fn">stream</span>().<span class="fn">collect</span>(
+    <span class="ty">Collectors</span>.<span class="fn">teeing</span>(
+        <span class="ty">Collectors</span>.<span class="fn">minBy</span>(<span class="ty">Comparator</span>.<span class="fn">naturalOrder</span>()),
+        <span class="ty">Collectors</span>.<span class="fn">maxBy</span>(<span class="ty">Comparator</span>.<span class="fn">naturalOrder</span>()),
+        (<span class="ty">Optional</span>&lt;<span class="ty">Integer</span>&gt; min, <span class="ty">Optional</span>&lt;<span class="ty">Integer</span>&gt; max) -&gt; <span class="ty">Map</span>.<span class="fn">of</span>(<span class="str">"min"</span>, min.<span class="fn">orElseThrow</span>(), <span class="str">"max"</span>, max.<span class="fn">orElseThrow</span>())
+    ));</code>
+  <span class="desc">teeing feeds each element into two independent collectors simultaneously, then merges the two results with a BiFunction — eliminates the need to traverse the stream twice for two independent aggregates.</span>
+</div>
+
+<div class="sub-heading">java.util.function</div>
+
+<div class="entry">
+  <code class="sig">Function&lt;T,R&gt;: apply(T) → R / andThen(Function) / compose(Function) / Function.identity()</code>
+  <code class="snippet"><span class="ty">Function</span>&lt;<span class="ty">String</span>, <span class="ty">Integer</span>&gt; len   = <span class="ty">String</span>::length;
+<span class="ty">Function</span>&lt;<span class="ty">String</span>, <span class="ty">String</span>&gt;  upper = <span class="ty">String</span>::toUpperCase;
+
+<span class="ty">Function</span>&lt;<span class="ty">String</span>, <span class="ty">Integer</span>&gt; upperLen = upper.<span class="fn">andThen</span>(len);  <span class="cm">// upper first, then len</span>
+<span class="ty">Function</span>&lt;<span class="ty">String</span>, <span class="ty">Integer</span>&gt; same    = len.<span class="fn">compose</span>(upper);  <span class="cm">// identical result</span>
+
+<span class="ty">Function</span>&lt;<span class="ty">User</span>, <span class="ty">User</span>&gt; id = <span class="ty">Function</span>.<span class="fn">identity</span>(); <span class="cm">// u -> u, useful as a no-op mapper</span></code>
+  <span class="desc">andThen applies this function first then the next; compose applies the argument first then this — they are inverses of each other. Function.identity() avoids a lambda for u -&gt; u situations.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Predicate&lt;T&gt;: test(T) / negate() / and(Predicate) / or(Predicate) / Predicate.not(Predicate) (Java 11+)</code>
+  <code class="snippet"><span class="ty">Predicate</span>&lt;<span class="ty">User</span>&gt; active  = <span class="ty">User</span>::isActive;
+<span class="ty">Predicate</span>&lt;<span class="ty">User</span>&gt; admin   = u -&gt; u.<span class="fn">role</span>() == <span class="ty">Role</span>.ADMIN;
+<span class="ty">Predicate</span>&lt;<span class="ty">User</span>&gt; blocked = <span class="ty">Predicate</span>.<span class="fn">not</span>(<span class="ty">User</span>::isActive);
+<span class="kw">var</span> result = users.<span class="fn">stream</span>().<span class="fn">filter</span>(active.<span class="fn">and</span>(admin)).<span class="fn">toList</span>();</code>
+  <span class="desc">Compose predicates with and/or/negate instead of nesting &&; Predicate.not() wraps a method reference into a negating predicate.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Consumer&lt;T&gt;: accept(T) / andThen(Consumer&lt;T&gt;) — chaining side-effect operations</code>
+  <code class="snippet"><span class="ty">Consumer</span>&lt;<span class="ty">Order</span>&gt; log    = o -&gt; <span class="ty">System</span>.out.<span class="fn">println</span>(<span class="str">"Processing: "</span> + o.<span class="fn">id</span>());
+<span class="ty">Consumer</span>&lt;<span class="ty">Order</span>&gt; audit  = o -&gt; auditService.<span class="fn">record</span>(o);
+<span class="ty">Consumer</span>&lt;<span class="ty">Order</span>&gt; pipeline = log.<span class="fn">andThen</span>(audit);
+
+orders.<span class="fn">forEach</span>(pipeline); <span class="cm">// log then audit for each order</span></code>
+  <span class="desc">Consumer encapsulates a single side-effect action; andThen chains consumers sequentially. Useful for composing logging, auditing, or notification steps without nested lambdas.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Supplier&lt;T&gt;: get() → T — deferred / lazy evaluation</code>
+  <code class="snippet"><span class="ty">Supplier</span>&lt;<span class="ty">List</span>&lt;<span class="ty">User</span>&gt;&gt; lazyUsers = () -&gt; userRepo.<span class="fn">findAll</span>(); <span class="cm">// DB call deferred</span>
+
+<span class="cm">// Optional.orElseGet with Supplier — only calls supplier if Optional is empty:</span>
+<span class="ty">User</span> u = <span class="fn">findUser</span>(id).<span class="fn">orElseGet</span>(() -&gt; userRepo.<span class="fn">findDefault</span>());
+
+<span class="cm">// Logger example — avoid string concat when log level is off:</span>
+logger.<span class="fn">debug</span>(() -&gt; <span class="str">"State: "</span> + expensive.<span class="fn">compute</span>()); <span class="cm">// Supplier-based overload</span></code>
+  <span class="desc">Supplier delays computation until get() is called; particularly valuable with Optional.orElseGet to avoid evaluating a fallback eagerly, and with logging APIs to skip string concatenation when the level is disabled.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">BiFunction&lt;T,U,R&gt;: apply(T,U) / UnaryOperator&lt;T&gt; extends Function&lt;T,T&gt; / BinaryOperator&lt;T&gt; extends BiFunction&lt;T,T,T&gt;</code>
+  <code class="snippet"><span class="ty">BiFunction</span>&lt;<span class="ty">String</span>, <span class="ty">Integer</span>, <span class="ty">String</span>&gt; repeat = (s, n) -&gt; s.<span class="fn">repeat</span>(n);
+<span class="ty">String</span> dashes = repeat.<span class="fn">apply</span>(<span class="str">"-"</span>, <span class="num">10</span>); <span class="cm">// "----------"</span>
+
+<span class="ty">UnaryOperator</span>&lt;<span class="ty">String</span>&gt; trim = <span class="ty">String</span>::strip; <span class="cm">// Function<String,String> specialisation</span>
+
+<span class="ty">BinaryOperator</span>&lt;<span class="ty">Integer</span>&gt; max = <span class="ty">Integer</span>::max; <span class="cm">// used in reduce</span>
+<span class="kw">int</span> biggest = <span class="ty">Stream</span>.<span class="fn">of</span>(<span class="num">3</span>,<span class="num">1</span>,<span class="num">4</span>,<span class="num">1</span>,<span class="num">5</span>).<span class="fn">reduce</span>(<span class="ty">Integer</span>::max).<span class="fn">orElseThrow</span>();</code>
+  <span class="desc">BiFunction takes two arguments; UnaryOperator is a Function where input and output types match — used in Stream.iterate and List.replaceAll; BinaryOperator is the BiFunction variant used in reduce and merge functions.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Primitive specializations: IntFunction&lt;R&gt; / ToIntFunction&lt;T&gt; / IntUnaryOperator / IntBinaryOperator / IntConsumer / IntSupplier / IntPredicate</code>
+  <code class="snippet"><span class="ty">IntUnaryOperator</span> doubler = n -&gt; n * <span class="num">2</span>;
+<span class="kw">int</span>[] doubled = <span class="ty">IntStream</span>.<span class="fn">range</span>(<span class="num">1</span>, <span class="num">6</span>).<span class="fn">map</span>(doubler).<span class="fn">toArray</span>(); <span class="cm">// [2,4,6,8,10]</span>
+
+<span class="ty">ToIntFunction</span>&lt;<span class="ty">String</span>&gt; strLen = <span class="ty">String</span>::length;
+<span class="kw">int</span>[] lengths = words.<span class="fn">stream</span>().<span class="fn">mapToInt</span>(strLen).<span class="fn">toArray</span>();
+
+<span class="cm">// Naming pattern: [To][Type]Function — avoids boxing in hot paths</span></code>
+  <span class="desc">Primitive functional interfaces eliminate autoboxing; follow the naming pattern — ToIntFunction converts T→int, IntFunction converts int→R, IntUnaryOperator maps int→int. Analogous Long/Double variants exist for each shape.</span>
+</div>
 
 <h2 class="section-heading" id="java-time">java.time</h2>
 <!-- entries coming in Task 7 -->
