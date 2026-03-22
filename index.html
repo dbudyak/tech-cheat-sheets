@@ -4199,7 +4199,209 @@ http.<span class="fn">Handle</span>(<span class="str">"/static/"</span>, http.<s
 <section id="java" class="lang-section">
 
 <h2 class="section-heading" id="java-lang-features">Language Features</h2>
-<!-- entries coming in Task 3 -->
+
+<div class="entry">
+  <code class="sig">record Point(double x, double y) { } (Java 16+)</code>
+  <code class="snippet"><span class="kw">record</span> <span class="ty">OrderLine</span>(<span class="ty">String</span> sku, <span class="ty">int</span> qty, <span class="ty">BigDecimal</span> unitPrice) {}
+<span class="cm">// Generated: sku(), qty(), unitPrice(), equals, hashCode, toString</span>
+<span class="ty">OrderLine</span> line = <span class="kw">new</span> <span class="ty">OrderLine</span>(<span class="str">"SKU-42"</span>, <span class="num">3</span>, <span class="ty">BigDecimal</span>.<span class="fn">valueOf</span>(<span class="num">9.99</span>));
+<span class="ty">System</span>.out.<span class="fn">println</span>(line.sku() + <span class="str">" × "</span> + line.qty());</code>
+  <span class="desc">Immutable data carrier; generates accessors, equals, hashCode, and toString — replaces boilerplate POJOs for DTOs, value objects, and domain events.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">record — compact constructor (Java 16+)</code>
+  <code class="snippet"><span class="kw">record</span> <span class="ty">EmailAddress</span>(<span class="ty">String</span> value) {
+    <span class="cm">// compact constructor — params already assigned; only validate/normalize</span>
+    <span class="ty">EmailAddress</span> {
+        value = value.<span class="fn">strip</span>().<span class="fn">toLowerCase</span>();
+        <span class="kw">if</span> (!value.<span class="fn">contains</span>(<span class="str">"@"</span>))
+            <span class="kw">throw</span> <span class="kw">new</span> <span class="ty">IllegalArgumentException</span>(<span class="str">"Invalid email: "</span> + value);
+    }
+}</code>
+  <span class="desc">Compact constructors run before the auto-generated field assignment; ideal for validation and normalization without repeating parameter names.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">sealed interface … permits (Java 17+)</code>
+  <code class="snippet"><span class="kw">sealed</span> <span class="kw">interface</span> <span class="ty">Result</span>&lt;<span class="ty">T</span>&gt; <span class="kw">permits</span> <span class="ty">Ok</span>, <span class="ty">Err</span> {}
+<span class="kw">record</span> <span class="ty">Ok</span>&lt;<span class="ty">T</span>&gt;(<span class="ty">T</span> value)     <span class="kw">implements</span> <span class="ty">Result</span>&lt;<span class="ty">T</span>&gt; {}
+<span class="kw">record</span> <span class="ty">Err</span>&lt;<span class="ty">T</span>&gt;(<span class="ty">String</span> msg) <span class="kw">implements</span> <span class="ty">Result</span>&lt;<span class="ty">T</span>&gt; {}
+
+<span class="ty">Result</span>&lt;<span class="ty">User</span>&gt; load(<span class="ty">long</span> id) {
+    <span class="kw">return</span> repo.<span class="fn">find</span>(id).<span class="fn">map</span>(<span class="ty">Ok</span>::<span class="kw">new</span>).<span class="fn">orElse</span>(<span class="kw">new</span> <span class="ty">Err</span>(<span class="str">"Not found"</span>));
+}</code>
+  <span class="desc">Sealed types restrict which classes may implement an interface; combined with records they produce exhaustive, algebraic-style sum types the compiler can verify.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">instanceof pattern matching (Java 16+)</code>
+  <code class="snippet"><span class="kw">void</span> <span class="fn">describe</span>(<span class="ty">Object</span> obj) {
+    <span class="kw">if</span> (obj <span class="kw">instanceof</span> <span class="ty">String</span> s &amp;&amp; s.<span class="fn">length</span>() &gt; <span class="num">10</span>)
+        <span class="ty">System</span>.out.<span class="fn">println</span>(<span class="str">"Long string: "</span> + s.<span class="fn">toUpperCase</span>());
+    <span class="kw">else if</span> (obj <span class="kw">instanceof</span> <span class="ty">Integer</span> n &amp;&amp; n &lt; <span class="num">0</span>)
+        <span class="ty">System</span>.out.<span class="fn">println</span>(<span class="str">"Negative int: "</span> + n);
+    <span class="kw">else if</span> (obj <span class="kw">instanceof</span> <span class="ty">List</span>&lt;?&gt; list)
+        <span class="ty">System</span>.out.<span class="fn">println</span>(<span class="str">"List size: "</span> + list.<span class="fn">size</span>());
+}</code>
+  <span class="desc">Pattern-matching instanceof binds the cast variable inline; the && guard is evaluated only when the pattern matches, eliminating redundant casts.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Pattern matching switch — type patterns (Java 21+)</code>
+  <code class="snippet"><span class="kw">sealed</span> <span class="kw">interface</span> <span class="ty">Shape</span> <span class="kw">permits</span> <span class="ty">Circle</span>, <span class="ty">Rect</span>, <span class="ty">Triangle</span> {}
+<span class="kw">record</span> <span class="ty">Circle</span>(<span class="ty">double</span> r)            <span class="kw">implements</span> <span class="ty">Shape</span> {}
+<span class="kw">record</span> <span class="ty">Rect</span>(<span class="ty">double</span> w, <span class="ty">double</span> h)   <span class="kw">implements</span> <span class="ty">Shape</span> {}
+<span class="kw">record</span> <span class="ty">Triangle</span>(<span class="ty">double</span> b, <span class="ty">double</span> h) <span class="kw">implements</span> <span class="ty">Shape</span> {}
+
+<span class="ty">double</span> <span class="fn">area</span>(<span class="ty">Shape</span> s) {
+    <span class="kw">return switch</span> (s) {
+        <span class="kw">case</span> <span class="ty">Circle</span>   c -&gt; <span class="ty">Math</span>.PI * c.r() * c.r();
+        <span class="kw">case</span> <span class="ty">Rect</span>     r -&gt; r.w() * r.h();
+        <span class="kw">case</span> <span class="ty">Triangle</span> t -&gt; <span class="num">0.5</span> * t.b() * t.h();
+    }; <span class="cm">// exhaustive — no default needed</span>
+}</code>
+  <span class="desc">Switch over a sealed hierarchy is exhaustive; the compiler rejects missing cases, giving you type-safe dispatch without casting.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Record patterns in switch — destructuring (Java 21+)</code>
+  <code class="snippet"><span class="ty">String</span> <span class="fn">format</span>(<span class="ty">Result</span>&lt;<span class="ty">String</span>&gt; result) {
+    <span class="kw">return switch</span> (result) {
+        <span class="kw">case</span> <span class="ty">Ok</span>(<span class="kw">var</span> v)  -&gt; <span class="str">"Success: "</span> + v;
+        <span class="kw">case</span> <span class="ty">Err</span>(<span class="kw">var</span> m) -&gt; <span class="str">"Error: "</span>   + m;
+    };
+}
+
+<span class="cm">// Nested destructuring</span>
+<span class="kw">record</span> <span class="ty">Point</span>(<span class="ty">int</span> x, <span class="ty">int</span> y) {}
+<span class="kw">record</span> <span class="ty">Line</span>(<span class="ty">Point</span> from, <span class="ty">Point</span> to) {}
+<span class="ty">String</span> <span class="fn">describe</span>(<span class="ty">Line</span> l) {
+    <span class="kw">return switch</span> (l) {
+        <span class="kw">case</span> <span class="ty">Line</span>(<span class="ty">Point</span>(<span class="kw">var</span> x1, <span class="kw">var</span> y1), <span class="ty">Point</span>(<span class="kw">var</span> x2, <span class="kw">var</span> y2))
+            -&gt; <span class="str">"("</span>+x1+<span class="str">","</span>+y1+<span class="str">") → ("</span>+x2+<span class="str">","</span>+y2+<span class="str">")"</span>;
+    };
+}</code>
+  <span class="desc">Record patterns deconstruct record components inline inside switch — including nested records — without explicit accessor calls.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Text blocks — """…""" (Java 15+)</code>
+  <code class="snippet"><span class="ty">String</span> sql = <span class="str">"""
+        SELECT u.id, u.name, o.total
+          FROM users  u
+          JOIN orders o ON o.user_id = u.id
+         WHERE u.active = true
+           AND o.total &gt; :minTotal
+         ORDER BY o.total DESC
+        """</span>;
+
+<span class="ty">String</span> json = <span class="str">"""
+        {
+          "event": "order.placed",
+          "orderId": %d,
+          "amount": %.2f
+        }
+        """</span>.<span class="fn">formatted</span>(orderId, amount);</code>
+  <span class="desc">Text blocks preserve indentation via a common-whitespace stripping algorithm; the closing """ determines the indent baseline, eliminating \n and concat noise.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">var — local variable type inference (Java 10+)</code>
+  <code class="snippet"><span class="kw">var</span> users   = <span class="kw">new</span> <span class="ty">ArrayList</span>&lt;<span class="ty">User</span>&gt;();      <span class="cm">// ArrayList&lt;User&gt;</span>
+<span class="kw">var</span> map     = <span class="ty">Map</span>.<span class="fn">of</span>(<span class="str">"a"</span>, <span class="num">1</span>, <span class="str">"b"</span>, <span class="num">2</span>);       <span class="cm">// Map&lt;String, Integer&gt;</span>
+<span class="kw">var</span> entries = map.<span class="fn">entrySet</span>();               <span class="cm">// Set&lt;Map.Entry&lt;String,Integer&gt;&gt;</span>
+
+<span class="kw">try</span> (<span class="kw">var</span> conn = <span class="ty">DataSource</span>.<span class="fn">getConnection</span>()) { <span class="cm">// Connection — works in try-with-resources</span>
+    <span class="kw">var</span> stmt = conn.<span class="fn">prepareStatement</span>(sql);
+    <span class="kw">var</span> rs   = stmt.<span class="fn">executeQuery</span>();
+}</code>
+  <span class="desc">var reduces verbosity for obvious right-hand sides; the inferred type is still static — use it where the type is clear from context, avoid it where it obscures intent.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Switch expressions — arrow cases &amp; yield (Java 14+)</code>
+  <code class="snippet"><span class="ty">int</span> fee = <span class="kw">switch</span> (tier) {
+    <span class="kw">case</span> FREE                    -&gt; <span class="num">0</span>;
+    <span class="kw">case</span> BASIC, STANDARD         -&gt; <span class="num">500</span>;
+    <span class="kw">case</span> PRO                     -&gt; <span class="num">1_200</span>;
+    <span class="kw">case</span> ENTERPRISE              -&gt; {
+        <span class="ty">int</span> base = <span class="fn">lookupContractBase</span>(account);
+        <span class="kw">yield</span> base + <span class="num">3_000</span>;  <span class="cm">// yield required in block arms</span>
+    }
+};
+
+<span class="cm">// Multiple labels collapse duplicate logic</span>
+<span class="ty">String</span> category = <span class="kw">switch</span> (statusCode) {
+    <span class="kw">case</span> <span class="num">200</span>, <span class="num">201</span>, <span class="num">204</span> -&gt; <span class="str">"success"</span>;
+    <span class="kw">case</span> <span class="num">400</span>, <span class="num">422</span>      -&gt; <span class="str">"client-error"</span>;
+    <span class="kw">default</span>             -&gt; <span class="str">"other"</span>;
+};</code>
+  <span class="desc">Switch expressions are statements that return a value; arrow cases don't fall through, and yield exits a block arm — no break needed.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">@FunctionalInterface — custom SAM + lambda (Java 8+)</code>
+  <code class="snippet"><span class="kw">@FunctionalInterface</span>
+<span class="kw">interface</span> <span class="ty">Validator</span>&lt;<span class="ty">T</span>&gt; {
+    <span class="ty">List</span>&lt;<span class="ty">String</span>&gt; <span class="fn">validate</span>(<span class="ty">T</span> value);
+
+    <span class="kw">default</span> <span class="ty">Validator</span>&lt;<span class="ty">T</span>&gt; <span class="fn">andThen</span>(<span class="ty">Validator</span>&lt;<span class="ty">T</span>&gt; next) {
+        <span class="kw">return</span> v -&gt; {
+            <span class="kw">var</span> errors = <span class="kw">new</span> <span class="ty">ArrayList</span>&lt;&gt;(<span class="kw">this</span>.<span class="fn">validate</span>(v));
+            errors.<span class="fn">addAll</span>(next.<span class="fn">validate</span>(v));
+            <span class="kw">return</span> errors;
+        };
+    }
+}
+
+<span class="ty">Validator</span>&lt;<span class="ty">String</span>&gt; notBlank = s -&gt;
+    s.<span class="fn">isBlank</span>() ? <span class="ty">List</span>.<span class="fn">of</span>(<span class="str">"must not be blank"</span>) : <span class="ty">List</span>.<span class="fn">of</span>();
+<span class="ty">Validator</span>&lt;<span class="ty">String</span>&gt; maxLen = s -&gt;
+    s.<span class="fn">length</span>() &gt; <span class="num">255</span> ? <span class="ty">List</span>.<span class="fn">of</span>(<span class="str">"max 255 chars"</span>) : <span class="ty">List</span>.<span class="fn">of</span>();
+<span class="ty">Validator</span>&lt;<span class="ty">String</span>&gt; emailVal = notBlank.<span class="fn">andThen</span>(maxLen);</code>
+  <span class="desc">@FunctionalInterface enforces exactly one abstract method; lambdas implement it without anonymous class boilerplate, and default methods add composability.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">Unnamed patterns _ (Java 22+)</code>
+  <code class="snippet"><span class="cm">// Unnamed pattern variable in switch — ignore components you don't need</span>
+<span class="ty">String</span> <span class="fn">label</span>(<span class="ty">Result</span>&lt;?&gt; r) {
+    <span class="kw">return switch</span> (r) {
+        <span class="kw">case</span> <span class="ty">Ok</span>(<span class="kw">var</span> v) -&gt; <span class="str">"ok:"</span> + v;
+        <span class="kw">case</span> <span class="ty">Err</span>(_)    -&gt; <span class="str">"error"</span>;  <span class="cm">// _ discards the msg component</span>
+    };
+}
+
+<span class="cm">// Unnamed catch variable — acknowledge exception without naming it</span>
+<span class="kw">try</span> {
+    <span class="kw">return</span> <span class="ty">Integer</span>.<span class="fn">parseInt</span>(input);
+} <span class="kw">catch</span> (<span class="ty">NumberFormatException</span> _) {
+    <span class="kw">return</span> <span class="num">0</span>;  <span class="cm">// _ suppresses "variable unused" warning</span>
+}</code>
+  <span class="desc">The unnamed pattern _ signals intentional discard of a bound variable; eliminates IDE warnings about unused names in catch blocks and switch destructuring.</span>
+</div>
+
+<div class="entry">
+  <code class="sig">instanceof pattern with guard (Java 21+)</code>
+  <code class="snippet"><span class="kw">sealed</span> <span class="kw">interface</span> <span class="ty">Event</span> <span class="kw">permits</span> <span class="ty">Login</span>, <span class="ty">Purchase</span>, <span class="ty">Refund</span> {}
+<span class="kw">record</span> <span class="ty">Login</span>(<span class="ty">String</span> userId, <span class="ty">boolean</span> mfa)         <span class="kw">implements</span> <span class="ty">Event</span> {}
+<span class="kw">record</span> <span class="ty">Purchase</span>(<span class="ty">String</span> userId, <span class="ty">BigDecimal</span> amount) <span class="kw">implements</span> <span class="ty">Event</span> {}
+<span class="kw">record</span> <span class="ty">Refund</span>(<span class="ty">String</span> userId, <span class="ty">BigDecimal</span> amount)   <span class="kw">implements</span> <span class="ty">Event</span> {}
+
+<span class="ty">String</span> <span class="fn">audit</span>(<span class="ty">Event</span> e) {
+    <span class="kw">return switch</span> (e) {
+        <span class="kw">case</span> <span class="ty">Login</span> l    <span class="kw">when</span> !l.mfa()   -&gt; <span class="str">"⚠ MFA bypass: "</span>  + l.userId();
+        <span class="kw">case</span> <span class="ty">Login</span> l                    -&gt; <span class="str">"login: "</span>          + l.userId();
+        <span class="kw">case</span> <span class="ty">Purchase</span> p <span class="kw">when</span> p.amount().compareTo(<span class="ty">THRESHOLD</span>) &gt; <span class="num">0</span>
+                                        -&gt; <span class="str">"high-value: $"</span>   + p.amount();
+        <span class="kw">case</span> <span class="ty">Purchase</span> p                 -&gt; <span class="str">"purchase: $"</span>     + p.amount();
+        <span class="kw">case</span> <span class="ty">Refund</span> r                   -&gt; <span class="str">"refund: $"</span>       + r.amount();
+    };
+}</code>
+  <span class="desc">when guards refine a type pattern with a boolean predicate; more specific guarded cases must appear before broader ones of the same type, or the compiler rejects the switch.</span>
+</div>
+
 
 <h2 class="section-heading" id="java-lang">java.lang</h2>
 <!-- entries coming in Task 4 -->
