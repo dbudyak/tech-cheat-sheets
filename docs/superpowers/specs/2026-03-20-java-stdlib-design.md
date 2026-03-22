@@ -2,7 +2,7 @@
 
 ## Goal
 
-Add a comprehensive Java SE 26 standard library tab to `index.html`, covering 10 package categories with ≥90% public non-deprecated API coverage per section. Content validated via context7 against Java SE 26 docs. Real-world memorable snippets throughout — better than javadoc examples.
+Add a comprehensive Java SE 26 standard library tab to `index.html`, covering 11 `<h2>` sections across 10 sidebar categories with ≥90% public non-deprecated API coverage per section. Content validated via context7 against Java SE 26 docs. Real-world memorable snippets throughout — better than javadoc examples.
 
 ## Non-Goals
 
@@ -24,7 +24,7 @@ Single-file modification. All Java content added to the existing `index.html` as
 |----------|--------|
 | `.lang-tabs` div | Add `<button class="lang-tab" data-lang="java">Java</button>` |
 | After Go `cat-list` closing `</div>` | Add Java `cat-list` with 10 sidebar links |
-| After Go `</section>` | Add `<section id="java" class="lang-section">` with 10 `<h2>` sections |
+| After Go `</section>` | Add `<section id="java" class="lang-section">` with 11 `<h2>` sections (java.io and java.nio.file are separate) |
 
 ---
 
@@ -222,7 +222,7 @@ Sub-headings: `Virtual Threads`, `ExecutorService`, `CompletableFuture`, `Synchr
 Required entries (≥20):
 - `Thread.ofVirtual().start` / `Thread.startVirtualThread` (Java 21+)
 - `Executors.newVirtualThreadPerTaskExecutor` (Java 21+)
-- `StructuredTaskScope` / `StructuredTaskScope.ShutdownOnFailure` / `ShutdownOnSuccess` (Java 21+)
+- `StructuredTaskScope` / `StructuredTaskScope.ShutdownOnFailure` / `ShutdownOnSuccess` (preview — Java 21–26; expected to finalize in Java 26, sig line must carry `(preview)` note if not yet stable)
 - `ExecutorService` — `submit` / `invokeAll` / `invokeAny` / `shutdown` / `shutdownNow` / `awaitTermination` / `close` (AutoCloseable Java 19+)
 - `Executors.newFixedThreadPool` / `newCachedThreadPool` / `newSingleThreadExecutor` / `newScheduledThreadPool`
 - `Future` — `get` / `cancel` / `isDone` / `isCancelled`
@@ -273,6 +273,32 @@ Required entries (≥8):
 - Verify no external CDN/HTTP dependencies introduced
 - Verify Java tab switching works (sidebar + section toggle, scroll reset)
 - Verify total Java entry count ≥ 160
+
+**Delivery checklist (run before committing):**
+
+```bash
+# Java tab button present
+grep 'data-lang="java"' index.html | head -5
+
+# All 11 section IDs present
+grep -c 'id="java-' index.html
+# Expected: ≥11
+
+# Sidebar hidden by default
+grep 'data-lang="java" style="display:none"' index.html
+
+# Total Java entry count
+awk '/<section id="java"/,/<\/section>/' index.html | grep -c 'class="entry"'
+# Expected: ≥160
+
+# No external dependencies
+grep -i 'cdn\|https://\|http://' index.html
+# Expected: no resource loads (code snippet strings are OK)
+
+# Coverage comments present
+grep -c 'coverage: java' index.html
+# Expected: 11
+```
 
 ---
 
