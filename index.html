@@ -6701,6 +6701,40 @@ const observer = new IntersectionObserver(entries => {
 }, { root: document.querySelector('#main'), rootMargin: '-10% 0px -80% 0px' });
 
 headings.forEach(h => observer.observe(h));
+
+// ── Mobile sidebar ─────────────────────────────
+document.getElementById('topbar-menu')
+  .addEventListener('click', () => document.body.classList.add('sidebar-open'));
+
+document.getElementById('sidebar-close')
+  .addEventListener('click', () => document.body.classList.remove('sidebar-open'));
+
+document.getElementById('overlay-backdrop')
+  .addEventListener('click', () => document.body.classList.remove('sidebar-open'));
+
+// Close sidebar on cat-link click (synchronous — must re-enable #main scroll
+// before the browser processes the anchor jump; do not use setTimeout)
+document.querySelectorAll('.cat-link').forEach(link => {
+  link.addEventListener('click', () => document.body.classList.remove('sidebar-open'));
+});
+
+// Close sidebar + update top-bar label on lang switch
+// (second forEach on .lang-tab — do not modify the existing tab-switch block)
+document.querySelectorAll('.lang-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.body.classList.remove('sidebar-open');
+    document.getElementById('topbar-lang').textContent = tab.textContent;
+  });
+});
+
+// Initialise top-bar label from whichever tab has class "active" at page load
+document.getElementById('topbar-lang').textContent =
+  document.querySelector('.lang-tab.active').textContent;
+
+// Clear sidebar-open if user resizes from mobile to desktop
+window.matchMedia('(max-width: 640px)').addEventListener('change', e => {
+  if (!e.matches) document.body.classList.remove('sidebar-open');
+});
 </script>
 
 </body>
