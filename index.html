@@ -195,6 +195,58 @@ details .adv-content { border: 1px solid #30363d; border-top: none; border-radiu
 #topbar           { display: none; }
 #sidebar-close    { display: none; }
 #overlay-backdrop { display: none; }
+
+/* ── Mobile layout (≤640px) ─────────────────── */
+@media (max-width: 640px) {
+  #topbar {
+    display: flex;
+    align-items: center;
+    position: fixed; top: 0; left: 0; width: 100%; height: 44px;
+    z-index: 100;
+    background: #161b22;
+    border-bottom: 1px solid #30363d;
+    padding: 0 max(12px, env(safe-area-inset-right)) 0 max(12px, env(safe-area-inset-left));
+  }
+  #topbar-menu {
+    background: none; border: none; color: #c9d1d9;
+    font-size: 20px; cursor: pointer; line-height: 1; flex-shrink: 0;
+  }
+  #topbar-lang {
+    position: absolute; left: 50%; transform: translateX(-50%);
+    font-size: 13px; font-weight: 600; color: #e6edf3;
+    white-space: nowrap; overflow: hidden; max-width: calc(100% - 80px);
+    pointer-events: none;
+  }
+  #sidebar {
+    position: fixed; top: 0; left: 0;
+    width: 85vw; height: 100vh; min-width: 0;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    z-index: 200;
+  }
+  body.sidebar-open #sidebar  { transform: translateX(0); }
+  body.sidebar-open #overlay-backdrop {
+    display: block;
+    position: fixed; inset: 0;
+    z-index: 199;
+    background: rgba(0,0,0,0.5);
+  }
+  body.sidebar-open #main { overflow: hidden; }
+  #sidebar-close {
+    display: block;
+    align-self: flex-end;
+    margin-bottom: 4px;
+    background: none; border: none;
+    color: #8b949e; font-size: 18px; cursor: pointer;
+    padding: 10px 12px;
+  }
+  #main {
+    padding: 44px 12px 64px;
+    scroll-padding-top: 44px;
+    width: 100%;
+    min-width: 0;
+  }
+}
 </style>
 </head>
 <body>
