@@ -4,15 +4,78 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tech Recall</title>
+<script>
+// Theme: saved choice (shared by all pages), otherwise follow the system setting
+(function () {
+  var t = null;
+  try { t = localStorage.getItem('theme'); } catch (e) {}
+  if (!t) t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  document.documentElement.dataset.theme = t;
+})();
+</script>
 <style>
+/* ── Theme tokens (dark default, light via [data-theme="light"]) ── */
+:root {
+  color-scheme: dark;
+  --bg: #0f1117;
+  --surface: #161b22;
+  --code-bg: #0d1117;
+  --hover: #1c2128;
+  --border-muted: #21262d;
+  --border: #30363d;
+  --text-faint: #484f58;
+  --text-muted: #8b949e;
+  --text: #c9d1d9;
+  --text-strong: #e6edf3;
+  --accent: #58a6ff;
+  --accent-2: #388bfd;
+  --red: #ff7b72;
+  --fn: #d2a8ff;
+  --str: #a5d6ff;
+  --num: #79c0ff;
+  --ty: #ffa657;
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #ffffff;
+  --surface: #f6f8fa;
+  --code-bg: #eef1f4;
+  --hover: #eaeef2;
+  --border-muted: #d8dee4;
+  --border: #d0d7de;
+  --text-faint: #8c959f;
+  --text-muted: #57606a;
+  --text: #24292f;
+  --text-strong: #1f2328;
+  --accent: #0969da;
+  --accent-2: #0969da;
+  --red: #cf222e;
+  --fn: #8250df;
+  --str: #0a3069;
+  --num: #0550ae;
+  --ty: #953800;
+}
+
+.theme-toggle {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1;
+  padding: 4px 7px;
+  cursor: pointer;
+}
+.theme-toggle:hover { color: var(--text); border-color: var(--accent); }
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
   display: flex;
   font-family: 'Segoe UI', system-ui, sans-serif;
   font-size: 14px;
-  background: #0f1117;
-  color: #c9d1d9;
+  background: var(--bg);
+  color: var(--text);
   height: 100vh;
   overflow: hidden;
 }
@@ -21,8 +84,8 @@ body {
 #sidebar {
   width: 220px;
   min-width: 220px;
-  background: #161b22;
-  border-right: 1px solid #30363d;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -31,7 +94,7 @@ body {
 
 .lang-tabs {
   display: flex;
-  border-bottom: 1px solid #30363d;
+  border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
 
@@ -42,7 +105,7 @@ body {
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  color: #8b949e;
+  color: var(--text-muted);
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
@@ -50,11 +113,11 @@ body {
 }
 
 .lang-tab.active {
-  color: #58a6ff;
-  border-bottom-color: #58a6ff;
+  color: var(--accent);
+  border-bottom-color: var(--accent);
 }
 
-.lang-tab:hover:not(.active) { color: #c9d1d9; }
+.lang-tab:hover:not(.active) { color: var(--text); }
 
 .cat-list {
   padding: 8px 0;
@@ -67,14 +130,14 @@ body {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #484f58;
+  color: var(--text-faint);
 }
 
 .cat-link {
   display: block;
   padding: 5px 12px 5px 16px;
   font-size: 12px;
-  color: #8b949e;
+  color: var(--text-muted);
   text-decoration: none;
   border-left: 2px solid transparent;
   transition: color 0.1s, border-color 0.1s;
@@ -83,19 +146,19 @@ body {
   text-overflow: ellipsis;
 }
 
-.cat-link:hover { color: #c9d1d9; }
-.cat-link.active { color: #58a6ff; border-left-color: #58a6ff; background: #1c2128; }
+.cat-link:hover { color: var(--text); }
+.cat-link.active { color: var(--accent); border-left-color: var(--accent); background: var(--hover); }
 
 /* ── Link to the cloud-native page ───────────── */
 .cross-link {
   display: block;
   padding: 8px 12px;
   font-size: 11px;
-  color: #58a6ff;
+  color: var(--accent);
   text-decoration: none;
-  border-bottom: 1px solid #30363d;
+  border-bottom: 1px solid var(--border);
 }
-.cross-link:hover { background: #1c2128; }
+.cross-link:hover { background: var(--hover); }
 
 /* ── Main content ────────────────────────────── */
 #main {
@@ -112,17 +175,17 @@ body {
 .section-heading {
   font-size: 22px;
   font-weight: 700;
-  color: #e6edf3;
+  color: var(--text-strong);
   margin: 40px 0 4px;
   padding-top: 16px;
-  border-bottom: 1px solid #21262d;
+  border-bottom: 1px solid var(--border-muted);
   padding-bottom: 8px;
 }
 
 .sub-heading {
   font-size: 13px;
   font-weight: 600;
-  color: #58a6ff;
+  color: var(--accent);
   margin: 20px 0 8px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -132,18 +195,18 @@ body {
 .entry {
   margin-bottom: 12px;
   padding: 8px 10px;
-  background: #161b22;
+  background: var(--surface);
   border-radius: 6px;
-  border-left: 3px solid #21262d;
+  border-left: 3px solid var(--border-muted);
 }
 
-.entry:hover { border-left-color: #388bfd; }
+.entry:hover { border-left-color: var(--accent-2); }
 
 .sig {
   display: block;
   font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
   font-size: 12px;
-  color: #8b949e;
+  color: var(--text-muted);
   margin-bottom: 4px;
 }
 
@@ -151,8 +214,8 @@ body {
   display: block;
   font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
   font-size: 12px;
-  color: #e6edf3;
-  background: #0d1117;
+  color: var(--text-strong);
+  background: var(--code-bg);
   padding: 4px 8px;
   border-radius: 4px;
   margin-bottom: 5px;
@@ -161,16 +224,16 @@ body {
 }
 
 /* Syntax colouring (hand-coded) */
-.kw  { color: #ff7b72; }  /* keywords: val, fun, it, etc. */
-.fn  { color: #d2a8ff; }  /* function calls */
-.str { color: #a5d6ff; }  /* string literals */
-.num { color: #79c0ff; }  /* numbers */
-.cm  { color: #484f58; }  /* comments */
-.ty  { color: #ffa657; }  /* types */
+.kw  { color: var(--red); }  /* keywords: val, fun, it, etc. */
+.fn  { color: var(--fn); }  /* function calls */
+.str { color: var(--str); }  /* string literals */
+.num { color: var(--num); }  /* numbers */
+.cm  { color: var(--text-faint); }  /* comments */
+.ty  { color: var(--ty); }  /* types */
 
 .desc {
   font-size: 12px;
-  color: #8b949e;
+  color: var(--text-muted);
   line-height: 1.5;
 }
 
@@ -181,10 +244,10 @@ details > summary {
   cursor: pointer;
   font-size: 14px;
   font-weight: 600;
-  color: #8b949e;
+  color: var(--text-muted);
   padding: 8px 10px;
-  background: #161b22;
-  border: 1px solid #30363d;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 6px;
   list-style: none;
   user-select: none;
@@ -192,15 +255,15 @@ details > summary {
 
 details > summary::before { content: '▶  '; font-size: 10px; }
 details[open] > summary::before { content: '▼  '; }
-details > summary:hover { color: #c9d1d9; }
-details[open] > summary { border-radius: 6px 6px 0 0; border-bottom-color: #21262d; }
+details > summary:hover { color: var(--text); }
+details[open] > summary { border-radius: 6px 6px 0 0; border-bottom-color: var(--border-muted); }
 details > summary::-webkit-details-marker { display: none; }
-details .adv-content { border: 1px solid #30363d; border-top: none; border-radius: 0 0 6px 6px; padding: 8px; }
+details .adv-content { border: 1px solid var(--border); border-top: none; border-radius: 0 0 6px 6px; padding: 8px; }
 
 /* ── Scrollbar ───────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
 /* ── Mobile elements (hidden on desktop) ────── */
 #topbar           { display: none; }
@@ -214,17 +277,17 @@ details .adv-content { border: 1px solid #30363d; border-top: none; border-radiu
     align-items: center;
     position: fixed; top: 0; left: 0; width: 100%; height: 44px;
     z-index: 100;
-    background: #161b22;
-    border-bottom: 1px solid #30363d;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
     padding: 0 max(12px, env(safe-area-inset-right)) 0 max(12px, env(safe-area-inset-left));
   }
   #topbar-menu {
-    background: none; border: none; color: #c9d1d9;
+    background: none; border: none; color: var(--text);
     font-size: 20px; cursor: pointer; line-height: 1; flex-shrink: 0;
   }
   #topbar-lang {
     position: absolute; left: 50%; transform: translateX(-50%);
-    font-size: 13px; font-weight: 600; color: #e6edf3;
+    font-size: 13px; font-weight: 600; color: var(--text-strong);
     white-space: nowrap; overflow: hidden; max-width: calc(100% - 80px);
     pointer-events: none;
   }
@@ -248,7 +311,7 @@ details .adv-content { border: 1px solid #30363d; border-top: none; border-radiu
     align-self: flex-end;
     margin-bottom: 4px;
     background: none; border: none;
-    color: #8b949e; font-size: 18px; cursor: pointer;
+    color: var(--text-muted); font-size: 18px; cursor: pointer;
     padding: 10px 12px;
   }
   #main {
@@ -258,6 +321,15 @@ details .adv-content { border: 1px solid #30363d; border-top: none; border-radiu
     min-width: 0;
   }
 }
+.sidebar-head {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.sidebar-head .cross-link { flex: 1; border-bottom: none; }
+.sidebar-head .theme-toggle { margin-right: 8px; }
+#topbar .theme-toggle { margin-left: auto; }
 </style>
 </head>
 <body>
@@ -265,13 +337,17 @@ details .adv-content { border: 1px solid #30363d; border-top: none; border-radiu
 <div id="topbar">
   <button id="topbar-menu" aria-label="Open menu">☰</button>
   <span id="topbar-lang"></span>
+  <button class="theme-toggle" type="button"></button>
 </div>
 
 <div id="overlay-backdrop"></div>
 
 <nav id="sidebar">
   <button id="sidebar-close" aria-label="Close menu">✕</button>
-  <a class="cross-link" href="platform.html">Kubernetes · Go · Terraform · Flashcards →</a>
+  <div class="sidebar-head">
+  <a class="cross-link" href="platform.html">K8s · Go · Terraform · Cards →</a>
+  <button class="theme-toggle" type="button"></button>
+  </div>
   <div class="lang-tabs">
     <button class="lang-tab active" data-lang="kotlin">Kotlin</button>
     <button class="lang-tab" data-lang="go">Go</button>
@@ -6747,6 +6823,21 @@ document.getElementById('topbar-lang').textContent =
 window.matchMedia('(max-width: 640px)').addEventListener('change', e => {
   if (!e.matches) document.body.classList.remove('sidebar-open');
 });
+// ── Theme toggle ───────────────────────────────
+function setThemeButtons() {
+  const dark = document.documentElement.dataset.theme !== 'light';
+  document.querySelectorAll('.theme-toggle').forEach(b => {
+    b.textContent = dark ? '☀' : '☾';
+    b.title = b.ariaLabel = dark ? 'Switch to light mode' : 'Switch to dark mode';
+  });
+}
+document.querySelectorAll('.theme-toggle').forEach(b => b.addEventListener('click', () => {
+  const t = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+  document.documentElement.dataset.theme = t;
+  try { localStorage.setItem('theme', t); } catch (e) {}
+  setThemeButtons();
+}));
+setThemeButtons();
 </script>
 
 </body>
