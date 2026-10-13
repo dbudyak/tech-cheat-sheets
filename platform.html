@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tech Recall — Cloud Native</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  display: flex;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 14px;
+  background: #0f1117;
+  color: #c9d1d9;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── Sidebar ─────────────────────────────────── */
+#sidebar {
+  width: 240px;
+  min-width: 240px;
+  background: #161b22;
+  border-right: 1px solid #30363d;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  height: 100vh;
+}
+
+.cross-link {
+  display: block;
+  padding: 8px 12px;
+  font-size: 11px;
+  color: #8b949e;
+  text-decoration: none;
+  border-bottom: 1px solid #30363d;
+}
+.cross-link:hover { color: #58a6ff; }
+
+.mode-tabs {
+  display: flex;
+  border-bottom: 1px solid #30363d;
+  flex-shrink: 0;
+}
+
+.mode-tab {
+  flex: 1;
+  padding: 10px 6px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  color: #8b949e;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+}
+.mode-tab.active { color: #58a6ff; border-bottom-color: #58a6ff; }
+.mode-tab:hover:not(.active) { color: #c9d1d9; }
+
+.cat-list { padding: 8px 0; }
+
+.cat-group {
+  padding: 6px 12px 2px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #484f58;
+}
+
+.cat-link, .topic-link {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 5px 12px 5px 16px;
+  font-size: 12px;
+  color: #8b949e;
+  text-decoration: none;
+  border-left: 2px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cat-link:hover, .topic-link:hover { color: #c9d1d9; }
+.cat-link.active, .topic-link.active { color: #58a6ff; border-left-color: #58a6ff; background: #1c2128; }
+.topic-link .count { color: #484f58; font-size: 11px; }
+.topic-link.other-mode { opacity: 0.55; }
+.topic-link.other-mode::after { content: '↗'; color: #484f58; font-size: 10px; }
+
+/* ── Main content ────────────────────────────── */
+#main {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 32px 64px;
+  height: 100vh;
+  scroll-behavior: smooth;
+}
+
+.page-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: #e6edf3;
+  margin: 28px 0 4px;
+}
+.page-sub { font-size: 12px; color: #8b949e; margin-bottom: 8px; }
+
+.section-heading {
+  font-size: 22px;
+  font-weight: 700;
+  color: #e6edf3;
+  margin: 40px 0 4px;
+  padding-top: 16px;
+  border-bottom: 1px solid #21262d;
+  padding-bottom: 8px;
+}
+
+.sub-heading {
+  font-size: 13px;
+  font-weight: 600;
+  color: #58a6ff;
+  margin: 20px 0 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ── Entry ───────────────────────────────────── */
+.entry {
+  margin-bottom: 12px;
+  padding: 8px 10px;
+  background: #161b22;
+  border-radius: 6px;
+  border-left: 3px solid #21262d;
+}
+.entry:hover { border-left-color: #388bfd; }
+
+.sig {
+  display: block;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 12px;
+  color: #8b949e;
+  margin-bottom: 4px;
+}
+
+.snippet {
+  display: block;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 12px;
+  color: #e6edf3;
+  background: #0d1117;
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-bottom: 5px;
+  white-space: pre;
+  overflow-x: auto;
+}
+
+.kw  { color: #ff7b72; }
+.fn  { color: #d2a8ff; }
+.str { color: #a5d6ff; }
+.num { color: #79c0ff; }
+.cm  { color: #6e7681; }
+.ty  { color: #ffa657; }
+
+.desc { font-size: 12px; color: #8b949e; line-height: 1.5; display: block; }
+.desc code, .card-a code, .card-q code {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 11.5px;
+  background: #0d1117;
+  color: #e6edf3;
+  padding: 0 4px;
+  border-radius: 3px;
+}
+.desc b, .card-a b { color: #c9d1d9; }
+
+.loading, .error { margin: 40px 0; color: #8b949e; }
+.error { color: #ff7b72; }
+
+/* ── Flashcards ──────────────────────────────── */
+.fc-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin: 12px 0;
+}
+.btn {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #30363d;
+  background: #161b22;
+  color: #c9d1d9;
+  cursor: pointer;
+}
+.btn:hover { border-color: #58a6ff; }
+.btn.on { color: #58a6ff; border-color: #58a6ff; }
+.btn.again { color: #ff7b72; }
+.btn.good  { color: #3fb950; }
+select.btn { max-width: 100%; }
+
+.progress {
+  height: 4px;
+  background: #21262d;
+  border-radius: 2px;
+  overflow: hidden;
+  margin: 4px 0 12px;
+}
+.progress > div { height: 100%; background: #3fb950; width: 0; transition: width 0.2s; }
+.fc-stats { font-size: 12px; color: #8b949e; }
+
+.card {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 10px;
+  padding: 18px 18px 14px;
+  min-height: 220px;
+  cursor: pointer;
+  user-select: text;
+}
+.card-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #484f58;
+  margin-bottom: 10px;
+}
+.card-q { font-size: 17px; font-weight: 600; color: #e6edf3; line-height: 1.4; }
+.card-a {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed #30363d;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #c9d1d9;
+}
+.card-a .snippet { margin-top: 8px; }
+.card-hint { margin-top: 18px; font-size: 11px; color: #484f58; text-align: center; }
+.fc-actions { display: flex; gap: 8px; margin-top: 12px; }
+.fc-actions .btn { flex: 1; padding: 12px; font-size: 14px; }
+.fc-done { text-align: center; padding: 40px 0; color: #8b949e; }
+.fc-done b { color: #3fb950; font-size: 18px; display: block; margin-bottom: 8px; }
+
+.browse-card {
+  background: #161b22;
+  border-radius: 6px;
+  border-left: 3px solid #21262d;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+.browse-card.known { border-left-color: #238636; }
+.browse-card .card-q { font-size: 14px; }
+.browse-card .card-a { margin-top: 8px; padding-top: 8px; font-size: 13px; }
+.browse-card details > summary { list-style: none; cursor: pointer; }
+.browse-card details > summary::-webkit-details-marker { display: none; }
+
+/* ── Scrollbar ───────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+
+/* ── Mobile elements (hidden on desktop) ────── */
+#topbar           { display: none; }
+#sidebar-close    { display: none; }
+#overlay-backdrop { display: none; }
+
+@media (max-width: 640px) {
+  #topbar {
+    display: flex;
+    align-items: center;
+    position: fixed; top: 0; left: 0; width: 100%; height: 44px;
+    z-index: 100;
+    background: #161b22;
+    border-bottom: 1px solid #30363d;
+    padding: 0 max(12px, env(safe-area-inset-right)) 0 max(12px, env(safe-area-inset-left));
+  }
+  #topbar-menu {
+    background: none; border: none; color: #c9d1d9;
+    font-size: 20px; cursor: pointer; line-height: 1; flex-shrink: 0;
+  }
+  #topbar-lang {
+    position: absolute; left: 50%; transform: translateX(-50%);
+    font-size: 13px; font-weight: 600; color: #e6edf3;
+    white-space: nowrap; overflow: hidden; max-width: calc(100% - 80px);
+    pointer-events: none;
+  }
+  #sidebar {
+    position: fixed; top: 0; left: 0;
+    width: 85vw; height: 100vh; min-width: 0;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    z-index: 200;
+  }
+  body.sidebar-open #sidebar { transform: translateX(0); }
+  body.sidebar-open #overlay-backdrop {
+    display: block;
+    position: fixed; inset: 0;
+    z-index: 199;
+    background: rgba(0,0,0,0.5);
+  }
+  body.sidebar-open #main { overflow: hidden; }
+  #sidebar-close {
+    display: block;
+    align-self: flex-end;
+    background: none; border: none;
+    color: #8b949e; font-size: 18px; cursor: pointer;
+    padding: 10px 12px;
+  }
+  #main {
+    padding: 44px 12px 64px;
+    scroll-padding-top: 44px;
+    width: 100%;
+    min-width: 0;
+  }
+  .card { padding: 14px; min-height: 260px; }
+  .card-q { font-size: 16px; }
+  .card-hint { display: none; }
+  .card-a .snippet { white-space: pre-wrap; overflow-wrap: anywhere; }
+}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <button id="topbar-menu" aria-label="Open menu">☰</button>
+  <span id="topbar-lang"></span>
+</div>
+
+<div id="overlay-backdrop"></div>
+
+<nav id="sidebar">
+  <button id="sidebar-close" aria-label="Close menu">✕</button>
+  <a class="cross-link" href="index.html">← Kotlin · Go stdlib · Java</a>
+  <div class="mode-tabs">
+    <button class="mode-tab active" data-mode="sheet">Cheat Sheet</button>
+    <button class="mode-tab" data-mode="cards">Flashcards</button>
+  </div>
+  <div class="cat-list" id="topic-list"></div>
+  <div class="cat-list" id="section-list"></div>
+</nav>
+
+<main id="main"></main>
+
+<script>
+// ── Topics ──────────────────────────────────────
+// Content lives in content/<id>.sheet.md and content/<id>.cards.md
+// (format documented in content/README.md).
+const TOPICS = [
+  { id: 'quickref',      title: 'Quick Reference',      group: 'Start here', sheet: true,  cards: false },
+  { id: 'k8s',           title: 'Kubernetes',           group: 'Core',       sheet: true,  cards: true },
+  { id: 'operators',     title: 'Operators & Cluster API', group: 'Core',    sheet: true,  cards: true },
+  { id: 'go',            title: 'Go',                   group: 'Core',       sheet: true,  cards: true },
+  { id: 'terraform',     title: 'Terraform',            group: 'Core',       sheet: true,  cards: true },
+  { id: 'talos',         title: 'Talos Linux',          group: 'Platform',   sheet: false, cards: true },
+  { id: 'openstack',     title: 'OpenStack',            group: 'Platform',   sheet: false, cards: true },
+  { id: 'helm',          title: 'Helm',                 group: 'Delivery',   sheet: false, cards: true },
+  { id: 'argocd',        title: 'Argo CD & GitOps',     group: 'Delivery',   sheet: false, cards: true },
+  { id: 'ansible',       title: 'Ansible',              group: 'Delivery',   sheet: false, cards: true },
+  { id: 'observability', title: 'Observability & SRE',  group: 'Operations', sheet: false, cards: true },
+  { id: 'openbao',       title: 'OpenBao / Secrets',    group: 'Operations', sheet: false, cards: true },
+];
+
+const state = { mode: 'sheet', topic: 'quickref', study: 'study', tag: '', unknownOnly: false };
+const cache = {};   // url -> text
+const $main = document.getElementById('main');
+
+// ── Utilities ───────────────────────────────────
+const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+function inline(text) {
+  // escape, then `code` and **bold**
+  return esc(text)
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
+}
+
+function slug(s) {
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+function hash(s) {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
+  return (h >>> 0).toString(36);
+}
+
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+};
+
+async function load(url) {
+  if (cache[url] !== undefined) return cache[url];
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`${url}: HTTP ${res.status}`);
+  cache[url] = await res.text();
+  return cache[url];
+}
+
+// ── Syntax highlighting (small tokenizer, same colour classes as index.html) ──
+const LANGS = {
+  go: {
+    kw: 'break case chan const continue default defer else fallthrough for func go goto if import interface map package range return select struct switch type var nil true false iota',
+    ty: 'any bool byte comparable complex64 complex128 error float32 float64 int int8 int16 int32 int64 rune string uint uint8 uint16 uint32 uint64 uintptr',
+    comment: /\/\/[^\n]*|\/\*[\s\S]*?\*\//y, str: /"(?:\\.|[^"\\\n])*"|`[^`]*`|'(?:\\.|[^'\\\n])+'/y, caps: true,
+  },
+  yaml: { comment: /#[^\n]*/y, str: /"(?:\\.|[^"\\\n])*"|'[^'\n]*'/y, key: /[A-Za-z_][\w.\/-]*(?=\s*:(\s|$))/y, kw: 'true false null' },
+  hcl: {
+    kw: 'resource data variable output locals module provider terraform for_each count depends_on lifecycle moved import removed check ephemeral backend required_providers dynamic content for in if true false null each self var local',
+    ty: 'string number bool list map set object tuple any', comment: /#[^\n]*|\/\/[^\n]*|\/\*[\s\S]*?\*\//y, str: /"(?:\\.|[^"\\\n])*"|<<-?EOT[\s\S]*?EOT/y,
+  },
+  bash: { comment: /(^|(?<=\s))#[^\n]*/y, str: /"(?:\\.|[^"\\])*"|'[^']*'/y, flag: /(?<=\s)--?[A-Za-z][\w-]*/y, cmd: true,
+    kw: 'if then else fi for do done while case esac in export' },
+  promql: { kw: 'by without on ignoring group_left group_right offset and or unless bool', comment: /#[^\n]*/y, str: /"(?:\\.|[^"\\])*"/y },
+  sql: { kw: 'select from where and or not in is null join on group by order limit insert update delete', comment: /--[^\n]*/y, str: /'[^']*'/y },
+};
+LANGS.sh = LANGS.bash; LANGS.terraform = LANGS.hcl; LANGS.yml = LANGS.yaml;
+
+function highlight(code, lang) {
+  const L = LANGS[lang];
+  if (!L) return esc(code);
+  const kw = new Set((L.kw || '').split(' '));
+  const ty = new Set((L.ty || '').split(' '));
+  let out = '', i = 0, lineStart = true;
+  const at = re => { re.lastIndex = i; const m = re.exec(code); return m && m.index === i ? m[0] : null; };
+  const span = (cls, t) => `<span class="${cls}">${esc(t)}</span>`;
+  while (i < code.length) {
+    let t;
+    if (L.comment && (t = at(L.comment)) !== null && t.length) { out += span('cm', t); i += t.length; continue; }
+    if (L.str && (t = at(L.str))) { out += span('str', t); i += t.length; lineStart = false; continue; }
+    if (L.key && lineStartish(code, i) && (t = at(L.key))) { out += span('ty', t); i += t.length; continue; }
+    if (L.flag && (t = at(L.flag))) { out += span('kw', t); i += t.length; continue; }
+    if ((t = at(/\d[\w.]*/y)) && !/\w/.test(code[i - 1] || '')) { out += span('num', t); i += t.length; lineStart = false; continue; }
+    if ((t = at(/[A-Za-z_][\w-]*/y))) {
+      let word = t;
+      if (lang !== 'bash' && lang !== 'sh' && lang !== 'yaml' && lang !== 'yml') word = t.match(/^[A-Za-z_]\w*/)[0];
+      if (L.cmd && lineStart && !kw.has(word)) out += span('fn', word);
+      else if (kw.has(word)) out += span('kw', word);
+      else if (ty.has(word) || (L.caps && /^[A-Z]/.test(word) && code[i - 1] !== '.')) out += span('ty', word);
+      else if (code[i + word.length] === '(') out += span('fn', word);
+      else out += esc(word);
+      i += word.length; lineStart = false; continue;
+    }
+    const c = code[i];
+    if (c === '\n') lineStart = true;
+    else if (c === '|' || c === ';' || c === '&') lineStart = true;
+    else if (c !== ' ' && c !== '\t' && c !== '$') lineStart = false;
+    out += esc(c); i++;
+  }
+  return out;
+}
+function lineStartish(code, i) {
+  const before = code.slice(code.lastIndexOf('\n', i - 1) + 1, i);
+  return /^[\s-]*$/.test(before);
+}
+
+// ── Parsing ─────────────────────────────────────
+// Splits text into lines but keeps ``` fenced blocks intact as {code, lang}.
+function blocks(text) {
+  const lines = text.replace(/\r/g, '').split('\n');
+  const out = [];
+  for (let i = 0; i < lines.length; i++) {
+    const m = lines[i].match(/^```(\w*)\s*$/);
+    if (m) {
+      const buf = [];
+      i++;
+      while (i < lines.length && !/^```\s*$/.test(lines[i])) buf.push(lines[i++]);
+      out.push({ code: buf.join('\n'), lang: m[1] });
+    } else out.push(lines[i]);
+  }
+  return out;
+}
+
+function parseCards(text, topic) {
+  const cards = [];
+  let tag = '', card = null, field = null;
+  // allow "A: ```lang" — the answer starting directly with a code block
+  text = text.replace(/^A: (```\w*)\s*$/gm, 'A: \n$1');
+  for (const b of blocks(text)) {
+    if (typeof b !== 'string') { if (card) card.parts.push(b); continue; }
+    if (b.startsWith('<!--')) continue;
+    if (b.startsWith('## ')) { tag = b.slice(3).trim(); card = null; continue; }
+    if (b.startsWith('# ')) continue;
+    if (b.startsWith('Q: ')) {
+      card = { topic, tag, q: b.slice(3).trim(), parts: [] };
+      card.id = topic + ':' + hash(card.q);
+      cards.push(card); field = 'q'; continue;
+    }
+    if (b.startsWith('A: ') && card) { field = 'a'; card.parts.push(b.slice(3)); continue; }
+    if (!card) continue;
+    if (field === 'q' && b.trim()) card.q += ' ' + b.trim();
+    else if (field === 'a') card.parts.push(b);
+  }
+  return cards;
+}
+
+function renderParts(parts) {
+  // consecutive text lines -> paragraphs; "- " lines -> bullets; code -> snippet
+  let html = '', para = [];
+  const flush = () => {
+    if (!para.length) return;
+    html += '<div>' + para.map(l => /^\s*- /.test(l) ? '• ' + inline(l.replace(/^\s*- /, '')) : inline(l)).join('<br>') + '</div>';
+    para = [];
+  };
+  for (const p of parts) {
+    if (typeof p !== 'string') { flush(); html += `<code class="snippet">${highlight(p.code, p.lang)}</code>`; continue; }
+    if (!p.trim()) { flush(); continue; }
+    para.push(p);
+  }
+  flush();
+  return html;
+}
+
+// Sheet format: "## Section", "### Sub", "> signature" starts an entry,
+// followed by optional ``` code and description lines. Other text = intro paragraph.
+function renderSheet(text) {
+  let html = '', entry = null, sections = [];
+  const close = () => {
+    if (!entry) return;
+    html += '<div class="entry">' +
+      (entry.sig ? `<code class="sig">${esc(entry.sig)}</code>` : '') +
+      entry.parts.map(p => typeof p === 'string' ? '' : `<code class="snippet">${highlight(p.code, p.lang)}</code>`).join('') +
+      (entry.desc.length ? `<span class="desc">${entry.desc.map(inline).join('<br>')}</span>` : '') +
+      '</div>';
+    entry = null;
+  };
+  for (const b of blocks(text)) {
+    if (typeof b !== 'string') {
+      if (!entry) entry = { sig: '', parts: [], desc: [] };
+      entry.parts.push(b); continue;
+    }
+    if (b.startsWith('<!--')) continue;
+    if (b.startsWith('# ')) { close(); continue; }
+    if (b.startsWith('## ')) {
+      close();
+      const title = b.slice(3).trim(), id = state.topic + '-' + slug(title);
+      sections.push({ id, title });
+      html += `<h2 class="section-heading" id="${id}">${esc(title)}</h2>`; continue;
+    }
+    if (b.startsWith('### ')) { close(); html += `<h3 class="sub-heading">${esc(b.slice(4).trim())}</h3>`; continue; }
+    if (b.startsWith('> ')) { close(); entry = { sig: b.slice(2).trim(), parts: [], desc: [] }; continue; }
+    if (!b.trim()) continue;
+    if (entry) entry.desc.push(b.trim());
+    else html += `<p class="page-sub">${inline(b.trim())}</p>`;
+  }
+  close();
+  return { html, sections };
+}
+
+// ── Sidebar ─────────────────────────────────────
+const cardCounts = {};
+
+function renderTopicList() {
+  let html = '', group = '';
+  for (const t of TOPICS) {
+    if (t.group !== group) { group = t.group; html += `<div class="cat-group">${esc(group)}</div>`; }
+    const avail = state.mode === 'sheet' ? t.sheet : t.cards;
+    const n = state.mode === 'cards' && cardCounts[t.id] ? `<span class="count">${cardCounts[t.id]}</span>` : '';
+    const title = avail ? '' : ` title="${state.mode === 'sheet' ? 'Flashcards only' : 'Cheat sheet only'}"`;
+    html += `<a class="topic-link${t.id === state.topic ? ' active' : ''}${avail ? '' : ' other-mode'}" data-topic="${t.id}"${title}>${esc(t.title)}${n}</a>`;
+  }
+  if (state.mode === 'cards') {
+    const total = Object.values(cardCounts).reduce((a, b) => a + b, 0);
+    html += `<div class="cat-group">Mixed</div><a class="topic-link${state.topic === 'all' ? ' active' : ''}" data-topic="all">All decks<span class="count">${total || ''}</span></a>`;
+  }
+  document.getElementById('topic-list').innerHTML = html;
+  document.querySelectorAll('.topic-link').forEach(a => a.addEventListener('click', () => {
+    state.topic = a.dataset.topic; state.tag = '';
+    // topics that exist only in the other mode switch the mode
+    const t = TOPICS.find(t => t.id === state.topic);
+    if (t && !t[state.mode]) state.mode = state.mode === 'sheet' ? 'cards' : 'sheet';
+    document.body.classList.remove('sidebar-open');
+    go();
+  }));
+}
+
+function renderSectionList(sections) {
+  const el = document.getElementById('section-list');
+  if (!sections.length) { el.innerHTML = ''; return; }
+  el.innerHTML = '<div class="cat-group">Sections</div>' +
+    sections.map(s => `<a class="cat-link" href="#${s.id}">${esc(s.title)}</a>`).join('');
+  el.querySelectorAll('.cat-link').forEach(a => a.addEventListener('click', e => {
+    e.preventDefault();
+    document.body.classList.remove('sidebar-open');
+    document.getElementById(a.getAttribute('href').slice(1)).scrollIntoView();
+  }));
+  const links = el.querySelectorAll('.cat-link');
+  if (observer) observer.disconnect();
+  observer = new IntersectionObserver(entries => {
+    const hit = entries.filter(e => e.isIntersecting);
+    if (!hit.length) return;
+    const top = hit.reduce((a, b) => a.boundingClientRect.top < b.boundingClientRect.top ? a : b);
+    links.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#' + top.target.id));
+  }, { root: $main, rootMargin: '-10% 0px -80% 0px' });
+  sections.forEach(s => observer.observe(document.getElementById(s.id)));
+}
+let observer = null;
+
+// ── Cheat-sheet mode ────────────────────────────
+async function showSheet() {
+  const t = TOPICS.find(t => t.id === state.topic && t.sheet) || TOPICS.find(t => t.sheet);
+  state.topic = t.id;
+  $main.innerHTML = '<p class="loading">Loading…</p>';
+  try {
+    const { html, sections } = renderSheet(await load(`content/${t.id}.sheet.md`));
+    $main.innerHTML = `<h1 class="page-title">${esc(t.title)}</h1>` + html;
+    renderSectionList(sections);
+  } catch (e) { $main.innerHTML = `<p class="error">${esc(String(e))}</p>`; renderSectionList([]); }
+  $main.scrollTop = 0;
+}
+
+// ── Flashcard mode ──────────────────────────────
+let deck = [], queue = [], current = null, revealed = false;
+const known = new Set(store.get('fc-known', []));
+const saveKnown = () => store.set('fc-known', [...known]);
+
+async function cardsFor(id) {
+  if (id === 'all') {
+    const all = await Promise.all(TOPICS.filter(t => t.cards).map(t => cardsFor(t.id)));
+    return all.flat();
+  }
+  const cards = parseCards(await load(`content/${id}.cards.md`), id);
+  cardCounts[id] = cards.length;
+  return cards;
+}
+
+function shuffle(a) {
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+
+async function showCards() {
+  if (state.topic !== 'all' && !TOPICS.find(t => t.id === state.topic && t.cards)) state.topic = 'k8s';
+  $main.innerHTML = '<p class="loading">Loading…</p>';
+  renderSectionList([]);
+  try { deck = await cardsFor(state.topic); }
+  catch (e) { $main.innerHTML = `<p class="error">${esc(String(e))}</p>`; return; }
+  renderTopicList();
+  buildQueue();
+  renderCardsPage();
+}
+
+function filtered() {
+  return deck.filter(c => (!state.tag || c.tag === state.tag) && (!state.unknownOnly || !known.has(c.id)));
+}
+
+function buildQueue() {
+  const f = filtered();
+  // unknown cards first (in file order unless shuffled), then known ones
+  queue = state.shuffle ? shuffle(f.slice()) : f.slice();
+  queue.sort((a, b) => known.has(a.id) - known.has(b.id));
+  current = queue.shift() || null;
+  revealed = false;
+}
+
+function renderCardsPage() {
+  const t = TOPICS.find(t => t.id === state.topic);
+  const title = t ? t.title : 'All decks';
+  const tags = [...new Set(deck.map(c => c.tag))];
+  const sel = `<select class="btn" id="fc-tag"><option value="">All sections (${deck.length})</option>` +
+    tags.map(g => `<option value="${esc(g)}"${g === state.tag ? ' selected' : ''}>${esc(g)} (${deck.filter(c => c.tag === g).length})</option>`).join('') + '</select>';
+  $main.innerHTML = `
+    <h1 class="page-title">${esc(title)} <span class="fc-stats" id="fc-stats"></span></h1>
+    <div class="progress"><div id="fc-bar"></div></div>
+    <div class="fc-toolbar">
+      <button class="btn${state.study === 'study' ? ' on' : ''}" data-study="study">Study</button>
+      <button class="btn${state.study === 'browse' ? ' on' : ''}" data-study="browse">Browse all</button>
+      ${sel}
+      <button class="btn${state.shuffle ? ' on' : ''}" id="fc-shuffle">Shuffle</button>
+      <button class="btn${state.unknownOnly ? ' on' : ''}" id="fc-unknown">Unknown only</button>
+      <button class="btn" id="fc-reset">Reset progress</button>
+    </div>
+    <div id="fc-body"></div>`;
+  document.querySelectorAll('[data-study]').forEach(b => b.addEventListener('click', () => { state.study = b.dataset.study; renderCardsPage(); }));
+  document.getElementById('fc-tag').addEventListener('change', e => { state.tag = e.target.value; buildQueue(); renderCardsPage(); });
+  document.getElementById('fc-shuffle').addEventListener('click', () => { state.shuffle = !state.shuffle; buildQueue(); renderCardsPage(); });
+  document.getElementById('fc-unknown').addEventListener('click', () => { state.unknownOnly = !state.unknownOnly; buildQueue(); renderCardsPage(); });
+  document.getElementById('fc-reset').addEventListener('click', () => {
+    if (!confirm('Reset progress for this deck?')) return;
+    deck.forEach(c => known.delete(c.id)); saveKnown(); buildQueue(); renderCardsPage();
+  });
+  updateStats();
+  state.study === 'browse' ? renderBrowse() : renderCard();
+}
+
+function updateStats() {
+  const f = deck.filter(c => !state.tag || c.tag === state.tag);
+  const k = f.filter(c => known.has(c.id)).length;
+  document.getElementById('fc-stats').textContent = `${k} / ${f.length} known`;
+  document.getElementById('fc-bar').style.width = f.length ? (100 * k / f.length) + '%' : '0';
+}
+
+function cardMeta(c) {
+  const t = TOPICS.find(t => t.id === c.topic);
+  return `<div class="card-meta"><span>${esc(state.topic === 'all' ? t.title + ' · ' + c.tag : c.tag)}</span><span>${known.has(c.id) ? '✓ known' : ''}</span></div>`;
+}
+
+function renderCard() {
+  const body = document.getElementById('fc-body');
+  if (!current) {
+    body.innerHTML = `<div class="fc-done"><b>Deck done 🎉</b>Every card in this selection has been answered.<br><br><button class="btn" id="fc-again">Go again</button></div>`;
+    document.getElementById('fc-again').addEventListener('click', () => { buildQueue(); renderCard(); });
+    return;
+  }
+  body.innerHTML = `
+    <div class="card" id="fc-card">
+      ${cardMeta(current)}
+      <div class="card-q">${inline(current.q)}</div>
+      ${revealed ? `<div class="card-a">${renderParts(current.parts)}</div>` : '<div class="card-hint">tap / space to reveal · ← again · → got it</div>'}
+    </div>
+    <div class="fc-actions">
+      ${revealed
+        ? '<button class="btn again" id="fc-no">Again</button><button class="btn good" id="fc-yes">Got it</button>'
+        : '<button class="btn" id="fc-show">Show answer</button>'}
+    </div>
+    <p class="fc-stats" style="margin-top:8px">${queue.length} more in queue</p>`;
+  document.getElementById('fc-card').addEventListener('click', e => {
+    if (!revealed && !window.getSelection().toString()) reveal();
+  });
+  if (revealed) {
+    document.getElementById('fc-no').addEventListener('click', () => answer(false));
+    document.getElementById('fc-yes').addEventListener('click', () => answer(true));
+  } else document.getElementById('fc-show').addEventListener('click', reveal);
+}
+
+function reveal() { revealed = true; renderCard(); }
+
+function answer(ok) {
+  if (ok) known.add(current.id); else known.delete(current.id);
+  saveKnown();
+  // "Again" re-inserts the card a few positions later in this session
+  if (!ok) queue.splice(Math.min(queue.length, 4), 0, current);
+  current = queue.shift() || null;
+  revealed = false;
+  updateStats();
+  renderCard();
+  $main.scrollTop = 0;
+}
+
+function renderBrowse() {
+  const f = filtered();
+  let html = '', tag = null;
+  for (const c of f) {
+    if (c.tag !== tag && state.topic !== 'all') { tag = c.tag; html += `<h3 class="sub-heading">${esc(tag)}</h3>`; }
+    html += `<div class="browse-card${known.has(c.id) ? ' known' : ''}"><details><summary><div class="card-q">${inline(c.q)}</div></summary><div class="card-a">${renderParts(c.parts)}</div></details></div>`;
+  }
+  document.getElementById('fc-body').innerHTML =
+    `<div class="fc-toolbar"><button class="btn" id="fc-expand">Expand all</button><button class="btn" id="fc-collapse">Collapse all</button></div>` + html;
+  document.getElementById('fc-expand').addEventListener('click', () => document.querySelectorAll('#fc-body details').forEach(d => d.open = true));
+  document.getElementById('fc-collapse').addEventListener('click', () => document.querySelectorAll('#fc-body details').forEach(d => d.open = false));
+}
+
+document.addEventListener('keydown', e => {
+  if (state.mode !== 'cards' || state.study !== 'study' || !current) return;
+  if (e.target.tagName === 'SELECT') return;
+  if (!revealed && (e.key === ' ' || e.key === 'Enter')) { e.preventDefault(); reveal(); }
+  else if (revealed && (e.key === 'ArrowRight' || e.key === ' ')) { e.preventDefault(); answer(true); }
+  else if (revealed && e.key === 'ArrowLeft') { e.preventDefault(); answer(false); }
+});
+
+// ── Routing (#mode/topic) ───────────────────────
+function go() {
+  const h = `#${state.mode}/${state.topic}`;
+  if (location.hash !== h) history.replaceState(null, '', h);
+  document.querySelectorAll('.mode-tab').forEach(b => b.classList.toggle('active', b.dataset.mode === state.mode));
+  const t = TOPICS.find(t => t.id === state.topic);
+  document.getElementById('topbar-lang').textContent =
+    (t ? t.title : 'All decks') + (state.mode === 'cards' ? ' · cards' : '');
+  renderTopicList();
+  state.mode === 'cards' ? showCards() : showSheet();
+}
+
+document.querySelectorAll('.mode-tab').forEach(b => b.addEventListener('click', () => {
+  state.mode = b.dataset.mode;
+  if (state.mode === 'sheet' && !(TOPICS.find(t => t.id === state.topic) || {}).sheet) state.topic = 'quickref';
+  if (state.mode === 'cards' && state.topic === 'quickref') state.topic = 'k8s';
+  state.tag = '';
+  document.body.classList.remove('sidebar-open');
+  go();
+}));
+
+const m = location.hash.match(/^#(sheet|cards)\/([\w-]+)/);
+if (m) { state.mode = m[1]; state.topic = m[2]; }
+go();
+
+// Prefetch everything so the page keeps working on a flaky connection
+Promise.all(TOPICS.filter(t => t.cards).map(t => cardsFor(t.id).catch(() => []))).then(renderTopicList);
+TOPICS.filter(t => t.sheet).forEach(t => load(`content/${t.id}.sheet.md`).catch(() => {}));
+
+// ── Mobile sidebar ──────────────────────────────
+document.getElementById('topbar-menu').addEventListener('click', () => document.body.classList.add('sidebar-open'));
+document.getElementById('sidebar-close').addEventListener('click', () => document.body.classList.remove('sidebar-open'));
+document.getElementById('overlay-backdrop').addEventListener('click', () => document.body.classList.remove('sidebar-open'));
+window.matchMedia('(max-width: 640px)').addEventListener('change', e => {
+  if (!e.matches) document.body.classList.remove('sidebar-open');
+});
+</script>
+
+</body>
+</html>
